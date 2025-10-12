@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: STROMDAO Support
+    url: mailto:dev@stromdao.com
+    about: Contact the STROMDAO team directly for vendor-specific questions or SLA topics.

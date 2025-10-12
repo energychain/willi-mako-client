@@ -1,0 +1,44 @@
+image: gitpod/workspace-node:latest
+
+tasks:
+  - name: Install Dependencies
+    init: npm install
+    command: |
+      echo "🔌 Willi-Mako Client SDK Development Environment"
+      echo "================================================"
+      echo ""
+      echo "Available commands:"
+      echo "  npm run build       - Build the project"
+      echo "  npm test            - Run tests"
+      echo "  npm run lint        - Lint code"
+      echo "  npm run format      - Format code"
+      echo "  npm run docs        - Generate API docs"
+      echo ""
+      echo "Don't forget to set WILLI_MAKO_TOKEN:"
+      echo "  gp env WILLI_MAKO_TOKEN='your-token'"
+      echo ""
+
+vscode:
+  extensions:
+    - dbaeumer.vscode-eslint
+    - esbenp.prettier-vscode
+    - ms-vscode.vscode-typescript-next
+    - vitest.explorer
+
+ports:
+  - port: 4173
+    onOpen: notify
+    description: Web Dashboard (examples/web-dashboard.ts)
+  - port: 7337
+    onOpen: notify
+    description: MCP Server (examples/mcp-server.ts)
+
+github:
+  prebuilds:
+    master: true
+    branches: true
+    pullRequests: true
+    pullRequestsFromForks: false
+    addCheck: true
+    addComment: false
+    addBadge: false

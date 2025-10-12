@@ -1,0 +1,217 @@
+# Willi-Mako Client SDK – Example Playbook
+
+This playbook illustrates how to combine the SDK and CLI for common energy-market scenarios revolving around UTILMD, MSCONS, ORDERS, PRICAT, and INVOIC.
+
+## Table of Contents
+
+- [Prerequisites](#prerequisites)
+- [1. UTILMD Contract Change Validation](#1-utilmd-contract-change-validation)
+- [2. MSCONS Meter Reading Clearing](#2-mscons-meter-reading-clearing)
+- [3. ORDERS Incident Replay](#3-orders-incident-replay)
+- [4. PRICAT Price Synchronisation](#4-pricat-price-synchronisation)
+- [5. INVOIC Compliance Archiving](#5-invoic-compliance-archiving)
+- [CLI Recipes](#cli-recipes)
+- [Next Steps](#next-steps)
+
+---
+
+## Prerequisites
+
+- Node.js 18+ with native `fetch`
+- Valid Willi-Mako API token exported as `WILLI_MAKO_TOKEN`
+- Familiarity with edi@energy processes and your organisation's Willi-Mako workspace structure
+
+```bash
+export WILLI_MAKO_TOKEN="your-api-token"
+```
+
+---
+
+## 1. UTILMD Contract Change Validation
+
+```typescript
+import { WilliMakoClient } from '@stromhaltig/willi-mako-client';
+
+const client = new WilliMakoClient();
+const sessionId = 'lieferantenwechsel-2024-05';
+
+const utilmd = `UNH+1+UTILMD:D:04B:UN:2.3e'
+BGM+NIL:9+123456789'
+DTM+137:202404221015:203'
+...`;
+
+// 1) Store raw message for audit
+await client.createArtifact({
+  sessionId,
+  type: 'edifact-message',
+  name: 'UTILMD_Lieferantenwechsel.edi',
+  mimeType: 'text/plain',
+  encoding: 'utf8',
+  content: utilmd,
+  tags: ['utilmd', 'lieferant', 'wechsel']
+});
+
+// 2) Run validation in sandbox
+const validationJob = await client.createNodeScriptJob({
+  sessionId,
+  source: `
+    const payload = ${JSON.stringify(utilmd)};
+    const hasBGM = payload.includes("BGM+");
+    console.log(JSON.stringify({ valid: hasBGM }));
+  `,
+  timeoutMs: 5000,
+  metadata: { process: 'lieferantenwechsel', format: 'UTILMD' }
+});
+
+// 3) Persist validation result once job finishes
+const jobId = validationJob.data.job.id;
+let job = await client.getToolJob(jobId);
+while (['queued', 'running'].includes(job.data.job.status)) {
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+  job = await client.getToolJob(jobId);
+}
+
+await client.createArtifact({
+  sessionId,
+  type: 'validation-report',
+  name: 'UTILMD_validation.json',
+  mimeType: 'application/json',
+  encoding: 'utf8',
+  content: job.data.job.result?.stdout ?? '{}',
+  tags: ['utilmd', 'validation', 'audit']
+});
+```
+
+---
+
+## 2. MSCONS Meter Reading Clearing
+
+```typescript
+const sessionId = 'mscons-clearing-2024-Q1';
+const meterReadings = [
+  { marktlokation: 'DE000123456789012345', value: 2350, timestamp: '2024-03-31T22:00:00Z' },
+  { marktlokation: 'DE000123456789012346', value: 1244, timestamp: '2024-03-31T22:00:00Z' }
+];
+
+await client.createArtifact({
+  sessionId,
+  type: 'etl-input',
+  name: 'mscons-readings.json',
+  mimeType: 'application/json',
+  encoding: 'utf8',
+  content: JSON.stringify(meterReadings),
+  tags: ['mscons', 'clearing', 'input']
+});
+
+const job = await client.createNodeScriptJob({
+  sessionId,
+  source: `
+    const readings = ${JSON.stringify(meterReadings)};
+    const anomalies = readings.filter(r => r.value < 0);
+    console.log(JSON.stringify({ total: readings.length, anomalies }));
+  `,
+  metadata: { format: 'MSCONS', purpose: 'clearing' }
+});
+```
+
+---
+
+## 3. ORDERS Incident Replay
+
+```typescript
+const sessionId = 'orders-incident-2024-04-09';
+const ordersPayload = `UNH+1+ORDERS:D:96A:UN:EAN005'
+BGM+220+20240409-0001+9'
+...`;
+
+await client.createArtifact({
+  sessionId,
+  type: 'incident-input',
+  name: 'ORDERS_incident.edi',
+  mimeType: 'text/plain',
+  encoding: 'utf8',
+  content: ordersPayload,
+  tags: ['orders', 'incident', 'klaerfallanalyse']
+});
+
+const replayJob = await client.createNodeScriptJob({
+  sessionId,
+  source: `
+    const message = ${JSON.stringify(ordersPayload)};
+    const supplierId = /\+([A-Z0-9]{13})'/.exec(message)?.[1];
+    console.log(JSON.stringify({ supplierId }));
+  `,
+  metadata: { format: 'ORDERS', action: 'incident-replay' }
+});
+```
+
+---
+
+## 4. PRICAT Price Synchronisation
+
+```typescript
+const sessionId = 'pricat-sync-2024-05';
+const priceList = {
+  validity: '2024-05-01',
+  entries: [
+    { productId: 'P-1001', price: 0.322, unit: 'EUR/kWh' }
+  ]
+};
+
+await client.createArtifact({
+  sessionId,
+  type: 'price-list',
+  name: 'pricat-2024-05.json',
+  mimeType: 'application/json',
+  encoding: 'utf8',
+  content: JSON.stringify(priceList, null, 2),
+  tags: ['pricat', 'pricing', 'lieferant']
+});
+```
+
+---
+
+## 5. INVOIC Compliance Archiving
+
+```typescript
+const sessionId = 'invoic-archive-2024-02';
+const invoicePdfBase64 = await readFileAsBase64('./examples/data/invoice.pdf');
+
+await client.createArtifact({
+  sessionId,
+  type: 'invoice-document',
+  name: 'INVOIC_2024-02-28.pdf',
+  mimeType: 'application/pdf',
+  encoding: 'base64',
+  content: invoicePdfBase64,
+  tags: ['invoic', 'audit', 'netzbetreiber'],
+  metadata: { customerId: '9876543210', period: '2024-02' }
+});
+```
+
+---
+
+## CLI Recipes
+
+```bash
+# Validate UTILMD message using sandbox
+willi-mako tools run-node-script \
+  --session "lieferantenwechsel-2024-05" \
+  --source "const msg = process.env.UTILMD; console.log(msg.includes('BGM+220'));" \
+  --timeout 3000
+
+# Create MSCONS clearing report from file
+cat data/mscons-clearing.json | willi-mako artifacts create \
+  --session "mscons-clearing-2024-Q1" \
+  --type "clearing-report" \
+  --name "mscons-clearing-2024-Q1.json" \
+  --mime "application/json"
+```
+
+---
+
+## Next Steps
+
+- Explore the [`examples/`](../examples) folder for runnable scripts.
+- Combine artifacts with your DWH/ETL tooling (e.g., Apache Airflow, Prefect, dbt) to automate compliance checkpoints.
+- Contribute your best practices back to the community via pull requests or discussions.

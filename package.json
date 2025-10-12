@@ -1,0 +1,107 @@
+{
+  "name": "@stromhaltig/willi-mako-client",
+  "version": "0.1.0",
+  "description": "Official TypeScript client & CLI for the Willi-Mako API v2 (Marktkommunikation, compliance & ETL automation)",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./cli": {
+      "import": "./dist/cli.js"
+    },
+    "./openapi.json": "./schemas/openapi.json"
+  },
+  "bin": {
+    "willi-mako": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "schemas/openapi.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "clean": "rimraf dist coverage",
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "lint": "eslint src tests --ext .ts",
+    "lint:fix": "eslint src tests --ext .ts --fix",
+    "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"tests/**/*.ts\"",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "docs": "typedoc",
+    "prepublishOnly": "npm run lint && npm run typecheck && npm test && npm run clean && npm run build",
+    "prepare": "husky"
+  },
+  "keywords": [
+    "willi-mako",
+    "stromdao",
+    "marktkommunikation",
+    "edi@energy",
+    "utilmd",
+    "mscons",
+    "orders",
+    "pricat",
+    "invoic",
+    "etl",
+    "compliance",
+    "audit",
+    "api-client"
+  ],
+  "author": "STROMDAO GmbH",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/energychain/willi-mako-client.git"
+  },
+  "homepage": "https://github.com/energychain/willi-mako-client#readme",
+  "bugs": {
+    "url": "https://github.com/energychain/willi-mako-client/issues"
+  },
+  "funding": {
+    "type": "custom",
+    "url": "mailto:dev@stromdao.com"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "sideEffects": false,
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.20.0",
+    "commander": "^11.1.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.30",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "@vitest/coverage-v8": "^1.6.0",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "husky": "^9.0.11",
+    "lint-staged": "^15.2.2",
+    "prettier": "^3.2.5",
+    "rimraf": "^6.0.1",
+    "typedoc": "^0.26.0",
+    "typescript": "^5.5.4",
+    "vitest": "^1.6.0"
+  },
+  "lint-staged": {
+    "*.ts": [
+      "eslint --fix --max-warnings 50",
+      "prettier --write"
+    ]
+  }
+}

@@ -1,0 +1,32 @@
+# Source files
+src/
+tests/
+examples/
+
+# Config files
+.github/
+.vscode/
+.editorconfig
+.eslintrc.json
+.prettierrc.json
+.prettierignore
+.nvmrc
+.gitignore
+tsconfig.json
+vitest.config.ts
+
+# Documentation (only include README in package)
+docs/
+*.md
+!README.md
+
+# Development files
+coverage/
+node_modules/
+.DS_Store
+*.log
+*.tgz
+
+# Git
+.git/
+.gitattributes

@@ -1,0 +1,19 @@
+# Code Owners for willi-mako-client
+# These owners will be automatically requested for review when PRs are opened
+
+# Global owners
+* @energychain/maintainers
+
+# Core SDK
+/src/ @energychain/core-team
+
+# Documentation
+/docs/ @energychain/documentation
+
+# CI/CD & Infrastructure
+/.github/ @energychain/devops
+/examples/docker/ @energychain/devops
+
+# Security-sensitive files
+/SECURITY.md @energychain/security
+/.github/workflows/ @energychain/security

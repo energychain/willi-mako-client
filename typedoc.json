@@ -1,0 +1,22 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["src/index.ts"],
+  "out": "docs-api",
+  "plugin": [],
+  "exclude": ["**/*.test.ts", "node_modules/**"],
+  "excludePrivate": true,
+  "excludeProtected": false,
+  "excludeExternals": true,
+  "readme": "README.md",
+  "name": "Willi-Mako Client SDK",
+  "includeVersion": true,
+  "categorizeByGroup": true,
+  "defaultCategory": "Core",
+  "categoryOrder": ["Core", "Types", "Errors", "*"],
+  "sort": ["source-order"],
+  "validation": {
+    "notExported": false,
+    "invalidLink": true,
+    "notDocumented": false
+  }
+}
