@@ -21,7 +21,7 @@ This guide lists common issues encountered when using the Willi-Mako Client SDK 
 
 ### `ERR_PNPM_NO_MATCHING_VERSION` or similar
 - Ensure you are using a public npm registry (`npm config get registry`).
-- The package is published as `@stromdao/willi-mako-client`; check scope and spelling.
+- The package is published as `willi-mako-client`; check scope and spelling.
 
 ### `node: this package requires Node.js >= 18`
 - Upgrade Node.js to version 18 or higher. The SDK relies on native `fetch` and modern ESM support.
@@ -89,7 +89,7 @@ This guide lists common issues encountered when using the Willi-Mako Client SDK 
 
 ### `willi-mako: command not found`
 - Install dependencies (`npm install`) and run `npm run build` before using the local CLI.
-- Use `npx @stromdao/willi-mako-client --help` to run without installing globally.
+- Use `npx willi-mako-client --help` to run without installing globally.
 
 ### `A bearer token is required`
 - Pass `--token <token>` or export the `WILLI_MAKO_TOKEN` environment variable.
@@ -117,7 +117,7 @@ If the issue persists:
 4. Contact STROMDAO: [dev@stromdao.com](mailto:dev@stromdao.com).
 
 Provide:
-- SDK version (`npm ls @stromdao/willi-mako-client`)
+- SDK version (`npm ls willi-mako-client`)
 - Node.js version (`node -v`)
 - Error output or logs (sanitize sensitive data)
 - Details about the affected edi@energy message or ETL workflow

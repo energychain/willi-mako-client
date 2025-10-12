@@ -6,7 +6,7 @@
  * anomalies, and persist clearing results with metadata.
  */
 
-import { WilliMakoClient } from '@stromdao/willi-mako-client';
+import { WilliMakoClient } from 'willi-mako-client';
 
 const SESSION_ID = `mscons-clearing-${new Date().toISOString()}`;
 

@@ -23,7 +23,7 @@ What you expected to happen.
 What actually happened.
 
 ## Environment
-- SDK version: `@stromdao/willi-mako-client@x.y.z`
+- SDK version: `willi-mako-client@x.y.z`
 - Node.js version: `node -v`
 - OS: e.g. Ubuntu 22.04
 - Market role / workflow (Lieferant, Netzbetreiber, Messstellenbetreiber, etc.)

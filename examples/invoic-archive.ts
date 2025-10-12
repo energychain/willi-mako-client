@@ -6,7 +6,7 @@
  * together with metadata for audit and downstream analytics.
  */
 
-import { WilliMakoClient } from '@stromdao/willi-mako-client';
+import { WilliMakoClient } from 'willi-mako-client';
 
 const SESSION_ID = `invoic-archive-${Date.now()}`;
 

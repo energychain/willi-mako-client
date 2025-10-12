@@ -6,7 +6,7 @@
  * persisting PRICAT payloads and sharing audit-ready metadata.
  */
 
-import { WilliMakoClient } from '@stromdao/willi-mako-client';
+import { WilliMakoClient } from 'willi-mako-client';
 
 const SESSION_ID = `pricat-sync-${Date.now()}`;
 

@@ -1,5 +1,5 @@
 {
-  "name": "@stromdao/willi-mako-client",
+  "name": "willi-mako-client",
   "version": "0.1.0",
   "description": "Official TypeScript client & CLI for the Willi-Mako API v2 (Marktkommunikation, compliance & ETL automation)",
   "type": "module",

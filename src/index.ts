@@ -120,7 +120,7 @@ export class WilliMakoError extends Error {
  * @example
  * **Basic Usage**
  * ```typescript
- * import { WilliMakoClient } from '@stromdao/willi-mako-client';
+ * import { WilliMakoClient } from 'willi-mako-client';
  *
  * const client = new WilliMakoClient({
  *   token: process.env.WILLI_MAKO_TOKEN
