@@ -1,5 +1,6 @@
 {
-  "name": "willi-mako-client",
+  "$schema": "https://json.schemastore.org/package.json",
+  "name": "@energychain/willi-mako-client",
   "version": "0.1.0",
   "description": "Official TypeScript client & CLI for the Willi-Mako API v2 (Marktkommunikation, compliance & ETL automation)",
   "type": "module",
@@ -86,7 +87,8 @@
   },
   "publishConfig": {
     "access": "public",
-    "registry": "https://registry.npmjs.org/"
+    "registry": "https://npm.pkg.github.com",
+    "tag": "latest"
   },
   "sideEffects": false,
   "dependencies": {
@@ -108,11 +110,5 @@
     "typedoc": "^0.26.0",
     "typescript": "^5.5.4",
     "vitest": "^1.6.0"
-  },
-  "lint-staged": {
-    "*.ts": [
-      "eslint --fix --max-warnings 50",
-      "prettier --write"
-    ]
   }
 }

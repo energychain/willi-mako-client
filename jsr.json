@@ -1,0 +1,21 @@
+{
+  "name": "@energychain/willi-mako-client",
+  "version": "0.1.0",
+  "exports": {
+    ".": "./src/index.ts",
+    "./cli": "./src/cli.ts",
+    "./types": "./src/types.ts"
+  },
+  "publish": {
+    "include": [
+      "src/**/*.ts",
+      "schemas/openapi.json",
+      "README.md",
+      "LICENSE"
+    ],
+    "exclude": [
+      "**/*.test.ts",
+      "tests/**"
+    ]
+  }
+}
