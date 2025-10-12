@@ -1,6 +1,6 @@
 # Docker Quickstart for Willi-Mako Client
 
-This folder contains a minimal Docker setup that wraps the `@stromhaltig/willi-mako-client` CLI. It is designed for developers who prefer to run the tooling in an isolated container and for CI/CD pipelines.
+This folder contains a minimal Docker setup that wraps the `@stromdao/willi-mako-client` CLI. It is designed for developers who prefer to run the tooling in an isolated container and for CI/CD pipelines.
 
 ## Build the image
 

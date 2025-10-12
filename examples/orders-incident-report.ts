@@ -6,7 +6,7 @@
  * identifiers, and create audit artifacts during Klärfallanalyse.
  */
 
-import { WilliMakoClient } from '@stromhaltig/willi-mako-client';
+import { WilliMakoClient } from '@stromdao/willi-mako-client';
 
 const SESSION_ID = `orders-incident-${Date.now()}`;
 const ORDERS_PAYLOAD = "UNH+1+ORDERS:D:96A:UN:EAN005'BGM+220+20240409-0001+9'...";

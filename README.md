@@ -2,7 +2,7 @@
 
 <div align="center">
 
-[![npm version](https://img.shields.io/npm/v/@stromhaltig/willi-mako-client)](https://www.npmjs.com/package/@stromhaltig/willi-mako-client)
+[![npm version](https://img.shields.io/npm/v/@stromdao/willi-mako-client)](https://www.npmjs.com/package/@stromdao/willi-mako-client)
 [![CI](https://github.com/energychain/willi-mako-client/actions/workflows/ci.yml/badge.svg)](https://github.com/energychain/willi-mako-client/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/energychain/willi-mako-client/branch/main/graph/badge.svg)](https://codecov.io/gh/energychain/willi-mako-client)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
@@ -72,11 +72,11 @@ Mit dem SDK erhalten Sie:
 ## 📦 Installation
 
 ```bash
-npm install @stromhaltig/willi-mako-client
+npm install @stromdao/willi-mako-client
 # oder
-pnpm add @stromhaltig/willi-mako-client
+pnpm add @stromdao/willi-mako-client
 # oder
-yarn add @stromhaltig/willi-mako-client
+yarn add @stromdao/willi-mako-client
 ```
 
 > Voraussetzung: **Node.js 18+** (inkl. nativer `fetch`) sowie optional **TypeScript 5+** für Projekte mit Typprüfung.
@@ -94,7 +94,7 @@ yarn add @stromhaltig/willi-mako-client
 
 2. **Client initialisieren und API prüfen**:
    ```typescript
-   import { WilliMakoClient } from '@stromhaltig/willi-mako-client';
+   import { WilliMakoClient } from '@stromdao/willi-mako-client';
 
    const client = new WilliMakoClient();
    const schema = await client.getRemoteOpenApiDocument();
@@ -253,7 +253,7 @@ Fehler führen zu `WilliMakoError` mit `status` und `body`. Vollständige Typen 
 ## 🖥️ CLI Usage
 
 ```bash
-npx @stromhaltig/willi-mako-client --help
+npx @stromdao/willi-mako-client --help
 ```
 
 **Typische Befehle:**
@@ -376,7 +376,7 @@ Bitte bei Pull Requests:
 
 Bitte angeben:
 
-- SDK-Version (`npm ls @stromhaltig/willi-mako-client`)
+- SDK-Version (`npm ls @stromdao/willi-mako-client`)
 - Node-Version (`node -v`)
 - Relevante Logs oder Artefakt-Metadaten
 

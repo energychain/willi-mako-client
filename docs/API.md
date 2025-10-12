@@ -1,6 +1,6 @@
 # Willi-Mako Client SDK – API Reference
 
-This document provides an overview of the TypeScript/JavaScript API exposed by `@stromhaltig/willi-mako-client`. Refer to the generated type definitions in `dist/index.d.ts` for full detail.
+This document provides an overview of the TypeScript/JavaScript API exposed by `@stromdao/willi-mako-client`. Refer to the generated type definitions in `dist/index.d.ts` for full detail.
 
 ## Table of Contents
 
@@ -24,7 +24,7 @@ This document provides an overview of the TypeScript/JavaScript API exposed by `
 ## Instantiating the Client
 
 ```typescript
-import { WilliMakoClient } from '@stromhaltig/willi-mako-client';
+import { WilliMakoClient } from '@stromdao/willi-mako-client';
 
 const client = new WilliMakoClient({
   baseUrl: 'https://stromhaltig.de/api/v2',

@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-The Willi-Mako Client SDK is currently in active development. We aim to support the latest minor release of the `@stromhaltig/willi-mako-client` package and the previous minor release. Security fixes are applied to the most recent version and published via npm.
+The Willi-Mako Client SDK is currently in active development. We aim to support the latest minor release of the `@stromdao/willi-mako-client` package and the previous minor release. Security fixes are applied to the most recent version and published via npm.
 
 | Version | Supported | Notes |
 |---------|-----------|-------|
@@ -31,7 +31,7 @@ We will acknowledge receipt of your report within 72 hours and work with you on 
 
 ## Scope
 
-This policy applies to the contents of this repository and the published `@stromhaltig/willi-mako-client` npm package. If you uncover issues in other STROMDAO products or infrastructure, please still notify us; we will route the report to the appropriate team.
+This policy applies to the contents of this repository and the published `@stromdao/willi-mako-client` npm package. If you uncover issues in other STROMDAO products or infrastructure, please still notify us; we will route the report to the appropriate team.
 
 ## Encryption Key
 

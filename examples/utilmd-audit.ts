@@ -9,7 +9,7 @@
  *   node --loader ts-node/esm examples/utilmd-audit.ts
  */
 
-import { WilliMakoClient } from '@stromhaltig/willi-mako-client';
+import { WilliMakoClient } from '@stromdao/willi-mako-client';
 
 const SESSION_ID = `utilmd-audit-${new Date().toISOString()}`;
 const UTILMD_PAYLOAD = "UNH+1+UTILMD:D:04B:UN:2.3e'BGM+Z01+47110815+9'...";

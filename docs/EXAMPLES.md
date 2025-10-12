@@ -30,7 +30,7 @@ export WILLI_MAKO_TOKEN="your-api-token"
 ## 1. UTILMD Contract Change Validation
 
 ```typescript
-import { WilliMakoClient } from '@stromhaltig/willi-mako-client';
+import { WilliMakoClient } from '@stromdao/willi-mako-client';
 
 const client = new WilliMakoClient();
 const sessionId = 'lieferantenwechsel-2024-05';
