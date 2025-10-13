@@ -22,8 +22,8 @@ import type {
   ClarificationAnalyzeResponse
 } from './types.js';
 
-const require = createRequire(import.meta.url);
-const openApiDocument = require('../schemas/openapi.json');
+const require: NodeJS.Require = createRequire(import.meta.url);
+const openApiDocument: Record<string, unknown> = require('../schemas/openapi.json');
 
 export * from './types.js';
 
