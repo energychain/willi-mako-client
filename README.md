@@ -162,17 +162,19 @@ Der Container installiert das SDK global und setzt `willi-mako` als EntryPoint. 
 
 ### MCP Server Quickstart
 
-Expose die Plattform als **Model Context Protocol (MCP)**-Server, damit interne LLMs geprüfte Marktkommunikationsprozesse anstoßen können. Ein komplettes Beispiel liegt unter [`examples/mcp-server.ts`](./examples/mcp-server.ts).
+Expose die Plattform als **Model Context Protocol (MCP)**-Server, damit interne LLMs geprüfte Marktkommunikationsprozesse anstoßen können. Die CLI kapselt das komplette Setup, eigene Anpassungen können weiterhin auf [`examples/mcp-server.ts`](./examples/mcp-server.ts) aufbauen.
 
 1. **Server starten** (setzt `WILLI_MAKO_TOKEN` voraus):
    ```bash
-   node --loader ts-node/esm examples/mcp-server.ts
+   willi-mako --token "$WILLI_MAKO_TOKEN" mcp --port 7337
    ```
 
-   Optionale Variablen:
+   Alternativ greift die CLI auf Umgebungsvariablen zurück:
    ```bash
    export PORT=7337
+   export WILLI_MAKO_TOKEN="<dein-token>"
    export WILLI_MAKO_BASE_URL="https://stromhaltig.de/api/v2"
+   willi-mako mcp
    ```
 
 2. **Bereitgestellte Tools & Ressourcen**
@@ -193,21 +195,23 @@ Expose die Plattform als **Model Context Protocol (MCP)**-Server, damit interne 
 
 ### Lightweight Web UI Quickstart
 
-Für MaKo-Fachbereiche ohne lokale Node.js-Installation liegt unter [`examples/web-dashboard.ts`](./examples/web-dashboard.ts) ein leichtgewichtiger HTTP-Server.
+Für MaKo-Fachbereiche ohne lokale Node.js-Installation liefert die CLI ein gebündeltes Dashboard (Basis: [`src/demos/web-dashboard.ts`](./src/demos/web-dashboard.ts)).
 
-1. **Abhängigkeiten installieren** (nutzt nur Kernmodule, kein zusätzliches npm-Paket nötig):
+1. **Abhängigkeiten installieren** (CLI & Dashboard werden gemeinsam ausgeliefert):
    ```bash
    npm install
    ```
 
 2. **Server starten**:
    ```bash
-   node --loader ts-node/esm examples/web-dashboard.ts
+   willi-mako --token "$WILLI_MAKO_TOKEN" serv --port 4173
    ```
+
+   Ohne `--token` startet der Server ebenfalls und ermöglicht den Login über das Formular.
 
 3. **Im Browser öffnen**: `http://localhost:4173`
 
-4. **Formular verwenden** – EDIFACT-Message einfügen, Preview starten. Der Server erstellt intern Sandbox-Jobs, pollt Ergebnisse und zeigt Output sowie Artefakt-Vorschläge an.
+4. **Formular verwenden** – EDIFACT-Message einfügen, Preview starten. Der Server erstellt intern Sandbox-Jobs, pollt Ergebnisse und zeigt Output sowie Artefakt-Vorschläge an. Eigene Anpassungen können auf [`examples/web-dashboard.ts`](./examples/web-dashboard.ts) aufsetzen.
 
 ![Web Dashboard Vorschau](./docs/media/web-dashboard-screenshot.svg)
 

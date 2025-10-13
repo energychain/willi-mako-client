@@ -28,10 +28,10 @@ vscode:
 ports:
   - port: 4173
     onOpen: notify
-    description: Web Dashboard (examples/web-dashboard.ts)
+    description: Web Dashboard (willi-mako serv)
   - port: 7337
     onOpen: notify
-    description: MCP Server (examples/mcp-server.ts)
+    description: MCP Server (willi-mako mcp)
 
 github:
   prebuilds:

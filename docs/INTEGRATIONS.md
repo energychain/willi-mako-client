@@ -39,14 +39,14 @@ Dieser Leitfaden bündelt praxisnahe Szenarien für Entwickler:innen und Fachanw
 **Ziel:** Fachanwender:innen (z. B. MaKo-Team) können Sessions verwalten, Chat-/Reasoning-Aufgaben anstoßen und EDIFACT-Nachrichten prüfen – ganz ohne lokale Node.js Umgebung.
 
 1. **Server starten**:
-   ```bash
-   node --loader ts-node/esm examples/web-dashboard.ts
-   ```
+    ```bash
+    willi-mako --token "$WILLI_MAKO_TOKEN" serv --port 4173
+    ```
 2. **Browser öffnen:** `http://localhost:4173`
 3. **Anmelden & Sessions verwalten:** Über die Login-Kachel Authentifizieren, Sessions anlegen/abrufen/löschen und anschließend Chat, semantische Suche, Reasoning, Kontextauflösung und Klarstellungsanalyse direkt im Browser nutzen.
 
 **Anpassungen**
-- **Branding & Layout:** Passen Sie HTML/CSS innerhalb von `examples/web-dashboard.ts` an.
+- **Branding & Layout:** Passen Sie HTML/CSS innerhalb von `src/demos/web-dashboard.ts` an oder forken Sie das Beispielskript unter `examples/web-dashboard.ts`.
 - **Rollenbasierte Tokens:** Hinterlegen Sie unterschiedliche Tokens (z. B. Lesen/Schreiben) via Prozessumgebung.
 - **Auth-Proxy:** Empfohlen für produktive Nutzung (z. B. Basic Auth, Reverse Proxy mit OAuth2 Proxy).
 - **Mehrsprachigkeit:** Tauschen Sie Texte im HTML aus oder nutzen Sie ein Template-System.
@@ -125,19 +125,19 @@ Dieser Leitfaden bündelt praxisnahe Szenarien für Entwickler:innen und Fachanw
 
 **Ziel:** Den Willi-Mako Client in KI-gestützte Entwicklungsumgebungen (z. B. VS Code, Cursor, Claude Desktop) einbinden.
 
-1. **Server starten** (siehe [`examples/mcp-server.ts`](../examples/mcp-server.ts)):
+1. **Server starten** (CLI-Befehl, optional basierend auf [`src/demos/mcp-server.ts`](../src/demos/mcp-server.ts)):
     ```bash
-    node --loader ts-node/esm examples/mcp-server.ts
+    willi-mako --token "$WILLI_MAKO_TOKEN" mcp --port 7337
     ```
-    Der Server lauscht standardmäßig auf `http://127.0.0.1:7337/mcp`. Legen Sie `WILLI_MAKO_TOKEN` als Umgebungvariable fest, bevor Sie den Prozess starten.
+    Ohne `--token` greift der Befehl auf `WILLI_MAKO_TOKEN` aus der Umgebung zurück. `PORT` und `WILLI_MAKO_BASE_URL` können Sie ebenfalls vorab setzen, um Standardwerte zu überschreiben. Der Server lauscht anschließend auf `http://127.0.0.1:7337/mcp`.
 2. **Client konfigurieren:** Fügen Sie in Ihrer IDE oder Ihrem Agenten eine MCP-Verbindung hinzu.
      - **VS Code / Cursor:**
          ```json
          {
              "mcpServers": {
                  "willi-mako": {
-                     "command": "node",
-                     "args": ["--loader", "ts-node/esm", "examples/mcp-server.ts"],
+                     "command": "willi-mako",
+                     "args": ["mcp"],
                      "env": {
                          "WILLI_MAKO_TOKEN": "${WILLI_MAKO_TOKEN}"
                      }
@@ -149,10 +149,9 @@ Dieser Leitfaden bündelt praxisnahe Szenarien für Entwickler:innen und Fachanw
 3. **Werkzeuge & Ressourcen nutzen:** Der MCP-Server stellt u. a. die Tools `willi-mako.login`, `willi-mako.create-session`, `willi-mako.chat`, `willi-mako.semantic-search`, `willi-mako.reasoning-generate`, `willi-mako.resolve-context`, `willi-mako.clarification-analyze`, `willi-mako.create-node-script`, `willi-mako.get-tool-job`, `willi-mako.create-artifact` sowie die Resource `willi-mako://openapi` bereit. Agenten können damit komplette MaKo-Workflows automatisiert orchestrieren.
 
 **Best Practices**
-- Aktivieren Sie optional CORS-Domains via `ALLOWED_ORIGINS`, falls Sie den Server über einen Reverse Proxy bereitstellen.
 - Nutzen Sie separate **Service Token** für IDE-Automatisierungen und hinterlegen Sie diese in einer Secret-Manager-Lösung.
 - Beobachten Sie Logs (stdout) auf Tool- und Resource-Aufrufe, um Tuning-Möglichkeiten für Prompts oder Workflow-Pfade zu identifizieren.
-- Ergänzen Sie bei Bedarf weitere Tools im MCP-Server (z. B. `list-artifacts`, `list-jobs`) – die Struktur in `examples/mcp-server.ts` ist modular gehalten.
+- Ergänzen Sie bei Bedarf weitere Tools im MCP-Server (z. B. `list-artifacts`, `list-jobs`) – die Struktur in `src/demos/mcp-server.ts` ist modular gehalten.
 
 ---
 
@@ -178,14 +177,14 @@ Dieser Leitfaden bündelt praxisnahe Szenarien für Entwickler:innen und Fachanw
 - Nutzen Sie den **Code Node**, um komplexe Payloads zu erzeugen (z. B. Listen von Zählpunkten).
 - Verwenden Sie **Error Workflows** in n8n, um auf API-Fehler (`WilliMakoError`) zu reagieren.
 - Speichern Sie Artefakte über einen zusätzlichen HTTP-Request (`POST /artifacts`) und hängen Sie diese an Tickets oder E-Mails an.
-- Für langfristige Workflows lässt sich das Dashboard-Skript (`examples/web-dashboard.ts`) als Basis nutzen und über die n8n *Webhook*-Nodes ansteuern.
+- Für langfristige Workflows lässt sich das Dashboard-Skript (`src/demos/web-dashboard.ts`) als Basis nutzen und über die n8n *Webhook*-Nodes ansteuern.
 
 ---
 
 ## Weiterführende Ressourcen
 
 - [`README.md`](../README.md) – Überblick & Quickstarts.
-- [`examples/mcp-server.ts`](../examples/mcp-server.ts) – Vollständiger MCP Server mit Tools & Ressourcen.
+- [`src/demos/mcp-server.ts`](../src/demos/mcp-server.ts) – Vollständiger MCP Server mit Tools & Ressourcen.
 - [`docs/API.md`](./API.md) – Endpunkte im Detail.
 - [`docs/TROUBLESHOOTING.md`](./TROUBLESHOOTING.md) – Fehleranalyse & Logging.
 - [`examples/`](../examples) – Weitere Skripte und Demos.

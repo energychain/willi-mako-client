@@ -25,8 +25,11 @@ import {
   formatEnvExport,
   type SupportedShell
 } from './cli-utils.js';
+import { startWebDashboard } from './demos/web-dashboard.js';
+import { startMcpServer } from './demos/mcp-server.js';
 
 const program = new Command();
+let keepAlive = false;
 
 program
   .name('willi-mako')
@@ -398,6 +401,65 @@ artifacts
   });
 
 program
+  .command('serv')
+  .description('Start the interactive Willi-Mako web dashboard demo')
+  .option(
+    '-p, --port <port>',
+    'Port to bind the dashboard (defaults to $PORT or 4173)',
+    parseIntBase10
+  )
+  .action(async (options: { port?: number }) => {
+    const opts = program.opts();
+    const token = opts.token ?? process.env.WILLI_MAKO_TOKEN ?? null;
+
+    const instance = await startWebDashboard({
+      port: options.port,
+      baseUrl: opts.baseUrl,
+      token,
+      logger: (message) => console.log(message)
+    });
+
+    enableKeepAlive();
+    if (!token) {
+      console.warn('⚠️  No bearer token configured. Use the dashboard login to authenticate.');
+    }
+    console.log('Press Ctrl+C to stop the dashboard.');
+
+    registerShutdown(async () => {
+      console.log('\nStopping web dashboard...');
+      await instance.stop();
+    });
+  });
+
+program
+  .command('mcp')
+  .description('Expose Willi-Mako capabilities via the Model Context Protocol')
+  .option(
+    '-p, --port <port>',
+    'Port to bind the MCP HTTP server (defaults to $PORT or 7337)',
+    parseIntBase10
+  )
+  .action(async (options: { port?: number }) => {
+    const opts = program.opts();
+    const token = opts.token ?? process.env.WILLI_MAKO_TOKEN ?? null;
+
+    const instance = await startMcpServer({
+      port: options.port,
+      baseUrl: opts.baseUrl,
+      token,
+      logger: (message) => console.log(message)
+    });
+
+    enableKeepAlive();
+    console.log('Press Ctrl+C to stop the MCP server.');
+
+    registerShutdown(async () => {
+      console.log('\nStopping MCP server...');
+      await instance.stop();
+    });
+  });
+
+program
   .command('whoami')
   .description('Display the current configuration (safe to share)')
   .action(() => {
@@ -410,7 +472,10 @@ program
   });
 
 program.hook('postAction', () => {
-  // Ensure the process exits after async handlers finish
+  // Ensure the process exits after async handlers finish unless a long-running server is active
+  if (keepAlive) {
+    return;
+  }
   setImmediate(() => process.exit(0));
 });
 
@@ -465,6 +530,33 @@ function outputJson(value: unknown): void {
 
 interface ClientFactoryOptions {
   requireToken?: boolean;
+}
+
+function enableKeepAlive(): void {
+  keepAlive = true;
+}
+
+function registerShutdown(callback: () => Promise<void> | void): void {
+  const signals: NodeJS.Signals[] = ['SIGINT', 'SIGTERM'];
+  let shuttingDown = false;
+
+  const handler = async (signal: NodeJS.Signals) => {
+    if (shuttingDown) {
+      return;
+    }
+    shuttingDown = true;
+    process.stdout.write(`\nReceived ${signal}. Shutting down...\n`);
+    try {
+      await callback();
+    } catch (error) {
+      console.error('Error during shutdown:', error instanceof Error ? error.message : error);
+    }
+    process.exit(0);
+  };
+
+  for (const signal of signals) {
+    process.on(signal, handler);
+  }
 }
 
 function resolveShell(shell?: string): SupportedShell {

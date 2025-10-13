@@ -1,5 +1,6 @@
 import { Buffer } from 'node:buffer';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
+import type { AddressInfo } from 'node:net';
 import { parse } from 'node:url';
 import process from 'node:process';
 import { WilliMakoClient, WilliMakoError } from '../index.js';
@@ -302,12 +303,20 @@ export async function startWebDashboard(
     server.listen(port, resolve);
   });
 
-  options.logger?.(`⚡ Willi-Mako Dashboard läuft unter http://localhost:${port}`);
+  const addressInfo = server.address() as AddressInfo | string | null;
+  const resolvedPort =
+    typeof addressInfo === 'object' && addressInfo !== null && 'port' in addressInfo
+      ? (addressInfo.port as number)
+      : port;
+
+  const resolvedUrl = `http://localhost:${resolvedPort}`;
+
+  options.logger?.(`⚡ Willi-Mako Dashboard läuft unter ${resolvedUrl}`);
 
   return {
-    port,
+    port: resolvedPort,
     server,
-    url: `http://localhost:${port}`,
+    url: resolvedUrl,
     async stop() {
       await new Promise<void>((resolve, reject) => {
         server.close((error) => {
