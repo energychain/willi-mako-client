@@ -1,6 +1,6 @@
 # Quick Start Guide - Distribution
 
-Schnellanleitung zur sofortigen Verbreitung von willi-mako-client v0.1.0.
+Schnellanleitung zur sofortigen Verbreitung von willi-mako-client v0.2.0.
 
 ## ⚡ 15-Minuten Quick Start
 
@@ -150,7 +150,7 @@ open https://www.npmjs.com/package/willi-mako-client
 open https://libraries.io/npm/willi-mako-client
 
 # Bundlephobia
-open https://bundlephobia.com/package/willi-mako-client@0.1.0
+open https://bundlephobia.com/package/willi-mako-client@0.2.0
 
 # Packagephobia
 open https://packagephobia.com/result?p=willi-mako-client
@@ -166,7 +166,7 @@ open https://snyk.io/advisor/npm-package/willi-mako-client
 Drucke diese Checkliste aus und hake ab:
 
 ### Sofort (Heute)
-- [ ] GitHub Topics hinzugefügt
+- [x] GitHub Topics hinzugefügt
 - [ ] JSR published
 - [ ] Dev.to Post veröffentlicht
 - [ ] Twitter Thread gepostet

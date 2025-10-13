@@ -10,7 +10,13 @@ import {
   bundledOpenApiDocument,
   WilliMakoError,
   type WilliMakoClientOptions,
-  type RunNodeScriptJobRequest
+  type RunNodeScriptJobRequest,
+  type CreateSessionRequest,
+  type ChatRequest,
+  type SemanticSearchRequest,
+  type ReasoningGenerateRequest,
+  type ContextResolveRequest,
+  type ClarificationAnalyzeRequest
 } from './index.js';
 
 const program = new Command();
@@ -35,6 +41,210 @@ program
 
     const document = await client.getRemoteOpenApiDocument();
     outputJson(document);
+  });
+
+const auth = program.command('auth').description('Authentication helpers');
+
+auth
+  .command('login')
+  .description('Exchange email/password credentials for a JWT access token')
+  .requiredOption('-e, --email <email>', 'Email address used for authentication')
+  .requiredOption('-p, --password <password>', 'Password used for authentication')
+  .option('--no-store', 'Do not persist the retrieved token on this client instance')
+  .action(async (options: { email: string; password: string; store?: boolean }) => {
+    const client = createClient();
+    const response = await client.login(
+      {
+        email: options.email,
+        password: options.password
+      },
+      {
+        persistToken: options.store !== false
+      }
+    );
+
+    outputJson(response);
+  });
+
+const sessions = program.command('sessions').description('Manage Willi-Mako sessions');
+
+sessions
+  .command('create')
+  .description('Create a new session with optional preferences or context overrides')
+  .option(
+    '--preferences <json>',
+    'JSON encoded preferences (companiesOfInterest, preferredTopics)',
+    parseJsonOptional
+  )
+  .option('--context <json>', 'JSON encoded context settings object', parseJsonOptional)
+  .option('--ttl <minutes>', 'Time-to-live in minutes', parseIntBase10)
+  .action(async (options: { preferences?: unknown; context?: unknown; ttl?: number }) => {
+    const client = createClient({ requireToken: true });
+    const payload: CreateSessionRequest = {
+      preferences: (options.preferences as CreateSessionRequest['preferences']) ?? undefined,
+      contextSettings: (options.context as Record<string, unknown>) ?? undefined,
+      ttlMinutes: options.ttl ?? undefined
+    };
+
+    const response = await client.createSession(payload);
+    outputJson(response);
+  });
+
+sessions
+  .command('get <sessionId>')
+  .description('Retrieve an existing session by its identifier')
+  .action(async (sessionId: string) => {
+    const client = createClient({ requireToken: true });
+    const response = await client.getSession(sessionId);
+    outputJson(response);
+  });
+
+sessions
+  .command('delete <sessionId>')
+  .description('Delete an existing session')
+  .action(async (sessionId: string) => {
+    const client = createClient({ requireToken: true });
+    await client.deleteSession(sessionId);
+    outputJson({ success: true, sessionId });
+  });
+
+const chat = program.command('chat').description('Conversational interface helpers');
+
+chat
+  .command('send')
+  .description('Send a message to the conversational Willi-Mako endpoint')
+  .requiredOption('-s, --session <sessionId>', 'Session identifier used for the conversation')
+  .requiredOption('-m, --message <message>', 'Message content to send to the assistant')
+  .option('--context <json>', 'Optional JSON object overriding context settings', parseJsonOptional)
+  .option(
+    '--timeline <uuid>',
+    'Optional Timeline identifier to link the message to an existing flow'
+  )
+  .action(
+    async (options: { session: string; message: string; context?: unknown; timeline?: string }) => {
+      const client = createClient({ requireToken: true });
+      const payload: ChatRequest = {
+        sessionId: options.session,
+        message: options.message,
+        contextSettings: (options.context as Record<string, unknown>) ?? undefined,
+        timelineId: options.timeline ?? undefined
+      };
+
+      const response = await client.chat(payload);
+      outputJson(response);
+    }
+  );
+
+const retrieval = program.command('retrieval').description('Knowledge retrieval helpers');
+
+retrieval
+  .command('semantic-search')
+  .description('Run a semantic search query within the Willi-Mako knowledge base')
+  .requiredOption('-s, --session <sessionId>', 'Session identifier owning the retrieval')
+  .requiredOption('-q, --query <query>', 'Search query expressed in natural language')
+  .option(
+    '--options <json>',
+    'Additional engine options (limit, alpha, outlineScoping, excludeVisual)',
+    parseJsonOptional
+  )
+  .action(async (options: { session: string; query: string; options?: unknown }) => {
+    const client = createClient({ requireToken: true });
+    const payload: SemanticSearchRequest = {
+      sessionId: options.session,
+      query: options.query,
+      options: options.options as SemanticSearchRequest['options']
+    };
+
+    const response = await client.semanticSearch(payload);
+    outputJson(response);
+  });
+
+const reasoning = program.command('reasoning').description('Advanced reasoning workflows');
+
+reasoning
+  .command('generate')
+  .description('Trigger the hybrid reasoning engine for a given query')
+  .requiredOption('-s, --session <sessionId>', 'Session identifier to scope the reasoning')
+  .requiredOption('-q, --query <query>', 'Primary question or instruction')
+  .option(
+    '--messages <json>',
+    'Optional JSON array of prior conversation messages',
+    parseJsonOptional
+  )
+  .option('--context <json>', 'Optional JSON object overriding context settings', parseJsonOptional)
+  .option('--preferences <json>', 'Optional JSON object overriding preferences', parseJsonOptional)
+  .option('--pipeline <json>', 'Optional JSON pipeline overrides', parseJsonOptional)
+  .option('--detailed-intent', 'Enable detailed intent analysis', false)
+  .action(
+    async (options: {
+      session: string;
+      query: string;
+      messages?: unknown;
+      context?: unknown;
+      preferences?: unknown;
+      pipeline?: unknown;
+      detailedIntent?: boolean;
+    }) => {
+      const client = createClient({ requireToken: true });
+      const payload: ReasoningGenerateRequest = {
+        sessionId: options.session,
+        query: options.query,
+        messages: options.messages as ReasoningGenerateRequest['messages'],
+        contextSettingsOverride: (options.context as Record<string, unknown>) ?? undefined,
+        preferencesOverride: (options.preferences as Record<string, unknown>) ?? undefined,
+        overridePipeline: (options.pipeline as Record<string, unknown>) ?? undefined,
+        useDetailedIntentAnalysis: options.detailedIntent ?? undefined
+      };
+
+      const response = await client.generateReasoning(payload);
+      outputJson(response);
+    }
+  );
+
+const context = program.command('context').description('Context resolution helpers');
+
+context
+  .command('resolve')
+  .description('Resolve workspace context and decision scaffolding for a query')
+  .requiredOption('-s, --session <sessionId>', 'Session identifier used for the request')
+  .requiredOption('-q, --query <query>', 'User request requiring context resolution')
+  .option('--messages <json>', 'Optional JSON array of prior messages', parseJsonOptional)
+  .option('--context <json>', 'Optional context override', parseJsonOptional)
+  .action(
+    async (options: { session: string; query: string; messages?: unknown; context?: unknown }) => {
+      const client = createClient({ requireToken: true });
+      const payload: ContextResolveRequest = {
+        sessionId: options.session,
+        query: options.query,
+        messages: options.messages as ContextResolveRequest['messages'],
+        contextSettingsOverride: (options.context as Record<string, unknown>) ?? undefined
+      };
+
+      const response = await client.resolveContext(payload);
+      outputJson(response);
+    }
+  );
+
+const clarification = program
+  .command('clarification')
+  .description('Clarification workflow helpers');
+
+clarification
+  .command('analyze')
+  .description('Analyze whether clarification questions are required before progressing')
+  .requiredOption('-s, --session <sessionId>', 'Session identifier used for the analysis')
+  .requiredOption('-q, --query <query>', 'User query that may need clarification')
+  .option('--enhanced-query', 'Request an enhanced query suggestion', false)
+  .action(async (options: { session: string; query: string; enhancedQuery?: boolean }) => {
+    const client = createClient({ requireToken: true });
+    const payload: ClarificationAnalyzeRequest = {
+      sessionId: options.session,
+      query: options.query,
+      includeEnhancedQuery: options.enhancedQuery ?? undefined
+    };
+
+    const response = await client.analyzeClarification(payload);
+    outputJson(response);
   });
 
 const tools = program.command('tools').description('Tooling sandbox helpers');
@@ -141,7 +351,7 @@ function parseIntBase10(value: string): number {
   return parsed;
 }
 
-function parseJsonOptional(value: string): Record<string, unknown> {
+function parseJsonOptional(value: string): unknown {
   try {
     return JSON.parse(value);
   } catch (error) {

@@ -39,8 +39,8 @@ if [ $? -eq 0 ]; then
     echo "   → https://www.npmjs.com/package/willi-mako-client"
     echo ""
     echo "📋 Next steps:"
-    echo "   1. Create a git tag: git tag v0.1.0"
-    echo "   2. Push tag: git push origin v0.1.0"
+    echo "   1. Create a git tag: git tag v0.2.0"
+    echo "   2. Push tag: git push origin v0.2.0"
     echo "   3. GitHub Actions will create a release automatically"
 else
     echo "❌ Publishing failed. Please check the error message above."

@@ -159,8 +159,8 @@ npm run docs             # API-Docs generieren
 
 5. **Erste Release erstellen**:
    ```bash
-   git tag v0.1.0
-   git push origin v0.1.0
+   git tag v0.2.0
+   git push origin v0.2.0
    # Automatisches NPM Publishing via GitHub Actions
    ```
 
@@ -206,7 +206,7 @@ Das Willi-Mako Client SDK folgt jetzt **allen Best Practices** für erfolgreiche
 - ✅ Entwickler-freundlich
 - ✅ Production-ready
 
-**Status**: 🚀 **Production-Ready** und bereit für v0.1.0 Release!
+**Status**: 🚀 **Production-Ready** und bereit für v0.2.0 Release!
 
 ---
 

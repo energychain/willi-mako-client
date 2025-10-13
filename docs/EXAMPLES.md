@@ -1,6 +1,6 @@
 # Willi-Mako Client SDK – Example Playbook
 
-This playbook illustrates how to combine the SDK and CLI for common energy-market scenarios revolving around UTILMD, MSCONS, ORDERS, PRICAT, and INVOIC.
+This playbook illustrates how to combine the SDK, conversational endpoints and the CLI for common energy-market scenarios revolving around UTILMD, MSCONS, ORDERS, PRICAT, and INVOIC.
 
 ## Table of Contents
 
@@ -199,6 +199,17 @@ willi-mako tools run-node-script \
   --session "lieferantenwechsel-2024-05" \
   --source "const msg = process.env.UTILMD; console.log(msg.includes('BGM+220'));" \
   --timeout 3000
+
+# Start guided reasoning for a session
+willi-mako reasoning generate \
+  --session "lieferantenwechsel-2024-05" \
+  --query "Erstelle eine Maßnahmenliste für offene MSCONS-Klärfälle" \
+  --use-detailed-intent-analysis
+
+# Run semantic search and save the best hit as artifact
+willi-mako retrieval semantic-search --session "lieferantenwechsel-2024-05" --query "BDEW Lieferantenwechsel Leitfaden" --options '{"limit":1}' \
+  | jq -r '.data.results[0].payload' \
+  | willi-mako artifacts create --session "lieferantenwechsel-2024-05" --type knowledge-snippet --name "leitfaden.json" --mime application/json
 
 # Create MSCONS clearing report from file
 cat data/mscons-clearing.json | willi-mako artifacts create \

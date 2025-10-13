@@ -40,8 +40,8 @@ Erreichen von **maximaler Sichtbarkeit** für willi-mako-client in der TypeScrip
   ```
 
 ### ✅ 4. CDN-basierte Registries (automatisch)
-- **UNPKG**: https://unpkg.com/willi-mako-client@0.1.0/
-- **jsDelivr**: https://cdn.jsdelivr.net/npm/willi-mako-client@0.1.0/
+- **UNPKG**: https://unpkg.com/willi-mako-client@0.2.0/
+- **jsDelivr**: https://cdn.jsdelivr.net/npm/willi-mako-client@0.2.0/
 - **Status**: ✅ Automatisch nach NPM-Publish verfügbar
 - **Vorteile**: Direkte Browser-Integration ohne Build-Step
 
@@ -65,7 +65,7 @@ Erreichen von **maximaler Sichtbarkeit** für willi-mako-client in der TypeScrip
    - Zeigt Install-Size und Publish-Size
 
 4. **Bundlephobia** ✅
-   - URL: https://bundlephobia.com/package/willi-mako-client@0.1.0
+   - URL: https://bundlephobia.com/package/willi-mako-client@0.2.0
    - Bundle-Size-Analyse für Webpack/Rollup
 
 5. **Snyk Advisor** ✅
@@ -131,7 +131,7 @@ Erreichen von **maximaler Sichtbarkeit** für willi-mako-client in der TypeScrip
      - r/typescript (140k members)
      - r/opensource (180k members)
      - r/programming (6M members) - nur bei relevanten Diskussionen
-   - Format: "Show: willi-mako-client v0.1.0 - TypeScript SDK for Energy Market Communication"
+   - Format: "Show: willi-mako-client v0.2.0 - TypeScript SDK for Energy Market Communication"
 
 5. **Hacker News** 📝
    - Show HN: https://news.ycombinator.com/showhn.html
@@ -150,7 +150,7 @@ Erreichen von **maximaler Sichtbarkeit** für willi-mako-client in der TypeScrip
 7. **Twitter/X** 📝
    - Launch-Thread:
      ```
-     🚀 Launching willi-mako-client v0.1.0!
+   🚀 Launching willi-mako-client v0.2.0!
 
      TypeScript SDK for German energy market communication (UTILMD, MSCONS, etc.)
 
@@ -246,7 +246,7 @@ Erreichen von **maximaler Sichtbarkeit** für willi-mako-client in der TypeScrip
 
 ### Blog Posts (dev.to/Medium)
 
-1. **"Introducing willi-mako-client v0.1.0"**
+1. **"Introducing willi-mako-client v0.2.0"**
    - Was ist Willi-Mako?
    - Warum ein TypeScript SDK?
    - Features & Benefits

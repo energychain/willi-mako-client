@@ -6,6 +6,283 @@
 export type ArtifactEncoding = 'utf8' | 'base64';
 
 /**
+ * Login request payload for exchanging credentials against a JWT token.
+ */
+export interface LoginRequest {
+  /** User email used to authenticate against the platform */
+  email: string;
+  /** Clear text password. Ensure to handle with care and do not log this information. */
+  password: string;
+}
+
+/**
+ * Response returned after a successful login.
+ */
+export interface LoginResponse {
+  /** Indicates whether the authentication succeeded */
+  success: boolean;
+  data: {
+    /** JWT access token that can be used as bearer token */
+    accessToken: string;
+    /** ISO8601 timestamp when the token expires */
+    expiresAt: string;
+  };
+}
+
+/**
+ * Options to control client side handling of the login response.
+ */
+export interface LoginOptions {
+  /**
+   * Whether the obtained access token should automatically be stored on the client instance.
+   * Defaults to true to simplify common workflows.
+   */
+  persistToken?: boolean;
+}
+
+/**
+ * Optional preferences that can be attached to a session during creation.
+ */
+export interface SessionPreferences {
+  /** Companies the user is interested in (used for retrieval biasing) */
+  companiesOfInterest?: string[];
+  /** Topics the user prefers (used for intent analysis nudging) */
+  preferredTopics?: string[];
+}
+
+/**
+ * Request payload when creating a new Willi-Mako session.
+ */
+export interface CreateSessionRequest {
+  /** Optional preferences to pre-configure the session context */
+  preferences?: SessionPreferences;
+  /** Arbitrary context configuration passed to the backend */
+  contextSettings?: Record<string, unknown>;
+  /** Time-to-live in minutes for the session (minimum 1) */
+  ttlMinutes?: number;
+}
+
+/**
+ * Policy flags returned for a session (market role, feature access, ...).
+ */
+export interface SessionPolicyFlags {
+  role?: string;
+  canAccessCs30?: boolean;
+  [key: string]: unknown;
+}
+
+/**
+ * Envelope returned when querying or creating a session.
+ */
+export interface SessionEnvelope {
+  sessionId: string;
+  userId: string;
+  legacyChatId?: string;
+  workspaceContext: Record<string, unknown>;
+  policyFlags: SessionPolicyFlags;
+  preferences: SessionPreferences;
+  contextSettings?: Record<string, unknown>;
+  expiresAt: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/**
+ * Wrapper response for session operations.
+ */
+export interface SessionEnvelopeResponse {
+  success: boolean;
+  data: SessionEnvelope;
+}
+
+/**
+ * Request payload used to send a chat message through the platform.
+ */
+export interface ChatRequest {
+  sessionId: string;
+  message: string;
+  contextSettings?: Record<string, unknown>;
+  timelineId?: string | null;
+}
+
+/**
+ * Response returned by the chat endpoint.
+ * The exact data structure is subject to change, so it is typed loosely.
+ */
+export interface ChatResponse {
+  success: boolean;
+  data: Record<string, unknown>;
+}
+
+/**
+ * Options that control the semantic retrieval behaviour.
+ */
+export interface SemanticSearchOptions {
+  limit?: number;
+  alpha?: number;
+  outlineScoping?: boolean;
+  excludeVisual?: boolean;
+  [key: string]: unknown;
+}
+
+/**
+ * Single match returned by the semantic search pipeline.
+ */
+export interface SemanticSearchResultItem {
+  id: string;
+  score?: number | null;
+  payload: Record<string, unknown>;
+  highlight?: string | null;
+  metadata?: {
+    rank?: number;
+    originalScore?: number | null;
+    mergedScore?: number | null;
+    version?: string | number | null;
+    [key: string]: unknown;
+  };
+}
+
+/**
+ * Request payload for the semantic search endpoint.
+ */
+export interface SemanticSearchRequest {
+  sessionId: string;
+  query: string;
+  options?: SemanticSearchOptions;
+}
+
+/**
+ * Response payload for the semantic search endpoint.
+ */
+export interface SemanticSearchResponse {
+  success: boolean;
+  data: {
+    sessionId: string;
+    query: string;
+    totalResults: number;
+    durationMs: number;
+    options: SemanticSearchOptions;
+    results: SemanticSearchResultItem[];
+    [key: string]: unknown;
+  };
+}
+
+/**
+ * Message supplied to the reasoning endpoint to provide conversational context.
+ */
+export interface ReasoningMessage {
+  role: string;
+  content: string;
+}
+
+/**
+ * Request payload for the reasoning endpoint.
+ */
+export interface ReasoningGenerateRequest {
+  sessionId: string;
+  query: string;
+  messages?: ReasoningMessage[];
+  contextSettingsOverride?: Record<string, unknown>;
+  preferencesOverride?: Record<string, unknown>;
+  overridePipeline?: Record<string, unknown>;
+  useDetailedIntentAnalysis?: boolean;
+}
+
+/**
+ * Response payload for the reasoning endpoint.
+ */
+export interface ReasoningGenerateResponse {
+  success: boolean;
+  data: {
+    sessionId: string;
+    response: string;
+    reasoningSteps?: unknown[];
+    finalQuality?: number;
+    iterationsUsed?: number;
+    contextAnalysis?: Record<string, unknown>;
+    qaAnalysis?: Record<string, unknown>;
+    pipelineDecisions?: Record<string, unknown>;
+    apiCallsUsed?: number;
+    hybridSearchUsed?: boolean;
+    hybridSearchAlpha?: number | null;
+    metadata?: Record<string, unknown>;
+    [key: string]: unknown;
+  };
+}
+
+/**
+ * Request payload for context resolution.
+ */
+export interface ContextResolveRequest {
+  sessionId: string;
+  query: string;
+  messages?: ReasoningMessage[];
+  contextSettingsOverride?: Record<string, unknown>;
+}
+
+/**
+ * Response payload for context resolution.
+ */
+export interface ContextResolveResponse {
+  success: boolean;
+  data: {
+    sessionId: string;
+    contextSettingsUsed: Record<string, unknown>;
+    decision: Record<string, unknown>;
+    publicContext: string[];
+    userContext?: Record<string, unknown>;
+    [key: string]: unknown;
+  };
+}
+
+/**
+ * Clarification question suggested by the platform.
+ */
+export interface ClarificationQuestion {
+  id: string;
+  question: string;
+  category: 'scope' | 'context' | 'detail_level' | 'stakeholder' | 'energy_type' | string;
+  options?: string[] | null;
+  priority?: number;
+}
+
+/**
+ * Result of a clarification analysis.
+ */
+export interface ClarificationAnalysis {
+  clarificationNeeded: boolean;
+  ambiguityScore?: number;
+  detectedTopics?: string[];
+  reasoning?: string;
+  suggestedQuestions?: ClarificationQuestion[];
+  clarificationSessionId?: string | null;
+  enhancedQuery?: string | null;
+  [key: string]: unknown;
+}
+
+/**
+ * Request payload for clarification analysis.
+ */
+export interface ClarificationAnalyzeRequest {
+  sessionId: string;
+  query: string;
+  includeEnhancedQuery?: boolean;
+}
+
+/**
+ * Response payload for clarification analysis.
+ */
+export interface ClarificationAnalyzeResponse {
+  success: boolean;
+  data: {
+    sessionId: string;
+    query: string;
+    analysis: ClarificationAnalysis;
+    [key: string]: unknown;
+  };
+}
+
+/**
  * Storage configuration for inline artifact content.
  * Currently only inline mode is supported where content is stored directly in the API response.
  */

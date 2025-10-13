@@ -59,11 +59,13 @@ Mit dem SDK erhalten Sie:
 ## ✨ Key Features
 
 - 🚀 **Zero-config defaults** – sofort produktiv mit `https://stromhaltig.de/api/v2`.
-- 🔐 **Flexible Auth** – via `WILLI_MAKO_TOKEN`, expliziten Token oder Secrets-Manager.
-- 🧠 **Tooling Sandbox** – sichere Node.js-Ausführung für ETL, Validierung, KI-Skripte.
+- 🔐 **Flexible Auth** – Login-Helper mit optionaler Tokenpersistenz oder direkte Verwendung von Service Tokens.
+- 🧱 **Session Lifecycle APIs** – Sessions anlegen, inspizieren, bereinigen und dabei Präferenzen/Kontexte steuern.
+- 🧠 **Conversational Stack** – Chat, semantische Suche, Reasoning, Kontextauflösung und Klarstellungsanalyse aus einer Hand.
+- 🛠️ **Tooling Sandbox** – sichere Node.js-Ausführung für ETL, Validierung, KI-Skripte.
 - 🗂️ **Artifact Storage** – persistente Protokolle, Audit-Trails und EDIFACT-Snapshots.
 - 📦 **OpenAPI Bundle** – `schemas/openapi.json` für offline Analysen.
-- 🖥️ **CLI** – `willi-mako openapi`, `willi-mako tools run-node-script`, u. v. m.
+- 🖥️ **CLI & MCP** – vollständige Befehlsgruppen (`auth`, `sessions`, `chat`, `retrieval`, …) plus MCP-Server für KI-Agenten.
 - 🧪 **Vitest Testsuite** – Vertrauen in Stabilität und Regressionen.
 - 🛡️ **Compliance Fokus** – automatisierbare Prüfungen für UTILMD, MSCONS, ORDERS, PRICAT, INVOIC.
 
@@ -174,9 +176,10 @@ Expose die Plattform als **Model Context Protocol (MCP)**-Server, damit interne 
    ```
 
 2. **Bereitgestellte Tools & Ressourcen**
-   - `willi-mako.create-node-script` – führt Sandbox-Jobs aus
-   - `willi-mako.get-tool-job` – liefert Status, stdout, stderr
-   - `willi-mako.create-artifact` – speichert Artefakte im Audit Store
+   - `willi-mako.login`, `willi-mako.create-session`, `willi-mako.get-session`, `willi-mako.delete-session`
+   - `willi-mako.chat`, `willi-mako.semantic-search`, `willi-mako.reasoning-generate`
+   - `willi-mako.resolve-context`, `willi-mako.clarification-analyze`
+   - `willi-mako.create-node-script`, `willi-mako.get-tool-job`, `willi-mako.create-artifact`
    - Ressource `willi-mako://openapi` – liefert die aktuelle OpenAPI-Spezifikation
 
 3. **VS Code / GitHub Copilot verbinden**:
@@ -184,7 +187,7 @@ Expose die Plattform als **Model Context Protocol (MCP)**-Server, damit interne 
    code --add-mcp '{"name":"willi-mako","type":"http","url":"http://localhost:7337/mcp"}'
    ```
 
-   Danach lassen sich die Tools direkt in Copilot-Chat verwenden (z. B. `@willi-mako.create-node-script`).
+   Danach lassen sich die Tools direkt in Copilot-Chat verwenden (z. B. `@willi-mako.semantic-search`).
 
 4. **Weitere Clients**: Claude Desktop, Cursor, LangChain, Semantic Kernel etc. sprechen ebenfalls den Streamable-HTTP-Transport an. Details siehe [`docs/INTEGRATIONS.md`](./docs/INTEGRATIONS.md#mcp-server-und-ki-entwicklungsumgebungen).
 
@@ -241,10 +244,18 @@ Weitere Anpassungen (Authentifizierung, Mehrbenutzer, Branding) sind in [`docs/I
 
 | Methode | Zweck | Typische Formate | Hinweise |
 |---------|-------|------------------|----------|
-| `getRemoteOpenApiDocument()` | Aktuelle OpenAPI laden | – | Für Schema-Diffs & Code-Gen |
+| `login()` | JWT-Token aus E-Mail/Passwort erzeugen | – | Optional automatische Token-Persistenz |
+| `createSession()` | Session mit Präferenzen/Kontext anlegen | UTILMD, MSCONS, ORDERS, PRICAT, INVOIC | TTL & Preferences steuerbar |
+| `getSession()` / `deleteSession()` | Session inspizieren oder entfernen | – | Liefert Policy-Flags & Workspace-Kontext |
+| `chat()` | Konversation mit dem Assistenten führen | Freitext | Unterstützt Timeline & Kontext-Overrides |
+| `semanticSearch()` | Wissensgraph durchsuchen | Dokumente, Artikel | Hybrid Retrieval mit konfigurierbarem Limit |
+| `generateReasoning()` | Multi-Step-Reasoning ausführen | Incident-Analysen, Auswertungen | Pipeline & Intent-Analyse steuerbar |
+| `resolveContext()` | Kontextentscheidungen ableiten | Routing, Intent, Ressourcen | Nutzt Conversation History |
+| `analyzeClarification()` | Klärungsbedarf erkennen | Kundenanfragen | Liefert Klarstellungsfragen & Enhanced Query |
 | `createNodeScriptJob()` | Sandbox-Job starten | UTILMD, MSCONS, ORDERS, PRICAT, INVOIC | Rückgabe: Job-ID & Status |
 | `getToolJob(jobId)` | Job-Status + Ergebnisse | – | Polling bis `succeeded` oder `failed` |
 | `createArtifact()` | Artefakt speichern | Reports, EDIFACT, Compliance | Unterstützt Metadaten & Tags |
+| `getRemoteOpenApiDocument()` | Aktuelle OpenAPI laden | – | Für Schema-Diffs & Code-Gen |
 
 Fehler führen zu `WilliMakoError` mit `status` und `body`. Vollständige Typen siehe [`src/types.ts`](./src/types.ts) und [`docs/API.md`](./docs/API.md).
 
@@ -256,27 +267,30 @@ Fehler führen zu `WilliMakoError` mit `status` und `body`. Vollständige Typen 
 npx willi-mako-client --help
 ```
 
-**Typische Befehle:**
+**Typische Befehle (Auszug):**
 
 ```bash
-# OpenAPI anzeigen (remote)
-willi-mako openapi
+# Login mit optionaler Token-Persistenz
+willi-mako auth login --email user@example.com --password secret --persist
 
-# Sandbox-Job ausführen
-willi-mako tools run-node-script \
-  --session "session-uuid" \
-  --source 'console.log("Hello ETL world")' \
-  --timeout 5000
+# Session anlegen und verwalten
+willi-mako sessions create --ttl 30 --preferences '{"companiesOfInterest":["DE0001"]}'
+willi-mako sessions get <session-id>
+willi-mako sessions delete <session-id>
 
-# Job-Status prüfen
+# Chat & Retrieval
+willi-mako chat send --session <session-id> --message "Welche MSCONS-Anomalien liegen vor?"
+willi-mako retrieval semantic-search --session <session-id> --query "Flexibilitätsverordnung"
+
+# Reasoning & Kontext
+willi-mako reasoning generate --session <session-id> --query "Erstelle einen Maßnahmenplan"
+willi-mako context resolve --session <session-id> --query "Welche Datenpunkte fehlen?"
+willi-mako clarification analyze --session <session-id> --query "Bitte bereite den Lieferantenwechsel vor"
+
+# Tooling & Artefakte
+willi-mako tools run-node-script --session <session-id> --source 'console.log("ok")'
 willi-mako tools job <job-id>
-
-# Artefakt aus Datei erstellen
-cat compliance.json | willi-mako artifacts create \
-  --session "session-uuid" \
-  --name "compliance.json" \
-  --type "compliance-report" \
-  --mime "application/json"
+cat compliance.json | willi-mako artifacts create --session <session-id> --type compliance-report --mime application/json
 ```
 
 Über `--base-url` und `--token` lassen sich Zielsystem bzw. Credentials überschreiben.

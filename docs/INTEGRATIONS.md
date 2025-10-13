@@ -36,17 +36,18 @@ Dieser Leitfaden bündelt praxisnahe Szenarien für Entwickler:innen und Fachanw
 
 ## 2. Lightweight Web Interface
 
-**Ziel:** Fachanwender:innen (z. B. MaKo-Team) können EDIFACT-Nachrichten prüfen, ohne lokale Node.js Umgebung.
+**Ziel:** Fachanwender:innen (z. B. MaKo-Team) können Sessions verwalten, Chat-/Reasoning-Aufgaben anstoßen und EDIFACT-Nachrichten prüfen – ganz ohne lokale Node.js Umgebung.
 
 1. **Server starten**:
    ```bash
    node --loader ts-node/esm examples/web-dashboard.ts
    ```
 2. **Browser öffnen:** `http://localhost:4173`
-3. **Analyse durchführen:** Nachricht einfügen → Server erzeugt Sandbox-Job → Ergebnis erscheint inkl. Artefakt-Vorschlag.
+3. **Anmelden & Sessions verwalten:** Über die Login-Kachel Authentifizieren, Sessions anlegen/abrufen/löschen und anschließend Chat, semantische Suche, Reasoning, Kontextauflösung und Klarstellungsanalyse direkt im Browser nutzen.
 
 **Anpassungen**
 - **Branding & Layout:** Passen Sie HTML/CSS innerhalb von `examples/web-dashboard.ts` an.
+- **Rollenbasierte Tokens:** Hinterlegen Sie unterschiedliche Tokens (z. B. Lesen/Schreiben) via Prozessumgebung.
 - **Auth-Proxy:** Empfohlen für produktive Nutzung (z. B. Basic Auth, Reverse Proxy mit OAuth2 Proxy).
 - **Mehrsprachigkeit:** Tauschen Sie Texte im HTML aus oder nutzen Sie ein Template-System.
 - **Deployment:** Containerisieren Sie das Skript (siehe Docker-Abschnitt) oder nutzen Sie einen Node.js Application Service.
@@ -125,10 +126,10 @@ Dieser Leitfaden bündelt praxisnahe Szenarien für Entwickler:innen und Fachanw
 **Ziel:** Den Willi-Mako Client in KI-gestützte Entwicklungsumgebungen (z. B. VS Code, Cursor, Claude Desktop) einbinden.
 
 1. **Server starten** (siehe [`examples/mcp-server.ts`](../examples/mcp-server.ts)):
-     ```bash
-     node --loader ts-node/esm examples/mcp-server.ts
-     ```
-     Der Server lauscht standardmäßig auf `http://127.0.0.1:8080`. Legen Sie `WILLI_MAKO_TOKEN` als Umgebungvariable fest, bevor Sie den Prozess starten.
+    ```bash
+    node --loader ts-node/esm examples/mcp-server.ts
+    ```
+    Der Server lauscht standardmäßig auf `http://127.0.0.1:7337/mcp`. Legen Sie `WILLI_MAKO_TOKEN` als Umgebungvariable fest, bevor Sie den Prozess starten.
 2. **Client konfigurieren:** Fügen Sie in Ihrer IDE oder Ihrem Agenten eine MCP-Verbindung hinzu.
      - **VS Code / Cursor:**
          ```json
@@ -145,13 +146,13 @@ Dieser Leitfaden bündelt praxisnahe Szenarien für Entwickler:innen und Fachanw
          }
          ```
      - **Claude Desktop:** Einstellungen → *Model Context Protocol* → neuen Server mit `http://127.0.0.1:8080` hinzufügen.
-3. **Werkzeuge & Ressourcen nutzen:** Der MCP-Server stellt u. a. die Tools `willi-mako.run-sandbox-script` und `willi-mako.create-artifact` sowie die Resource `willi-mako.profile` bereit. Agenten können damit direkt Jobs starten, Artefakte erzeugen und Profildaten abrufen.
+3. **Werkzeuge & Ressourcen nutzen:** Der MCP-Server stellt u. a. die Tools `willi-mako.login`, `willi-mako.create-session`, `willi-mako.chat`, `willi-mako.semantic-search`, `willi-mako.reasoning-generate`, `willi-mako.resolve-context`, `willi-mako.clarification-analyze`, `willi-mako.create-node-script`, `willi-mako.get-tool-job`, `willi-mako.create-artifact` sowie die Resource `willi-mako://openapi` bereit. Agenten können damit komplette MaKo-Workflows automatisiert orchestrieren.
 
 **Best Practices**
 - Aktivieren Sie optional CORS-Domains via `ALLOWED_ORIGINS`, falls Sie den Server über einen Reverse Proxy bereitstellen.
 - Nutzen Sie separate **Service Token** für IDE-Automatisierungen und hinterlegen Sie diese in einer Secret-Manager-Lösung.
 - Beobachten Sie Logs (stdout) auf Tool- und Resource-Aufrufe, um Tuning-Möglichkeiten für Prompts oder Workflow-Pfade zu identifizieren.
-- Ergänzen Sie bei Bedarf weitere Tools im MCP-Server (z. B. `list-jobs`, `get-artifact`) – die Struktur in `examples/mcp-server.ts` ist modular gehalten.
+- Ergänzen Sie bei Bedarf weitere Tools im MCP-Server (z. B. `list-artifacts`, `list-jobs`) – die Struktur in `examples/mcp-server.ts` ist modular gehalten.
 
 ---
 

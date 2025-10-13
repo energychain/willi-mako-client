@@ -4,7 +4,22 @@ import type {
   CreateArtifactResponse,
   RunNodeScriptJobRequest,
   RunNodeScriptJobResponse,
-  GetToolJobResponse
+  GetToolJobResponse,
+  LoginRequest,
+  LoginResponse,
+  LoginOptions,
+  CreateSessionRequest,
+  SessionEnvelopeResponse,
+  ChatRequest,
+  ChatResponse,
+  SemanticSearchRequest,
+  SemanticSearchResponse,
+  ReasoningGenerateRequest,
+  ReasoningGenerateResponse,
+  ContextResolveRequest,
+  ContextResolveResponse,
+  ClarificationAnalyzeRequest,
+  ClarificationAnalyzeResponse
 } from './types.js';
 
 const require = createRequire(import.meta.url);
@@ -227,12 +242,138 @@ export class WilliMakoClient {
   }
 
   /**
+   * Performs a credential based login flow to obtain a JWT bearer token.
+   * On success the token is automatically stored on the client instance.
+   *
+   * @param credentials - Email/password combination issued by the platform
+   * @returns Login response including the access token and expiry timestamp
+   */
+  public async login(
+    credentials: LoginRequest,
+    options: LoginOptions = {}
+  ): Promise<LoginResponse> {
+    const response = await this.request<LoginResponse>('/auth/token', {
+      method: 'POST',
+      body: JSON.stringify(credentials),
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      skipAuth: true
+    });
+
+    if (response.success && response.data?.accessToken && options.persistToken !== false) {
+      this.setToken(response.data.accessToken);
+    }
+
+    return response;
+  }
+
+  /**
    * Returns the currently configured base URL.
    *
    * @returns The base URL (without trailing slash)
    */
   public getBaseUrl(): string {
     return this.baseUrl;
+  }
+
+  /**
+   * Creates a new workspace session. Sessions group tooling jobs, artefacts and
+   * conversational state. They also carry policy information such as market role.
+   */
+  public async createSession(payload: CreateSessionRequest = {}): Promise<SessionEnvelopeResponse> {
+    return this.request<SessionEnvelopeResponse>('/sessions', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+  }
+
+  /**
+   * Retrieves the metadata of an existing session.
+   */
+  public async getSession(sessionId: string): Promise<SessionEnvelopeResponse> {
+    return this.request<SessionEnvelopeResponse>(`/sessions/${encodeURIComponent(sessionId)}`);
+  }
+
+  /**
+   * Deletes a session and all associated sandbox jobs / artefacts.
+   */
+  public async deleteSession(sessionId: string): Promise<void> {
+    await this.request<void>(`/sessions/${encodeURIComponent(sessionId)}`, {
+      method: 'DELETE'
+    });
+  }
+
+  /**
+   * Sends a conversational message to the Willi-Mako chat endpoint.
+   */
+  public async chat(payload: ChatRequest): Promise<ChatResponse> {
+    return this.request<ChatResponse>('/chat', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+  }
+
+  /**
+   * Executes a hybrid semantic search against the knowledge base.
+   */
+  public async semanticSearch(payload: SemanticSearchRequest): Promise<SemanticSearchResponse> {
+    return this.request<SemanticSearchResponse>('/retrieval/semantic-search', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+  }
+
+  /**
+   * Triggers the advanced reasoning pipeline.
+   */
+  public async generateReasoning(
+    payload: ReasoningGenerateRequest
+  ): Promise<ReasoningGenerateResponse> {
+    return this.request<ReasoningGenerateResponse>('/reasoning/generate', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+  }
+
+  /**
+   * Resolves the most relevant context for a user query.
+   */
+  public async resolveContext(payload: ContextResolveRequest): Promise<ContextResolveResponse> {
+    return this.request<ContextResolveResponse>('/context/resolve', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+  }
+
+  /**
+   * Analyzes whether clarification questions are required before continuing.
+   */
+  public async analyzeClarification(
+    payload: ClarificationAnalyzeRequest
+  ): Promise<ClarificationAnalyzeResponse> {
+    return this.request<ClarificationAnalyzeResponse>('/clarification/analyze', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
   }
 
   /**

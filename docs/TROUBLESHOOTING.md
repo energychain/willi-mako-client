@@ -34,6 +34,7 @@ This guide lists common issues encountered when using the Willi-Mako Client SDK 
 - Confirm that `WILLI_MAKO_TOKEN` is set and valid.
 - Tokens are tenant-specific; verify you are using the correct environment (productive vs. sandbox).
 - Rotated credentials? Refresh the token from the Willi-Mako portal and call `client.setToken(newToken)`.
+- Verwenden Sie `willi-mako auth login` nur aus vertrauenswürdigen Umgebungen und prüfen Sie, ob `--persist` gesetzt ist, wenn Folgeaufrufe unmittelbar das Token benötigen.
 
 ### Token Injection in CI/CD
 - Store the token as a secret environment variable (e.g., GitHub Actions `secrets.WILLI_MAKO_TOKEN`).

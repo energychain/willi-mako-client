@@ -161,7 +161,7 @@ export interface WilliMakoClientOptions {
 }
 
 // ❌ Bad
-export interface WilliMakoClientOptions 
+export interface WilliMakoClientOptions
 {
     baseUrl?:string
     token?:string|null
@@ -175,10 +175,10 @@ All public APIs must include JSDoc comments:
 ```typescript
 /**
  * Creates a new artifact to store data snapshots.
- * 
+ *
  * @param payload - Artifact creation request with content and metadata
  * @returns Promise resolving to the created artifact details
- * 
+ *
  * @example
  * ```typescript
  * await client.createArtifact({
@@ -364,7 +364,7 @@ const client = new WilliMakoClient({ token: 'xxx' });
 **Environment:**
  - OS: [e.g. Ubuntu 22.04]
  - Node.js version: [e.g. 18.17.0]
- - Package version: [e.g. 0.1.0]
+ - Package version: [e.g. 0.2.0]
 
 **Additional context**
 Any other context about the problem.

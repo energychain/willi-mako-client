@@ -8,16 +8,16 @@ Fertige Templates für Social Media und Community-Posts zur Verbreitung von will
 
 ```markdown
 ---
-title: Introducing willi-mako-client v0.1.0 - TypeScript SDK for Energy Market Communication
+title: Introducing willi-mako-client v0.2.0 - TypeScript SDK for Energy Market Communication
 published: true
 description: Official TypeScript SDK & CLI for automating energy market communication workflows (UTILMD, MSCONS, INVOIC, etc.)
 tags: typescript, nodejs, opensource, api
 cover_image: https://github.com/energychain/willi-mako-client/raw/main/docs/media/willi-mako-architecture.svg
 ---
 
-# 🔌 Introducing willi-mako-client v0.1.0
+# 🔌 Introducing willi-mako-client v0.2.0
 
-Today I'm excited to announce the release of **willi-mako-client** - an official TypeScript SDK and CLI for automating energy market communication workflows in the German energy sector.
+Today I'm excited to announce the release of **willi-mako-client v0.2.0** – a major upgrade of the official TypeScript SDK and CLI for automating energy market communication workflows in the German energy sector.
 
 ## What is Willi-Mako?
 
@@ -34,8 +34,9 @@ Energy companies increasingly need to:
 The willi-mako-client SDK makes this easy with:
 
 ✅ **Fully typed TypeScript client** - Type safety for all API interactions
-✅ **CLI included** - Quick access without writing code
-✅ **MCP Server support** - AI agent integration (Claude, ChatGPT, etc.)
+✅ **Session-aware auth & chat APIs** - Login helpers, session lifecycle, semantic search, reasoning & clarification analysis
+✅ **CLI included** - Quick access without writing code (auth, sessions, chat, retrieval, reasoning, clarification)
+✅ **MCP Server support** - AI agent integration (Claude, ChatGPT, etc.) mit vollständigem Toolset
 ✅ **Comprehensive examples** - Docker, Power BI, n8n integrations
 ✅ **MIT licensed** - Use freely in commercial projects
 
@@ -177,7 +178,7 @@ npm install willi-mako-client
 ## 🐦 Twitter/X Thread
 
 ```
-🚀 Excited to announce willi-mako-client v0.1.0!
+🚀 Excited to announce willi-mako-client v0.2.0!
 
 A TypeScript SDK for automating energy market communication in the German energy sector.
 
@@ -292,7 +293,7 @@ GitHub: github.com/energychain/willi-mako-client
 ```
 🚀 Exciting News for the Energy Sector! 🚀
 
-I'm thrilled to announce the release of willi-mako-client v0.1.0 - an official TypeScript SDK for automating energy market communication workflows.
+I'm thrilled to announce the release of willi-mako-client v0.2.0 – a major upgrade of the official TypeScript SDK for automating energy market communication workflows.
 
 🔌 What is it?
 A comprehensive SDK and CLI tool for handling German energy market communication formats (UTILMD, MSCONS, ORDERS, PRICAT, INVOIC) with full TypeScript support and AI integration capabilities.
@@ -330,13 +331,13 @@ Feedback and contributions welcome! 🙌
 
 ### r/typescript
 
-**Title**: `[Release] willi-mako-client v0.1.0 - TypeScript SDK for German Energy Market Communication`
+**Title**: `[Release] willi-mako-client v0.2.0 - TypeScript SDK for German Energy Market Communication`
 
 **Body**:
 ```markdown
 Hi r/typescript! 👋
 
-I've just released **willi-mako-client v0.1.0** - a fully-typed TypeScript SDK for automating energy market communication workflows.
+I've just released **willi-mako-client v0.2.0** – a fully-typed TypeScript SDK for automating energy market communication workflows with built-in login, sessions, chat, semantic search, reasoning and clarification analysis.
 
 ## What is it?
 

@@ -2,9 +2,9 @@
 
 Zentrale Übersicht über alle Distribution-Aktivitäten für willi-mako-client.
 
-**Version**: 0.1.0  
-**Release Date**: 2025-10-12  
-**Last Updated**: 2025-10-12
+**Version**: 0.2.0
+**Release Date**: 2025-10-13
+**Last Updated**: 2025-10-13
 
 ---
 
@@ -28,8 +28,8 @@ Zentrale Übersicht über alle Distribution-Aktivitäten für willi-mako-client.
 | npm | ✅ Live | [willi-mako-client](https://www.npmjs.com/package/willi-mako-client) | 2025-10-12 |
 | JSR | ⏳ Pending | [jsr.io/@energychain/willi-mako-client](https://jsr.io/@energychain/willi-mako-client) | - |
 | GitHub Packages | ⏳ Pending | [GPR](https://github.com/energychain/willi-mako-client/packages) | - |
-| UNPKG CDN | ✅ Auto | [unpkg.com/willi-mako-client](https://unpkg.com/willi-mako-client@0.1.0/) | 2025-10-12 |
-| jsDelivr CDN | ✅ Auto | [jsdelivr.net/npm/willi-mako-client](https://cdn.jsdelivr.net/npm/willi-mako-client@0.1.0/) | 2025-10-12 |
+| UNPKG CDN | ✅ Auto | [unpkg.com/willi-mako-client](https://unpkg.com/willi-mako-client@0.2.0/) | 2025-10-13 |
+| jsDelivr CDN | ✅ Auto | [jsdelivr.net/npm/willi-mako-client](https://cdn.jsdelivr.net/npm/willi-mako-client@0.2.0/) | 2025-10-13 |
 
 ---
 
@@ -42,7 +42,7 @@ Zentrale Übersicht über alle Distribution-Aktivitäten für willi-mako-client.
 | Libraries.io | ✅ Auto | [libraries.io/npm/willi-mako-client](https://libraries.io/npm/willi-mako-client) | ~2025-10-12 |
 | npm.io | ✅ Auto | [npm.io/package/willi-mako-client](https://npm.io/package/willi-mako-client) | ~2025-10-12 |
 | Packagephobia | ✅ Auto | [packagephobia.com](https://packagephobia.com/result?p=willi-mako-client) | ~2025-10-12 |
-| Bundlephobia | ✅ Auto | [bundlephobia.com](https://bundlephobia.com/package/willi-mako-client@0.1.0) | ~2025-10-12 |
+| Bundlephobia | ✅ Auto | [bundlephobia.com](https://bundlephobia.com/package/willi-mako-client@0.2.0) | ~2025-10-13 |
 | Snyk Advisor | ✅ Auto | [snyk.io/advisor](https://snyk.io/advisor/npm-package/willi-mako-client) | ~2025-10-13 |
 
 ### Manuelle Registrierung
@@ -165,7 +165,7 @@ Sofort umsetzbare Aktionen (< 2 Stunden):
 - [ ] OpenBase claimen (10 Min)
 - [ ] Newsletter Submissions (20 Min)
 
-**Geschätzte Zeit**: 1h 54min  
+**Geschätzte Zeit**: 1h 54min
 **Potentielle Reichweite**: 500K+ Developers
 
 ---
@@ -228,16 +228,16 @@ gh repo view energychain/willi-mako-client --json stargazerCount,forkCount,watch
 ## 📝 Notes & Learnings
 
 ### Woche 1
-- 
+-
 
 ### Woche 2
-- 
+-
 
 ### Woche 3
-- 
+-
 
 ### Woche 4
-- 
+-
 
 ---
 
@@ -264,12 +264,12 @@ gh repo view energychain/willi-mako-client --json stargazerCount,forkCount,watch
 
 ## 📞 Kontakte
 
-**Verantwortlich**: STROMDAO GmbH  
-**Email**: dev@stromdao.com  
-**GitHub**: @energychain  
+**Verantwortlich**: STROMDAO GmbH
+**Email**: dev@stromdao.com
+**GitHub**: @energychain
 **Twitter**: (falls vorhanden)
 
 ---
 
-**Letzte Aktualisierung**: 2025-10-12  
+**Letzte Aktualisierung**: 2025-10-12
 **Nächste Review**: 2025-10-19 (wöchentlich)
