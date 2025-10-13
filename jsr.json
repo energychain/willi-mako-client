@@ -1,6 +1,6 @@
 {
   "name": "@energychain/willi-mako-client",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "exports": {
     ".": "./src/index.ts",
     "./cli": "./src/cli.ts",

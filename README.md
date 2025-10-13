@@ -270,8 +270,14 @@ npx willi-mako-client --help
 **Typische Befehle (Auszug):**
 
 ```bash
-# Login mit optionaler Token-Persistenz
+# Login mit optionaler Token-Persistenz (JSON-Ausgabe)
 willi-mako auth login --email user@example.com --password secret --persist
+
+# Token direkt als Umgebungsvariable übernehmen (POSIX)
+eval "$(willi-mako auth login --email user@example.com --password secret --export-env --no-json)"
+
+# Session anlegen und Umgebungsvariable exportieren (WILLI_MAKO_SESSION_ID)
+eval "$(willi-mako sessions create --ttl 30 --export-env --no-json)"
 
 # Session anlegen und verwalten
 willi-mako sessions create --ttl 30 --preferences '{"companiesOfInterest":["DE0001"]}'
@@ -292,6 +298,455 @@ willi-mako tools run-node-script --session <session-id> --source 'console.log("o
 willi-mako tools job <job-id>
 cat compliance.json | willi-mako artifacts create --session <session-id> --type compliance-report --mime application/json
 ```
+
+### Beispiel: Komplettes CLI-Skript
+
+Das folgende Bash-Skript zeigt einen End-to-End-Flow – Login, Session anlegen und eine Frage an die Chat-API stellen. Die Antworten werden mit `jq` extrahiert, um nur die relevanten Teile weiterzugeben:
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Zugangsdaten aus der Umgebung beziehen
+: "${WILLI_MAKO_EMAIL:?Bitte WILLI_MAKO_EMAIL setzen}"
+: "${WILLI_MAKO_PASSWORD:?Bitte WILLI_MAKO_PASSWORD setzen}"
+
+# 1) Login durchführen und Token als Umgebungsvariable exportieren
+eval "$(willi-mako auth login \
+   --email "$WILLI_MAKO_EMAIL" \
+   --password "$WILLI_MAKO_PASSWORD" \
+   --export-env \
+   --no-json)"
+
+# 2) Session erstellen, Rückgabe merken und Session-ID exportieren
+SESSION_PAYLOAD="$(willi-mako sessions create \
+   --ttl 60 \
+   --export-env)"
+
+# Optional: Session-ID aus dem JSON ziehen
+SESSION_ID="$(echo "$SESSION_PAYLOAD" | jq -r '.data.sessionId')"
+echo "Session angelegt: $SESSION_ID"
+
+# 3) Frage an die Plattform stellen
+CHAT_RESPONSE="$(willi-mako chat send \
+   --session "$SESSION_ID" \
+   --message "Beschreibe die Nutzung einer MSCONS")"
+
+# Mit jq die eigentliche Antwort extrahieren
+ANSWER="$(echo "$CHAT_RESPONSE" | jq -r '.data.response // .data')"
+
+echo
+echo "Antwort der Willi-Mako Plattform:"
+echo "$ANSWER"
+```
+
+> 💡 Tipps
+> - `--no-json` sorgt dafür, dass beim Login nur der Export-Befehl ausgegeben wird – ideal für `eval`.
+> - Für andere Shells lässt sich über `--shell` die passende Export-Syntax erzeugen (z. B. `--shell powershell`).
+> - Beim Aufräumen (`willi-mako sessions delete …`) wird `WILLI_MAKO_SESSION_ID` automatisch aus der Umgebung entfernt.
+
+#### Reasoning-Beispiel mit gleicher Session
+
+Nachdem die Session aktiv ist, kann das Reasoning-API direkt genutzt werden. Auch hier lässt sich die Antwort mit `jq` herausfiltern:
+
+```bash
+REASONING_RESPONSE="$(willi-mako reasoning generate \
+   --session "$SESSION_ID" \
+   --query "Was ist eine MSCONS?")"
+
+REASONING_ANSWER="$(echo "$REASONING_RESPONSE" | jq -r '.data.response // .data')"
+
+echo
+echo "Reasoning-Ausgabe:"
+echo "$REASONING_ANSWER"
+```
+
+##### PowerShell-Workflow
+
+```powershell
+$ErrorActionPreference = 'Stop'
+
+# Zugangsdaten aus der Umgebung lesen
+if (-not $env:WILLI_MAKO_EMAIL -or -not $env:WILLI_MAKO_PASSWORD) {
+   throw 'Bitte WILLI_MAKO_EMAIL und WILLI_MAKO_PASSWORD setzen.'
+}
+
+# Login: Export-Befehl generieren und direkt ausführen
+Invoke-Expression (willi-mako auth login \
+   --email $env:WILLI_MAKO_EMAIL \
+   --password $env:WILLI_MAKO_PASSWORD \
+   --export-env \
+   --shell powershell \
+   --no-json)
+
+# Session erstellen und Session-ID speichern
+$sessionJson = willi-mako sessions create --ttl 60 | ConvertFrom-Json
+$env:WILLI_MAKO_SESSION_ID = $sessionJson.data.sessionId
+Write-Host "Session angelegt: $($env:WILLI_MAKO_SESSION_ID)"
+
+# Chat-Frage stellen
+$chat = willi-mako chat send \
+   --session $env:WILLI_MAKO_SESSION_ID \
+   --message "Beschreibe die Nutzung einer MSCONS"
+$chatAnswer = ($chat | ConvertFrom-Json).data.response
+Write-Host "Antwort:"; Write-Host $chatAnswer
+
+# Reasoning anstoßen
+$reasoning = willi-mako reasoning generate \
+   --session $env:WILLI_MAKO_SESSION_ID \
+   --query "Was ist eine MSCONS?"
+$reasoningAnswer = ($reasoning | ConvertFrom-Json).data.response
+Write-Host "Reasoning-Ausgabe:"; Write-Host $reasoningAnswer
+```
+
+##### CMD-Workflow (Windows Command Prompt)
+
+```bat
+@echo off
+setlocal enabledelayedexpansion
+
+if "%WILLI_MAKO_EMAIL%"=="" (
+   echo Bitte WILLI_MAKO_EMAIL setzen
+   exit /b 1
+)
+
+if "%WILLI_MAKO_PASSWORD%"=="" (
+   echo Bitte WILLI_MAKO_PASSWORD setzen
+   exit /b 1
+)
+
+rem Login-Export ausführen
+for /f "usebackq delims=" %%E in (`willi-mako auth login --email %WILLI_MAKO_EMAIL% --password %WILLI_MAKO_PASSWORD% --export-env --shell cmd --no-json`) do %%E
+
+rem Session erstellen und Export übernehmen
+for /f "usebackq delims=" %%E in (`willi-mako sessions create --ttl 60 --export-env --shell cmd --no-json`) do %%E
+echo Session angelegt: %WILLI_MAKO_SESSION_ID%
+
+rem Chat ausführen und Antwort mit jq.exe extrahieren
+willi-mako chat send --session %WILLI_MAKO_SESSION_ID% --message "Beschreibe die Nutzung einer MSCONS" ^
+   | jq.exe -r ".data.response // .data"
+
+rem Reasoning-Query stellen
+willi-mako reasoning generate --session %WILLI_MAKO_SESSION_ID% --query "Was ist eine MSCONS?" ^
+   | jq.exe -r ".data.response // .data"
+
+endlocal
+```
+
+> ℹ️ Für den CMD-Workflow wird `jq.exe` im `PATH` erwartet. Alternativ kann die JSON-Verarbeitung mit Bordmitteln oder PowerShell erfolgen (`powershell -Command ...`).
+
+### Tooling-Beispiel: MSCONS → CSV Converter
+
+Mit `willi-mako tools run-node-script` lassen sich maßgeschneiderte Tools als Sandbox-Jobs ausführen. Das folgende Beispiel erstellt einen Konverter, der eine MSCONS-Nachricht in CSV transformiert und die Messlokation (MeLo) als Dateinamen verwendet.
+
+```bash
+# 1) Node.js-Skript definieren (Multi-Line-String)
+MSCONS2CSV_SCRIPT=$(cat <<'EOF'
+const mscons = `UNH+1+MSCONS:D:96A:UN:1.2'
+BGM+E01+20240315-4711'
+DTM+137:202403150000:203'
+IDE+24+DE0123456789012345678901234567890'
+LOC+172+DE1234567890'
+MEA+AAE+KWH::60E223:15.78'
+MEA+AAE+KWH::60E224:16.12'
+UNT+7+1'`;
+
+const segments = mscons
+   .split("'")
+   .map((segment) => segment.trim())
+   .filter(Boolean);
+
+const melo = segments
+   .find((segment) => segment.startsWith('LOC+172+'))
+   ?.split('+')[2]
+   ?.replace(/[^A-Z0-9_-]/gi, '')
+   ?? 'mscons';
+
+const measurements = segments
+   .filter((segment) => segment.startsWith('MEA+'))
+   .map((segment) => {
+      const [, , qualifier, value] = segment.split('+');
+      const [quantity, unit] = (qualifier ?? '').split('::');
+      const numeric = value?.split(':')[2] ?? '';
+      return { quantity: quantity ?? 'KWH', value: numeric ?? '0', unit: unit ?? '' };
+   });
+
+const csv = ['quantity;value;unit', ...measurements.map((row) => `${row.quantity};${row.value};${row.unit}`)].join('\n');
+
+console.log(
+   JSON.stringify(
+      {
+         fileName: `${melo}-readings.csv`,
+         rows: measurements.length,
+         csv
+      },
+      null,
+      2
+   )
+);
+EOF
+)
+
+# 2) Job in der Sandbox anlegen (aktive Session vorausgesetzt)
+JOB_INFO=$(willi-mako tools run-node-script \
+   --session "$SESSION_ID" \
+   --source "$MSCONS2CSV_SCRIPT" \
+   --timeout 5000 \
+   --metadata '{"toolName":"MSCONS2CSV"}')
+
+JOB_ID=$(echo "$JOB_INFO" | jq -r '.data.job.id')
+echo "Tool-Job gestartet: $JOB_ID"
+
+# 3) Ergebnis abfragen und CSV speichern
+JOB_RESULT=$(willi-mako tools job "$JOB_ID" | jq -r '.data.job.result.stdout')
+CSV_FILE=$(echo "$JOB_RESULT" | jq -r '.fileName')
+
+echo "$JOB_RESULT" | jq -r '.csv' > "$CSV_FILE"
+
+echo "CSV-Datei erzeugt: $CSV_FILE"
+```
+
+> 🧰 Hinweise
+> - Das Skript schreibt ein JSON-Objekt auf `stdout`, das sich mit `jq` weiterverarbeiten lässt (z. B. zum Speichern der CSV oder für Artefakt-Uploads).
+> - Über `--metadata` können Tool-spezifische Informationen mitgegeben werden, die bei `willi-mako tools job` erneut auftauchen.
+> - Für reale Szenarien lässt sich die MSCONS-Payload dynamisch befüllen, etwa aus Artefakten oder vorherigen API-Schritten.
+
+#### PowerShell-Variante
+
+```powershell
+$ErrorActionPreference = 'Stop'
+
+if (-not $env:WILLI_MAKO_SESSION_ID) {
+   throw 'Bitte zuerst eine Session erstellen (siehe Login/Session-Beispiele oben).'
+}
+
+$script = @'
+const mscons = `UNH+1+MSCONS:D:96A:UN:1.2'
+BGM+E01+20240315-4711'
+DTM+137:202403150000:203'
+IDE+24+DE0123456789012345678901234567890'
+LOC+172+DE1234567890'
+MEA+AAE+KWH::60E223:15.78'
+MEA+AAE+KWH::60E224:16.12'
+UNT+7+1'`;
+
+const segments = mscons
+   .split("'")
+   .map((segment) => segment.trim())
+   .filter(Boolean);
+
+const melo = segments
+   .find((segment) => segment.startsWith('LOC+172+'))
+   ?.split('+')[2]
+   ?.replace(/[^A-Z0-9_-]/gi, '')
+   ?? 'mscons';
+
+const measurements = segments
+   .filter((segment) => segment.startsWith('MEA+'))
+   .map((segment) => {
+      const [, , qualifier, value] = segment.split('+');
+      const [quantity, unit] = (qualifier ?? '').split('::');
+      const numeric = value?.split(':')[2] ?? '';
+      return { quantity: quantity ?? 'KWH', value: numeric ?? '0', unit: unit ?? '' };
+   });
+
+const csv = ['quantity;value;unit', ...measurements.map((row) => `${row.quantity};${row.value};${row.unit}`)].join('\n');
+
+console.log(
+   JSON.stringify(
+      {
+         fileName: `${melo}-readings.csv`,
+         rows: measurements.length,
+         csv
+      },
+      null,
+      2
+   )
+);
+'@
+
+$job = willi-mako tools run-node-script `
+   --session $env:WILLI_MAKO_SESSION_ID `
+   --source $script `
+   --timeout 5000 `
+   --metadata '{"toolName":"MSCONS2CSV"}' | ConvertFrom-Json
+
+$jobId = $job.data.job.id
+Write-Host "Tool-Job gestartet: $jobId"
+
+$result = willi-mako tools job $jobId | ConvertFrom-Json
+$payload = $result.data.job.result.stdout | ConvertFrom-Json
+
+$payload.csv | Out-File -FilePath $payload.fileName -Encoding utf8
+Write-Host "CSV-Datei erzeugt:" $payload.fileName
+```
+
+#### CMD-Variante
+
+```bat
+@echo off
+setlocal enabledelayedexpansion
+
+if "%WILLI_MAKO_SESSION_ID%"=="" (
+   echo Bitte zuerst eine Session erstellen (siehe oben)
+   exit /b 1
+)
+
+set "MSCONS_SCRIPT=const mscons = `UNH+1+MSCONS:D:96A:UN:1.2'
+BGM+E01+20240315-4711'
+DTM+137:202403150000:203'
+IDE+24+DE0123456789012345678901234567890'
+LOC+172+DE1234567890'
+MEA+AAE+KWH::60E223:15.78'
+MEA+AAE+KWH::60E224:16.12'
+UNT+7+1'`;
+
+const segments = mscons
+   .split("'")
+   .map((segment) => segment.trim())
+   .filter(Boolean);
+
+const melo = segments
+   .find((segment) => segment.startsWith('LOC+172+'))
+   ?.split('+')[2]
+   ?.replace(/[^A-Z0-9_-]/gi, '')
+   ?? 'mscons';
+
+const measurements = segments
+   .filter((segment) => segment.startsWith('MEA+'))
+   .map((segment) => {
+      const [, , qualifier, value] = segment.split('+');
+      const [quantity, unit] = (qualifier ?? '').split('::');
+      const numeric = value?.split(':')[2] ?? '';
+      return { quantity: quantity ?? 'KWH', value: numeric ?? '0', unit: unit ?? '' };
+   });
+
+const csv = ['quantity;value;unit', ...measurements.map((row) => `${row.quantity};${row.value};${row.unit}`)].join('\n');
+
+console.log(
+   JSON.stringify(
+      {
+         fileName: `${melo}-readings.csv`,
+         rows: measurements.length,
+         csv
+      },
+      null,
+      2
+   )
+);"
+
+for /f "usebackq delims=" %%E in (`willi-mako tools run-node-script --session %WILLI_MAKO_SESSION_ID% --source "%MSCONS_SCRIPT%" --timeout 5000 --metadata "{\"toolName\":\"MSCONS2CSV\"}"`) do set "JOB_JSON=%%E"
+
+for /f "tokens=*" %%J in ('echo %JOB_JSON% ^| jq.exe -r ".data.job.id"') do set "JOB_ID=%%J"
+echo Tool-Job gestartet: %JOB_ID%
+
+for /f "usebackq delims=" %%R in (`willi-mako tools job %JOB_ID% ^| jq.exe -r ".data.job.result.stdout"`) do set "JOB_RESULT=%%R"
+
+for /f "tokens=*" %%F in ('echo %JOB_RESULT% ^| jq.exe -r ".fileName"') do set "CSV_FILE=%%F"
+echo %JOB_RESULT% ^| jq.exe -r ".csv" > "%CSV_FILE%"
+
+echo CSV-Datei erzeugt: %CSV_FILE%
+
+endlocal
+```
+
+> ℹ️ Für Windows empfiehlt sich `jq.exe` im `PATH`. Alternativ kann die JSON-Weiterverarbeitung auch über `powershell -Command` erfolgen.
+
+### Artefakte erstellen & abrufen
+
+Artefakte sind strukturierte Dateien (z. B. Reports, CSVs, EDIFACT-Audits), die einer Session zugeordnet werden. Die CLI unterstützt das Anlegen und Abfragen direkt.
+
+```bash
+# Beispiel-Report erzeugen
+cat <<'EOF' > audit-report.json
+{
+   "type": "MSCONS",
+   "status": "ok",
+   "checkedAt": "$(date --iso-8601=seconds)",
+   "remarks": ["Alle Werte im Toleranzbereich", "Kein Erneuerungsbedarf"]
+}
+EOF
+
+# Artefakt erstellen (Inline-Upload)
+ARTIFACT_RESPONSE=$(willi-mako artifacts create \
+   --session "$SESSION_ID" \
+   --type mscons-audit \
+   --name "audit-report.json" \
+   --mime application/json \
+   --encoding utf8 \
+   --description "MSCONS Audit Report" \
+   --tags "mscons,audit" \
+   --metadata '{"source":"cli-example"}' \
+   --content "$(cat audit-report.json)")
+
+ARTIFACT_ID=$(echo "$ARTIFACT_RESPONSE" | jq -r '.data.artifact.id')
+echo "Artefakt angelegt: $ARTIFACT_ID"
+
+# Inhalte abrufen (inline payload)
+willi-mako artifacts get --session "$SESSION_ID" --artifact "$ARTIFACT_ID" \
+   | jq -r '.data.artifact.storage.content' > downloaded-report.json
+
+echo "Report gespeichert unter downloaded-report.json"
+```
+
+> 📂 Standardmäßig werden Artefakte inline abgelegt. Für größere Dateien lassen sich Upload-URLs nutzen (siehe API-Dokumentation).
+
+#### PowerShell-Variante
+
+```powershell
+$report = @'
+{
+   "type": "MSCONS",
+   "status": "ok",
+   "checkedAt": "{0}",
+   "remarks": ["Alle Werte im Toleranzbereich", "Kein Erneuerungsbedarf"]
+}
+'@ -f (Get-Date -Format o)
+
+$artifact = willi-mako artifacts create `
+   --session $env:WILLI_MAKO_SESSION_ID `
+   --type mscons-audit `
+   --name audit-report.json `
+   --mime application/json `
+   --encoding utf8 `
+   --description "MSCONS Audit Report" `
+   --tags "mscons,audit" `
+   --metadata '{"source":"cli-example"}' `
+   --content $report | ConvertFrom-Json
+
+$artifactId = $artifact.data.artifact.id
+Write-Host "Artefakt angelegt:" $artifactId
+
+$download = willi-mako artifacts get `
+   --session $env:WILLI_MAKO_SESSION_ID `
+   --artifact $artifactId | ConvertFrom-Json
+
+$download.data.artifact.storage.content | Out-File -FilePath downloaded-report.json -Encoding utf8
+Write-Host "Report gespeichert: downloaded-report.json"
+```
+
+#### CMD-Variante
+
+```bat
+@echo off
+setlocal enabledelayedexpansion
+
+set "REPORT={"type":"MSCONS","status":"ok","checkedAt":"%date% %time%","remarks":["Alle Werte im Toleranzbereich","Kein Erneuerungsbedarf"]}"
+
+for /f "usebackq delims=" %%R in (`willi-mako artifacts create --session %WILLI_MAKO_SESSION_ID% --type mscons-audit --name audit-report.json --mime application/json --encoding utf8 --description "MSCONS Audit Report" --tags "mscons,audit" --metadata "{\"source\":\"cli-example\"}" --content "%REPORT%"`) do set "ARTIFACT_JSON=%%R"
+
+for /f "tokens=*" %%A in ('echo %ARTIFACT_JSON% ^| jq.exe -r ".data.artifact.id"') do set "ARTIFACT_ID=%%A"
+echo Artefakt angelegt: %ARTIFACT_ID%
+
+willi-mako artifacts get --session %WILLI_MAKO_SESSION_ID% --artifact %ARTIFACT_ID% ^
+   | jq.exe -r ".data.artifact.storage.content" > downloaded-report.json
+
+echo Report gespeichert: downloaded-report.json
+
+endlocal
+```
+
+> ℹ️ Für produktive Szenarien empfiehlt sich, Artefakte nach dem Download zu verifizieren und ggf. via `artifacts delete` wieder zu entfernen.
 
 Über `--base-url` und `--token` lassen sich Zielsystem bzw. Credentials überschreiben.
 

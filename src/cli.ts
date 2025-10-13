@@ -18,6 +18,13 @@ import {
   type ContextResolveRequest,
   type ClarificationAnalyzeRequest
 } from './index.js';
+import {
+  applyLoginEnvironmentToken,
+  applySessionEnvironmentId,
+  clearSessionEnvironmentId,
+  formatEnvExport,
+  type SupportedShell
+} from './cli-utils.js';
 
 const program = new Command();
 
@@ -51,20 +58,45 @@ auth
   .requiredOption('-e, --email <email>', 'Email address used for authentication')
   .requiredOption('-p, --password <password>', 'Password used for authentication')
   .option('--no-store', 'Do not persist the retrieved token on this client instance')
-  .action(async (options: { email: string; password: string; store?: boolean }) => {
-    const client = createClient();
-    const response = await client.login(
-      {
-        email: options.email,
-        password: options.password
-      },
-      {
-        persistToken: options.store !== false
-      }
-    );
+  .option('--export-env', 'Print shell export statement for WILLI_MAKO_TOKEN', false)
+  .option('--shell <shell>', 'Shell for --export-env output (posix|powershell|cmd)', 'posix')
+  .option('--json', 'Print JSON response payload', true)
+  .action(
+    async (options: {
+      email: string;
+      password: string;
+      store?: boolean;
+      exportEnv?: boolean;
+      shell?: SupportedShell;
+      json?: boolean;
+    }) => {
+      const client = createClient();
+      const response = await client.login(
+        {
+          email: options.email,
+          password: options.password
+        },
+        {
+          persistToken: options.store !== false
+        }
+      );
 
-    outputJson(response);
-  });
+      applyLoginEnvironmentToken(response);
+
+      if (options.exportEnv && response.success) {
+        const token = response.data?.accessToken;
+        if (token) {
+          process.stdout.write(
+            `${formatEnvExport('WILLI_MAKO_TOKEN', token, resolveShell(options.shell))}\n`
+          );
+        }
+      }
+
+      if (options.json !== false) {
+        outputJson(response);
+      }
+    }
+  );
 
 const sessions = program.command('sessions').description('Manage Willi-Mako sessions');
 
@@ -78,34 +110,85 @@ sessions
   )
   .option('--context <json>', 'JSON encoded context settings object', parseJsonOptional)
   .option('--ttl <minutes>', 'Time-to-live in minutes', parseIntBase10)
-  .action(async (options: { preferences?: unknown; context?: unknown; ttl?: number }) => {
-    const client = createClient({ requireToken: true });
-    const payload: CreateSessionRequest = {
-      preferences: (options.preferences as CreateSessionRequest['preferences']) ?? undefined,
-      contextSettings: (options.context as Record<string, unknown>) ?? undefined,
-      ttlMinutes: options.ttl ?? undefined
-    };
+  .option('--export-env', 'Print shell export statement for WILLI_MAKO_SESSION_ID', false)
+  .option('--shell <shell>', 'Shell for --export-env output (posix|powershell|cmd)', 'posix')
+  .option('--json', 'Print JSON response payload', true)
+  .action(
+    async (options: {
+      preferences?: unknown;
+      context?: unknown;
+      ttl?: number;
+      exportEnv?: boolean;
+      shell?: SupportedShell;
+      json?: boolean;
+    }) => {
+      const client = createClient({ requireToken: true });
+      const payload: CreateSessionRequest = {
+        preferences: (options.preferences as CreateSessionRequest['preferences']) ?? undefined,
+        contextSettings: (options.context as Record<string, unknown>) ?? undefined,
+        ttlMinutes: options.ttl ?? undefined
+      };
 
-    const response = await client.createSession(payload);
-    outputJson(response);
-  });
+      const response = await client.createSession(payload);
+      applySessionEnvironmentId(response);
+
+      if (options.exportEnv && response.success) {
+        const sessionId = response.data?.sessionId;
+        if (sessionId) {
+          process.stdout.write(
+            `${formatEnvExport('WILLI_MAKO_SESSION_ID', sessionId, resolveShell(options.shell))}\n`
+          );
+        }
+      }
+
+      if (options.json !== false) {
+        outputJson(response);
+      }
+    }
+  );
 
 sessions
   .command('get <sessionId>')
   .description('Retrieve an existing session by its identifier')
-  .action(async (sessionId: string) => {
-    const client = createClient({ requireToken: true });
-    const response = await client.getSession(sessionId);
-    outputJson(response);
-  });
+  .option('--export-env', 'Print shell export statement for WILLI_MAKO_SESSION_ID', false)
+  .option('--shell <shell>', 'Shell for --export-env output (posix|powershell|cmd)', 'posix')
+  .option('--json', 'Print JSON response payload', true)
+  .action(
+    async (
+      sessionId: string,
+      options: { exportEnv?: boolean; shell?: SupportedShell; json?: boolean }
+    ) => {
+      const client = createClient({ requireToken: true });
+      const response = await client.getSession(sessionId);
+      applySessionEnvironmentId(response);
+
+      if (options.exportEnv && response.success) {
+        const sessionIdValue = response.data?.sessionId;
+        if (sessionIdValue) {
+          process.stdout.write(
+            `${formatEnvExport('WILLI_MAKO_SESSION_ID', sessionIdValue, resolveShell(options.shell))}\n`
+          );
+        }
+      }
+
+      if (options.json !== false) {
+        outputJson(response);
+      }
+    }
+  );
 
 sessions
   .command('delete <sessionId>')
   .description('Delete an existing session')
-  .action(async (sessionId: string) => {
+  .option('--json', 'Print JSON response payload', true)
+  .action(async (sessionId: string, options: { json?: boolean }) => {
     const client = createClient({ requireToken: true });
     await client.deleteSession(sessionId);
-    outputJson({ success: true, sessionId });
+    clearSessionEnvironmentId(sessionId);
+
+    if (options.json !== false) {
+      outputJson({ success: true, sessionId });
+    }
   });
 
 const chat = program.command('chat').description('Conversational interface helpers');
@@ -382,6 +465,14 @@ function outputJson(value: unknown): void {
 
 interface ClientFactoryOptions {
   requireToken?: boolean;
+}
+
+function resolveShell(shell?: string): SupportedShell {
+  if (shell === 'powershell' || shell === 'cmd') {
+    return shell;
+  }
+
+  return 'posix';
 }
 
 function createClient(options: ClientFactoryOptions = {}): WilliMakoClient {
