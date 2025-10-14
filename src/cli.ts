@@ -7,6 +7,7 @@
  */
 import { Command } from 'commander';
 import { Buffer } from 'node:buffer';
+import { promises as fs } from 'node:fs';
 import process from 'node:process';
 import { inspect } from 'node:util';
 import {
@@ -32,6 +33,7 @@ import {
 } from './cli-utils.js';
 import { startWebDashboard } from './demos/web-dashboard.js';
 import { startMcpServer } from './demos/mcp-server.js';
+import { generateToolScript, type ToolScriptInputMode } from './tool-generation.js';
 
 const program = new Command();
 let keepAlive = false;
@@ -341,6 +343,111 @@ clarification
 const tools = program.command('tools').description('Tooling sandbox helpers');
 
 tools
+  .command('generate-script')
+  .description('Generate a ready-to-run Node.js tool script via the Willi-Mako reasoning API')
+  .requiredOption('-q, --query <text>', 'Natural language description of the desired tool')
+  .option('-s, --session <sessionId>', 'Optional session identifier to reuse')
+  .option(
+    '--input-mode <mode>',
+    'Preferred input mode (file|stdin|environment)',
+    parseInputModeOption
+  )
+  .option('--output-format <format>', 'Expected output format (csv|json|text)')
+  .option('-o, --output <file>', 'Write the generated script to a file instead of stdout')
+  .option('--artifact', 'Persist the generated script as Willi-Mako artifact', false)
+  .option(
+    '--artifact-name <name>',
+    'Override the artifact name when persisting (defaults to derived file name)'
+  )
+  .option(
+    '--artifact-type <type>',
+    'Artifact type used when persisting (default: tool-script)',
+    'tool-script'
+  )
+  .option('--json', 'Print JSON metadata (including script) instead of raw script output', false)
+  .option('--no-shebang', 'Omit the Node.js shebang from the generated script', false)
+  .option('--context <text>', 'Additional context or constraints for the generator')
+  .action(
+    async (options: {
+      query: string;
+      session?: string;
+      inputMode?: ToolScriptInputMode;
+      outputFormat?: string;
+      output?: string;
+      artifact?: boolean;
+      artifactName?: string;
+      artifactType?: string;
+      json?: boolean;
+      shebang?: boolean;
+      context?: string;
+    }) => {
+      const client = createClient({ requireToken: true });
+
+      let sessionId = options.session;
+      let createdSessionId: string | null = null;
+
+      if (!sessionId) {
+        const sessionResponse = await client.createSession({});
+        sessionId = sessionResponse.data.sessionId;
+        createdSessionId = sessionId;
+        console.error(`ℹ️  Session ${sessionId} wurde temporär erstellt.`);
+      }
+
+      const outputNameHint = options.output
+        ? options.output.split(/[/\\]/).pop()
+        : options.artifactName;
+
+      const generation = await generateToolScript({
+        client,
+        sessionId,
+        query: options.query,
+        preferredInputMode: options.inputMode,
+        outputFormat: options.outputFormat,
+        fileNameHint: outputNameHint,
+        includeShebang: options.shebang !== false,
+        additionalContext: options.context
+      });
+
+      let artifactResponse: unknown = null;
+      if (options.artifact) {
+        const artifactName = options.artifactName ?? generation.suggestedFileName;
+        artifactResponse = await client.createArtifact({
+          sessionId,
+          type: options.artifactType ?? 'tool-script',
+          name: artifactName,
+          mimeType: 'text/javascript',
+          encoding: 'utf8',
+          content: generation.code,
+          description: `Automatisch generiertes Tool: ${generation.summary}`
+        });
+        console.error(`✅ Skript als Artefakt "${artifactName}" gespeichert.`);
+      }
+
+      if (options.json) {
+        outputJson({
+          sessionId,
+          script: generation.code,
+          suggestedFileName: generation.suggestedFileName,
+          summary: generation.summary,
+          language: generation.language ?? 'javascript',
+          artifact: artifactResponse
+        });
+      } else if (options.output) {
+        await fs.writeFile(options.output, generation.code, 'utf8');
+        console.error(`✅ Skript nach ${options.output} geschrieben.`);
+      } else {
+        process.stdout.write(`${generation.code}\n`);
+      }
+
+      if (createdSessionId) {
+        console.error(
+          `ℹ️  Die Session ${createdSessionId} wurde automatisch erzeugt. Lösche sie bei Bedarf mit "willi-mako sessions delete ${createdSessionId}".`
+        );
+      }
+    }
+  );
+
+tools
   .command('run-node-script')
   .description('Create a sandbox job for evaluating Node.js source code')
   .requiredOption('-s, --session <sessionId>', 'Session ID that owns the job')
@@ -502,6 +609,15 @@ function parseIntBase10(value: string): number {
   }
 
   return parsed;
+}
+
+function parseInputModeOption(value: string): ToolScriptInputMode {
+  const normalized = value.toLowerCase();
+  if (normalized === 'file' || normalized === 'stdin' || normalized === 'environment') {
+    return normalized;
+  }
+
+  throw new Error('Invalid input mode. Supported values: file, stdin, environment');
 }
 
 function parseJsonOptional(value: string): unknown {

@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+## [0.3.0] - 2025-10-14
+
+### Added
+- CLI-Befehl `willi-mako tools generate-script` erstellt lauffähige Node.js-Tools per Reasoning-API, inklusive Artefakt-Persistierung und Dateiausgabe.
+- MCP-Tool `willi-mako.generate-tool` ermöglicht Agenten, Skripte direkt aus der MaKo-Beschreibung heraus generieren und optional zu speichern.
+
 ## [0.2.3] - 2025-10-14
 
 ### Added
@@ -64,7 +70,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Vitest test suite covering core client behaviour.
 - Comprehensive documentation, onboarding guides, and community standards.
 
-[Unreleased]: https://github.com/energychain/willi-mako-client/compare/v0.2.3...HEAD
+[Unreleased]: https://github.com/energychain/willi-mako-client/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/energychain/willi-mako-client/compare/v0.2.3...v0.3.0
 [0.2.3]: https://github.com/energychain/willi-mako-client/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/energychain/willi-mako-client/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/energychain/willi-mako-client/compare/v0.2.0...v0.2.1

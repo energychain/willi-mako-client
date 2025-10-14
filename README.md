@@ -43,7 +43,7 @@
 
 ## 🌍 About the Project
 
-**Willi-Mako** ist die Wissens- und Automatisierungsplattform für Marktkommunikation (*Marktkommunikation*) der deutschen Energiewirtschaft. Sie unterstützt Marktrollen wie **Lieferanten**, **Netzbetreiber** und **Messstellenbetreiber** bei Aufgaben rund um edi@energy-Standards, regulatorische Prüfungen und KI-gestützte Workflows.
+**Willi-Mako** ist die Wissens- und Automatisierungsplattform für Marktkommunikation (*MaKo*) der deutschen Energiewirtschaft. Sie unterstützt Marktrollen wie **Lieferanten**, **Netzbetreiber** und **Messstellenbetreiber** bei Aufgaben rund um edi@energy-Standards, regulatorische Prüfungen und KI-gestützte Workflows.
 
 Mit dem SDK erhalten Sie:
 
@@ -181,6 +181,7 @@ Expose die Plattform als **Model Context Protocol (MCP)**-Server, damit interne 
    - `willi-mako.login`, `willi-mako.create-session`, `willi-mako.get-session`, `willi-mako.delete-session`
    - `willi-mako.chat`, `willi-mako.semantic-search`, `willi-mako.reasoning-generate`
    - `willi-mako.resolve-context`, `willi-mako.clarification-analyze`
+   - `willi-mako.generate-tool` – erstellt auf Zuruf lauffähige Node.js-Skripte für MaKo-Workflows
    - `willi-mako.create-node-script`, `willi-mako.get-tool-job`, `willi-mako.create-artifact`
    - Ressource `willi-mako://openapi` – liefert die aktuelle OpenAPI-Spezifikation
 
@@ -438,6 +439,24 @@ endlocal
 ```
 
 > ℹ️ Für den CMD-Workflow wird `jq.exe` im `PATH` erwartet. Alternativ kann die JSON-Verarbeitung mit Bordmitteln oder PowerShell erfolgen (`powershell -Command ...`).
+
+### Tooling-Assistent: Skript-Generierung auf Zuruf
+
+Mit `willi-mako tools generate-script` lässt sich der Reasoning-Stack bitten, ein lauffähiges Node.js-Tool zu erstellen. Sessions werden bei Bedarf automatisch erzeugt; das Ergebnis kann direkt auf der Konsole erscheinen, in eine Datei geschrieben oder als Artefakt gespeichert werden.
+
+```bash
+# Skript generieren und lokal als Datei ablegen
+willi-mako tools generate-script \
+   --query "Erstelle mir ein Tool, das MSCONS-Nachrichten in CSV konvertiert" \
+   --output mscons-to-csv.mjs
+
+# Optional: Artefakt in Willi-Mako persistieren
+willi-mako tools generate-script \
+   --query "Generiere ein Prüftool für UTILMD und liefere JSON-Ausgabe" \
+   --artifact --artifact-name utilmd-validator.mjs
+```
+
+> 💡 Über `--input-mode` (`file`, `stdin`, `environment`) und `--output-format` (`csv`, `json`, `text`) steuerst du, wie die generierten Skripte Ein- und Ausgabe handhaben sollen. Mit `--json` erhältst du die Antwort inklusive Skript als strukturiertes JSON.
 
 ### Tooling-Beispiel: MSCONS → CSV Converter
 

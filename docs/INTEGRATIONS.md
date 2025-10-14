@@ -150,7 +150,7 @@ Dieser Leitfaden bündelt praxisnahe Szenarien für Entwickler:innen und Fachanw
          }
          ```
      - **Claude Desktop:** Einstellungen → *Model Context Protocol* → neuen Server mit `http://127.0.0.1:8080` hinzufügen.
-3. **Werkzeuge & Ressourcen nutzen:** Der MCP-Server stellt u. a. die Tools `willi-mako.login`, `willi-mako.create-session`, `willi-mako.chat`, `willi-mako.semantic-search`, `willi-mako.reasoning-generate`, `willi-mako.resolve-context`, `willi-mako.clarification-analyze`, `willi-mako.create-node-script`, `willi-mako.get-tool-job`, `willi-mako.create-artifact` sowie die Resource `willi-mako://openapi` bereit. Agenten können damit komplette MaKo-Workflows automatisiert orchestrieren.
+3. **Werkzeuge & Ressourcen nutzen:** Der MCP-Server stellt u. a. die Tools `willi-mako.login`, `willi-mako.create-session`, `willi-mako.chat`, `willi-mako.semantic-search`, `willi-mako.reasoning-generate`, `willi-mako.resolve-context`, `willi-mako.clarification-analyze`, `willi-mako.generate-tool`, `willi-mako.create-node-script`, `willi-mako.get-tool-job`, `willi-mako.create-artifact` sowie die Resource `willi-mako://openapi` bereit. Agenten können damit komplette MaKo-Workflows automatisiert orchestrieren.
 
 **Best Practices**
 - Nutzen Sie separate **Service Token** oder verwaltete Benutzer-Credentials für IDE-Automatisierungen und pflegen Sie diese in einer Secret-Manager-Lösung.

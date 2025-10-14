@@ -12,7 +12,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { ErrorCode, McpError } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
-import { WilliMakoClient, WilliMakoError } from '../index.js';
+import { WilliMakoClient, WilliMakoError, generateToolScript } from '../index.js';
 import type {
   ChatRequest,
   ClarificationAnalyzeRequest,
@@ -634,6 +634,96 @@ Resources:
         };
         const response = await clientInstance.analyzeClarification(payload);
         return respond({ ...response, sessionId: activeSessionId });
+      })
+  );
+
+  server.registerTool(
+    'willi-mako.generate-tool',
+    {
+      title: 'Generate a Node.js tool script',
+      description:
+        'Creates a reusable Node.js automation script for a market communication workflow.',
+      inputSchema: {
+        sessionId: z.string().describe('Optional session identifier.').optional(),
+        task: z
+          .string()
+          .min(10)
+          .describe('Description of the desired automation (German or English).'),
+        inputMode: z
+          .enum(['file', 'stdin', 'environment'])
+          .optional()
+          .describe('Preferred input mode for the generated script.'),
+        outputFormat: z
+          .enum(['csv', 'json', 'text'])
+          .optional()
+          .describe('Primary output format of the tool.'),
+        persistArtifact: z
+          .boolean()
+          .optional()
+          .describe('Persist the generated script as Willi-Mako artefact.'),
+        artifactName: z.string().optional().describe('Optional explicit artefact name.'),
+        artifactType: z
+          .string()
+          .optional()
+          .describe('Artefact type override (defaults to tool-script).'),
+        additionalContext: z
+          .string()
+          .optional()
+          .describe('Additional constraints or hints for the generator.')
+      }
+    },
+    async (
+      {
+        sessionId,
+        task,
+        inputMode,
+        outputFormat,
+        persistArtifact,
+        artifactName,
+        artifactType,
+        additionalContext
+      },
+      extra?: RequestContext
+    ) =>
+      withClient(extra, async (clientInstance, transportSessionId) => {
+        const activeSessionId = await ensureSessionId(
+          clientInstance,
+          transportSessionId,
+          sessionId
+        );
+        const generation = await generateToolScript({
+          client: clientInstance,
+          sessionId: activeSessionId,
+          query: task,
+          preferredInputMode: inputMode,
+          outputFormat,
+          fileNameHint: artifactName,
+          additionalContext
+        });
+
+        let artifactData: JsonLike | null = null;
+        if (persistArtifact) {
+          const persisted = await clientInstance.createArtifact({
+            sessionId: activeSessionId,
+            type: artifactType ?? 'tool-script',
+            name: artifactName ?? generation.suggestedFileName,
+            mimeType: 'text/javascript',
+            encoding: 'utf8',
+            content: generation.code,
+            description: `Automatisch generiertes Tool: ${generation.summary}`
+          });
+          artifactData = persisted.data as JsonLike;
+        }
+
+        return respond({
+          success: true,
+          sessionId: activeSessionId,
+          script: generation.code,
+          suggestedFileName: generation.suggestedFileName,
+          summary: generation.summary,
+          reasoning: generation.reasoningText,
+          artifact: artifactData
+        });
       })
   );
 

@@ -31,6 +31,7 @@ const require: NodeJS.Require = createRequire(import.meta.url);
 const openApiDocument: Record<string, unknown> = require('../schemas/openapi.json');
 
 export * from './types.js';
+export * from './tool-generation.js';
 
 /**
  * Default base URL pointing to the productive Willi-Mako API v2 endpoint.
