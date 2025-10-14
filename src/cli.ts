@@ -1,5 +1,10 @@
 #!/usr/bin/env node
 
+/**
+ * @module willi-mako-client/cli
+ * Registers the Commander-powered `willi-mako` CLI exposing authentication, sessions, retrieval,
+ * reasoning, tooling, and demo server commands for the Willi-Mako platform.
+ */
 import { Command } from 'commander';
 import { Buffer } from 'node:buffer';
 import process from 'node:process';

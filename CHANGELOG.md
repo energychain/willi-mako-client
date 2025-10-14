@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+## [0.2.3] - 2025-10-14
+
+### Added
+- Ausführliche Schritt-für-Schritt-Anleitungen für MCP-Integrationen in VS Code & GitHub Copilot, Claude Desktop, ChatGPT, anythingLLM und n8n.
+
+### Changed
+- Der MCP-Server akzeptiert nun wahlweise Bearer-Header, Basic-Credentials oder das Tool `willi-mako.login` und persistiert Tokens pro MCP-Session.
+- Automatisches Anlegen und Wiederverwenden von Willi-Mako Sessions für Tools ohne `sessionId`, inklusive klarer Logging-Nachrichten.
+- README und Integrations-Doku verweisen direkt auf die neuen Authentifizierungswege und Client-Setups.
+
 ## [0.2.2] - 2025-10-13
 
 ### Added
@@ -53,3 +63,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Bundled OpenAPI schema for offline integrations.
 - Vitest test suite covering core client behaviour.
 - Comprehensive documentation, onboarding guides, and community standards.
+
+[Unreleased]: https://github.com/energychain/willi-mako-client/compare/v0.2.3...HEAD
+[0.2.3]: https://github.com/energychain/willi-mako-client/compare/v0.2.2...v0.2.3
+[0.2.2]: https://github.com/energychain/willi-mako-client/compare/v0.2.1...v0.2.2
+[0.2.1]: https://github.com/energychain/willi-mako-client/compare/v0.2.0...v0.2.1
+[0.2.0]: https://github.com/energychain/willi-mako-client/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/energychain/willi-mako-client/releases/tag/v0.1.0

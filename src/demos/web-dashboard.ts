@@ -596,19 +596,19 @@ function createHtmlPage(params: { baseUrl: string; tokenConfigured: boolean }): 
         </div>
       </div>
 
-      ${dashboardBody(bootstrapState)}
+      ${dashboardBody()}
     </main>
 
     <script>
-      ${clientScript()}
+      ${clientScript(bootstrapState)}
     </script>
   </body>
 </html>`;
 }
 
-function dashboardBody(bootstrapState: string): string {
+function dashboardBody(): string {
   // The body markup is lengthy but intentionally kept inline to avoid additional bundling steps.
-  return `${bodyContent()}`.replace('${bootstrap}', bootstrapState);
+  return bodyContent();
 }
 
 function bodyContent(): string {
@@ -833,8 +833,8 @@ function bodyContent(): string {
       </section>`;
 }
 
-function clientScript(): string {
-  const script = `const bootstrap = ${'${bootstrap}'};
+function clientScript(bootstrapState: string): string {
+  const script = `const bootstrap = ${bootstrapState};
       const state = {
         sessionId: null,
         tokenConfigured: bootstrap.tokenConfigured,
@@ -900,7 +900,7 @@ function clientScript(): string {
         return sessionId;
       }
 
-      function attachFormHandler(id, submit) {
+      function attachFormHandler(id, submit, fallbackOutputId) {
         const form = document.getElementById(id);
         if (!form) {
           return;
@@ -908,8 +908,9 @@ function clientScript(): string {
         form.addEventListener('submit', async (event) => {
           event.preventDefault();
           const formData = new FormData(form);
+          let payload;
           try {
-            const payload = await submit(formData);
+            payload = await submit(formData);
             if (!payload) {
               return;
             }
@@ -919,7 +920,9 @@ function clientScript(): string {
               updateStatus();
             }
           } catch (error) {
-            setOutput(payload?.outputId ?? 'login-output', {
+            const defaultOutput =
+              payload?.outputId ?? fallbackOutputId ?? form.dataset.outputId ?? 'login-output';
+            setOutput(defaultOutput, {
               error: error instanceof Error ? error.message : String(error)
             });
           }
@@ -944,7 +947,7 @@ function clientScript(): string {
         state.tokenConfigured = true;
         state.lastLogin = { email: formData.get('email'), expiresAt: data.data?.expiresAt };
         return { outputId: 'login-output', data, statusUpdate: { lastLogin: state.lastLogin } };
-      });
+  }, 'login-output');
 
       attachFormHandler('session-create-form', async (formData) => {
         const payload = {};
@@ -968,7 +971,7 @@ function clientScript(): string {
         }
         state.sessionId = data.data?.sessionId ?? null;
         return { outputId: 'session-output', data, statusUpdate: { sessionId: state.sessionId } };
-      });
+  }, 'session-output');
 
       attachFormHandler('session-load-form', async (formData) => {
         const sessionId = resolveSessionId(formData.get('sessionId'));
@@ -979,7 +982,7 @@ function clientScript(): string {
         }
         state.sessionId = data.data?.sessionId ?? sessionId;
         return { outputId: 'session-load-output', data, statusUpdate: { sessionId: state.sessionId } };
-      });
+  }, 'session-load-output');
 
       attachFormHandler('session-delete-form', async (formData) => {
         const sessionId = resolveSessionId(formData.get('sessionId'));
@@ -994,7 +997,7 @@ function clientScript(): string {
           state.sessionId = null;
         }
         return { outputId: 'session-delete-output', data, statusUpdate: { sessionId: state.sessionId } };
-      });
+  }, 'session-delete-output');
 
       attachFormHandler('search-form', async (formData) => {
         const sessionId = resolveSessionId(formData.get('sessionId'));
@@ -1012,7 +1015,7 @@ function clientScript(): string {
           throw new Error(data?.error ?? 'Suche fehlgeschlagen');
         }
         return { outputId: 'search-output', data };
-      });
+  }, 'search-output');
 
       attachFormHandler('chat-form', async (formData) => {
         const sessionId = resolveSessionId(formData.get('sessionId'));
@@ -1031,7 +1034,7 @@ function clientScript(): string {
           throw new Error(data?.error ?? 'Nachricht konnte nicht gesendet werden');
         }
         return { outputId: 'chat-output', data };
-      });
+  }, 'chat-output');
 
       attachFormHandler('reasoning-form', async (formData) => {
         const sessionId = resolveSessionId(formData.get('sessionId'));
@@ -1053,9 +1056,9 @@ function clientScript(): string {
           throw new Error(data?.error ?? 'Reasoning fehlgeschlagen');
         }
         return { outputId: 'reasoning-output', data };
-      });
+      }, 'reasoning-output');
 
-      attachFormHandler('context-form', async (formData) => {
+  attachFormHandler('context-form', async (formData) => {
         const sessionId = resolveSessionId(formData.get('sessionId'));
         const response = await fetch('/context/resolve', {
           method: 'POST',
@@ -1072,9 +1075,9 @@ function clientScript(): string {
           throw new Error(data?.error ?? 'Kontextauflösung fehlgeschlagen');
         }
         return { outputId: 'context-output', data };
-      });
+      }, 'context-output');
 
-      attachFormHandler('clarification-form', async (formData) => {
+  attachFormHandler('clarification-form', async (formData) => {
         const sessionId = resolveSessionId(formData.get('sessionId'));
         const response = await fetch('/clarification/analyze', {
           method: 'POST',
@@ -1090,7 +1093,7 @@ function clientScript(): string {
           throw new Error(data?.error ?? 'Analyse fehlgeschlagen');
         }
         return { outputId: 'clarification-output', data };
-      });
+      }, 'clarification-output');
 
       attachFormHandler('analyze-form', async (formData) => {
         const statusIndicator = document.getElementById('analysis-status');

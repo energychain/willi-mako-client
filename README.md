@@ -164,18 +164,18 @@ Der Container installiert das SDK global und setzt `willi-mako` als EntryPoint. 
 
 Expose die Plattform als **Model Context Protocol (MCP)**-Server, damit interne LLMs geprüfte Marktkommunikationsprozesse anstoßen können. Die CLI kapselt das komplette Setup, eigene Anpassungen können weiterhin auf [`examples/mcp-server.ts`](./examples/mcp-server.ts) aufbauen.
 
-1. **Server starten** (setzt `WILLI_MAKO_TOKEN` voraus):
+1. **Server starten** – Standardmäßig lauscht der Transport auf `http://localhost:7337/mcp`:
    ```bash
-   willi-mako --token "$WILLI_MAKO_TOKEN" mcp --port 7337
+   willi-mako mcp --port 7337
    ```
 
-   Alternativ greift die CLI auf Umgebungsvariablen zurück:
-   ```bash
-   export PORT=7337
-   export WILLI_MAKO_TOKEN="<dein-token>"
-   export WILLI_MAKO_BASE_URL="https://stromhaltig.de/api/v2"
-   willi-mako mcp
-   ```
+   Authentifizierungsmöglichkeiten:
+   - **Bearer**: Sende einen `Authorization: Bearer <token>`-Header oder setze `WILLI_MAKO_TOKEN`. Die CLI akzeptiert weiterhin `--token`.
+   - **Basic**: Alternativ können Clients `Authorization: Basic base64(email:password)` schicken. Der Server tauscht die Credentials automatisch gegen einen JWT und cached ihn.
+   - **Tool-Login**: Ohne Header lässt sich `willi-mako.login` nutzen; das Token wird pro MCP-Session gespeichert.
+   - **Ad-hoc Sessions**: Wenn Tools ohne `sessionId` aufgerufen werden, erstellt der Server automatisch eine Session und gibt die ID im Response-Body zurück.
+
+   👉 Für Schritt-für-Schritt-Anleitungen zu VS Code, Claude, ChatGPT, anythingLLM und n8n siehe [docs/INTEGRATIONS.md](./docs/INTEGRATIONS.md#schritt-für-schritt-mcp-integrationen-in-gängigen-umgebungen).
 
 2. **Bereitgestellte Tools & Ressourcen**
    - `willi-mako.login`, `willi-mako.create-session`, `willi-mako.get-session`, `willi-mako.delete-session`

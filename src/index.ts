@@ -1,3 +1,8 @@
+/**
+ * @module willi-mako-client
+ * High-level TypeScript client utilities, CLI exports, and shared constants for the Willi-Mako API v2.
+ * Consumers should import from this entrypoint to interact with Marktkommunikation workflows programmatically.
+ */
 import { createRequire } from 'node:module';
 import type {
   CreateArtifactRequest,

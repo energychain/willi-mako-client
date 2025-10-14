@@ -1,4 +1,9 @@
 /**
+ * @module willi-mako-client/types
+ * Shared TypeScript interfaces, enums, and helpers that describe the Willi-Mako API surface.
+ * These types power both the runtime client and the CLI for safer Marktkommunikation automation.
+ */
+/**
  * Encoding type for artifact content storage.
  * - `utf8`: Plain text content (recommended for JSON, XML, CSV, EDIFACT text)
  * - `base64`: Binary content (for PDFs, images, or encrypted files)

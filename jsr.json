@@ -1,6 +1,12 @@
 {
   "name": "@energychain/willi-mako-client",
-  "version": "0.2.2",
+  "version": "0.2.3",
+  "description": "Official TypeScript client, CLI, and demo tooling for orchestrating Willi-Mako Marktkommunikation APIs.",
+  "compatibility": {
+    "deno": ">=1.42",
+    "node": ">=18",
+    "bun": ">=1.0"
+  },
   "exports": {
     ".": "./src/index.ts",
     "./cli": "./src/cli.ts",
