@@ -442,18 +442,18 @@ endlocal
 
 ### Tooling-Assistent: Skript-Generierung auf Zuruf
 
-Mit `willi-mako tools generate-script` lässt sich der Reasoning-Stack bitten, ein lauffähiges Node.js-Tool zu erstellen. Sessions werden bei Bedarf automatisch erzeugt; das Ergebnis kann direkt auf der Konsole erscheinen, in eine Datei geschrieben oder als Artefakt gespeichert werden.
+Mit `willi-mako tools generate-script` sprichst du den deterministischen Skriptgenerator der API an. Sessions werden bei Bedarf automatisch erzeugt; das Ergebnis kann direkt auf der Konsole erscheinen, in eine Datei geschrieben oder als Artefakt gespeichert werden. Die CLI zeigt zusätzlich eventuelle Validierungswarnungen des Generators an.
 
 ```bash
 # Skript generieren und lokal als Datei ablegen
 willi-mako tools generate-script \
    --query "Erstelle mir ein Tool, das MSCONS-Nachrichten in CSV konvertiert" \
-   --output mscons-to-csv.mjs
+   --output mscons-to-csv.js
 
 # Optional: Artefakt in Willi-Mako persistieren
 willi-mako tools generate-script \
    --query "Generiere ein Prüftool für UTILMD und liefere JSON-Ausgabe" \
-   --artifact --artifact-name utilmd-validator.mjs
+   --artifact --artifact-name utilmd-validator.js
 ```
 
 > 💡 Über `--input-mode` (`file`, `stdin`, `environment`) und `--output-format` (`csv`, `json`, `text`) steuerst du, wie die generierten Skripte Ein- und Ausgabe handhaben sollen. Mit `--json` erhältst du die Antwort inklusive Skript als strukturiertes JSON.

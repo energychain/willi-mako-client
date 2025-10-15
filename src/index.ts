@@ -24,7 +24,9 @@ import type {
   ContextResolveRequest,
   ContextResolveResponse,
   ClarificationAnalyzeRequest,
-  ClarificationAnalyzeResponse
+  ClarificationAnalyzeResponse,
+  GenerateToolScriptRequest,
+  GenerateToolScriptOperationResponse
 } from './types.js';
 
 const require: NodeJS.Require = createRequire(import.meta.url);
@@ -546,6 +548,21 @@ export class WilliMakoClient {
    */
   public async createArtifact(payload: CreateArtifactRequest): Promise<CreateArtifactResponse> {
     return this.request<CreateArtifactResponse>('/artifacts', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+  }
+
+  /**
+   * Generates a deterministic Node.js tooling script using the dedicated tooling endpoint.
+   */
+  public async generateToolScript(
+    payload: GenerateToolScriptRequest
+  ): Promise<GenerateToolScriptOperationResponse> {
+    return this.request<GenerateToolScriptOperationResponse>('/tools/generate-script', {
       method: 'POST',
       body: JSON.stringify(payload),
       headers: {

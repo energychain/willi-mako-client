@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+## [0.3.1] - 2025-10-15
+
+### Changed
+- `willi-mako tools generate-script` nutzt jetzt das deterministische `/tools/generate-script`-API, zeigt Validierungswarnungen an und erzeugt standardmäßig CommonJS-Skripte mit `.js`-Endung.
+- Das MCP-Tool `willi-mako.generate-tool` liefert Descriptor-, Eingabeschema- und Output-Metadaten der Skript-Generation an Agents zurück.
+- README und Tooling-Hilfen verweisen auf den deterministischen Generator und die neuen Standardausgaben.
+
 ## [0.3.0] - 2025-10-14
 
 ### Added
@@ -70,7 +77,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Vitest test suite covering core client behaviour.
 - Comprehensive documentation, onboarding guides, and community standards.
 
-[Unreleased]: https://github.com/energychain/willi-mako-client/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/energychain/willi-mako-client/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/energychain/willi-mako-client/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/energychain/willi-mako-client/compare/v0.2.3...v0.3.0
 [0.2.3]: https://github.com/energychain/willi-mako-client/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/energychain/willi-mako-client/compare/v0.2.1...v0.2.2

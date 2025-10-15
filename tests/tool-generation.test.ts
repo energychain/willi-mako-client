@@ -26,7 +26,7 @@ describe('tool generation helpers', () => {
   it('derives a default file name from the query', () => {
     const name = deriveSuggestedFileName('MSCONS Nachricht in CSV umwandeln');
     expect(name).toMatch(/mscons-nachricht-in-csv-umwandeln/);
-    expect(name.endsWith('.mjs')).toBe(true);
+    expect(name.endsWith('.js')).toBe(true);
   });
 
   it('builds a prompt including input instructions', () => {
@@ -37,6 +37,6 @@ describe('tool generation helpers', () => {
 
     expect(prompt).toContain('STDIN');
     expect(prompt).toContain('JSON-Datei');
-    expect(prompt).toContain('Erstelle ein eigenständig lauffähiges ES-Modul-Skript');
+    expect(prompt).toContain('Erstelle ein eigenständig lauffähiges CommonJS-Skript');
   });
 });

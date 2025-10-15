@@ -344,7 +344,7 @@ const tools = program.command('tools').description('Tooling sandbox helpers');
 
 tools
   .command('generate-script')
-  .description('Generate a ready-to-run Node.js tool script via the Willi-Mako reasoning API')
+  .description('Generate a ready-to-run Node.js tool script via the deterministic tooling API')
   .requiredOption('-q, --query <text>', 'Natural language description of the desired tool')
   .option('-s, --session <sessionId>', 'Optional session identifier to reuse')
   .option(
@@ -411,6 +411,7 @@ tools
       let artifactResponse: unknown = null;
       if (options.artifact) {
         const artifactName = options.artifactName ?? generation.suggestedFileName;
+        const artifactDescription = generation.description ?? generation.summary;
         artifactResponse = await client.createArtifact({
           sessionId,
           type: options.artifactType ?? 'tool-script',
@@ -418,9 +419,36 @@ tools
           mimeType: 'text/javascript',
           encoding: 'utf8',
           content: generation.code,
-          description: `Automatisch generiertes Tool: ${generation.summary}`
+          description: `Automatisch generiertes Tool: ${artifactDescription}`
         });
         console.error(`✅ Skript als Artefakt "${artifactName}" gespeichert.`);
+      }
+
+      const validation = generation.descriptor.validation;
+      if (!validation.syntaxValid) {
+        console.error(
+          '⚠️  Syntaxprüfung fehlgeschlagen. Bitte prüfe das Skript vor der Ausführung.'
+        );
+      }
+      if (!validation.deterministic) {
+        console.error(
+          '⚠️  Das Skript wurde als nicht deterministisch markiert. Ergebnisse könnten variieren.'
+        );
+      }
+      if (validation.forbiddenApis.length > 0) {
+        console.error(
+          `⚠️  Verbotene APIs erkannt: ${validation.forbiddenApis.map((value) => `"${value}"`).join(', ')}.`
+        );
+      }
+      if (validation.warnings.length > 0) {
+        validation.warnings.forEach((warning) => {
+          console.error(`⚠️  Hinweis: ${warning}`);
+        });
+      }
+      if (generation.descriptor.notes.length > 0) {
+        generation.descriptor.notes.forEach((note) => {
+          console.error(`ℹ️  Generator-Hinweis: ${note}`);
+        });
       }
 
       if (options.json) {
@@ -429,7 +457,11 @@ tools
           script: generation.code,
           suggestedFileName: generation.suggestedFileName,
           summary: generation.summary,
+          description: generation.description,
           language: generation.language ?? 'javascript',
+          descriptor: generation.descriptor,
+          inputSchema: generation.inputSchema,
+          expectedOutputDescription: generation.expectedOutputDescription,
           artifact: artifactResponse
         });
       } else if (options.output) {

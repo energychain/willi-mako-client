@@ -721,7 +721,10 @@ Resources:
           script: generation.code,
           suggestedFileName: generation.suggestedFileName,
           summary: generation.summary,
-          reasoning: generation.reasoningText,
+          description: generation.description,
+          descriptor: generation.descriptor,
+          inputSchema: generation.inputSchema,
+          expectedOutputDescription: generation.expectedOutputDescription,
           artifact: artifactData
         });
       })

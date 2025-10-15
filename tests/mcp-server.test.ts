@@ -13,6 +13,35 @@ const createMockClient = (): WilliMakoClient => {
     chat: noop,
     semanticSearch: noop,
     generateReasoning: noop,
+    generateToolScript: vi.fn(async () => ({
+      success: true,
+      data: {
+        sessionId: 'session-id',
+        script: {
+          code: '// mock code',
+          language: 'javascript',
+          entrypoint: 'run',
+          description: 'mock description',
+          runtime: 'node18',
+          deterministic: true,
+          dependencies: [],
+          source: {
+            language: 'node',
+            hash: 'mock-hash',
+            bytes: 10,
+            preview: '// mock code',
+            lineCount: 1
+          },
+          validation: {
+            syntaxValid: true,
+            deterministic: true,
+            forbiddenApis: [],
+            warnings: []
+          },
+          notes: []
+        }
+      }
+    })),
     resolveContext: noop,
     analyzeClarification: noop,
     createNodeScriptJob: noop,

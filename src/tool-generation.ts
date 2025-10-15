@@ -1,9 +1,17 @@
-import type { ReasoningGenerateRequest, ReasoningGenerateResponse } from './types.js';
+import type {
+  GenerateToolScriptRequest,
+  GenerateToolScriptOperationResponse,
+  ToolScriptConstraints,
+  ToolScriptDescriptor,
+  ToolScriptInputSchema
+} from './types.js';
 
 export type ToolScriptInputMode = 'stdin' | 'file' | 'environment';
 
 export interface ToolGenerationClient {
-  generateReasoning(payload: ReasoningGenerateRequest): Promise<ReasoningGenerateResponse>;
+  generateToolScript(
+    payload: GenerateToolScriptRequest
+  ): Promise<GenerateToolScriptOperationResponse>;
 }
 
 export interface GenerateToolScriptParams {
@@ -21,9 +29,12 @@ export interface GeneratedToolScript {
   code: string;
   language?: string;
   summary: string;
-  reasoningText: string;
+  description?: string;
+  descriptor: ToolScriptDescriptor;
+  inputSchema?: ToolScriptInputSchema;
+  expectedOutputDescription?: string | null;
   suggestedFileName: string;
-  rawResponse: ReasoningGenerateResponse;
+  rawResponse: GenerateToolScriptOperationResponse;
 }
 
 const DEFAULT_OUTPUT_FORMAT = 'text';
@@ -41,8 +52,8 @@ export function buildToolGenerationPrompt(
   const outputFormat = (options.outputFormat ?? DEFAULT_OUTPUT_FORMAT).toLowerCase();
   const shebangInstruction =
     options.includeShebang === false
-      ? 'Das Skript wird ohne Shebang ausgeliefert.'
-      : 'Füge am Anfang einen Shebang `#!/usr/bin/env node` hinzu.';
+      ? '- Liefere das Skript ohne Shebang.'
+      : '- Füge am Anfang einen Shebang `#!/usr/bin/env node` hinzu.';
 
   const inputInstructions: Record<ToolScriptInputMode, string> = {
     file: 'Das Skript nimmt den Pfad zur Eingabedatei als erstes Argument (`process.argv[2]`) entgegen. Validiere, dass das Argument vorhanden ist, und wirf bei Fehlern einen verständlichen Hinweis aus.',
@@ -65,7 +76,7 @@ export function buildToolGenerationPrompt(
 
   return [
     'Du bist Senior Node.js-Ingenieur*in mit Fokus auf Energie-Marktkommunikation.',
-    'Erstelle ein eigenständig lauffähiges ES-Modul-Skript für Node.js 18+.',
+    'Erstelle ein eigenständig lauffähiges CommonJS-Skript für Node.js 18+.',
     `Auftrag:\n${query}`,
     '',
     'Vorgaben:',
@@ -75,12 +86,13 @@ export function buildToolGenerationPrompt(
     `- ${inputInstructions[inputMode]}`,
     `- ${outputInstruction}`,
     '- Stelle sicher, dass Pfade plattformunabhängig über `path` aufgelöst werden.',
-    '- Führe am Ende eine kurze Erfolgsnachricht über `console.log` aus.',
-    shebangInstruction,
-    '- Das Skript soll direkt ausgeführt werden können (`if (process.argv[1] === fileURLToPath(import.meta.url)) { ... }`).',
     '- Verwende moderne Sprachfeatures (async/await, const/let, Template Strings).',
+    '- Nutze ausschließlich `require()`-Aufrufe auf Standardbibliotheken (z. B. `fs/promises`, `path`).',
+    '- Exportiere eine asynchrone Funktion `run` (`module.exports = { run }`).',
+    '- Führe `run()` automatisch aus, wenn das Skript direkt gestartet wird (`if (require.main === module) { run().catch(...) }`).',
+    '- Führe am Ende eine kurze Erfolgsnachricht über `console.log` aus.',
     '- Überschreibe keine bestehenden Dateien ohne Benutzerbestätigung.',
-    '- Gib das Ergebnis ausschließlich als ```javascript``` Codeblock zurück – ohne zusätzliche Erklärtexte.',
+    shebangInstruction,
     additional
   ]
     .filter(Boolean)
@@ -118,7 +130,7 @@ export function deriveSuggestedFileName(query: string, explicitName?: string): s
   const slug = normalized.length > 0 ? normalized.slice(0, 48) : 'generated-tool';
   const base = slug.length > 0 ? slug : 'tool-script';
   const name = base.replace(/-+/g, '-');
-  const extension = name.endsWith('.js') || name.endsWith('.mjs') ? '' : '.mjs';
+  const extension = name.endsWith('.js') ? '' : '.js';
   return `${name}${extension}`;
 }
 
@@ -132,33 +144,63 @@ export async function generateToolScript({
   includeShebang,
   additionalContext
 }: GenerateToolScriptParams): Promise<GeneratedToolScript> {
-  const prompt = buildToolGenerationPrompt(query, {
+  const instructions = buildToolGenerationPrompt(query, {
     preferredInputMode,
     outputFormat,
     includeShebang,
     additionalContext
   });
+  const expectedOutputDescription = deriveExpectedOutputDescription(outputFormat);
+  const constraints = buildDefaultConstraints(preferredInputMode);
 
-  const reasoningResponse = await client.generateReasoning({
+  const response = await client.generateToolScript({
     sessionId,
-    query: prompt,
-    useDetailedIntentAnalysis: true
+    instructions,
+    expectedOutputDescription,
+    additionalContext,
+    constraints
   });
 
-  const reasoningText = reasoningResponse.data?.response ?? '';
-  const codeBlock = extractPrimaryCodeBlock(reasoningText);
-  const code = codeBlock?.code ?? reasoningText.trim();
-
-  if (!code) {
-    throw new Error('Die Reasoning-Antwort enthielt kein Skript.');
-  }
+  const descriptor = response.data.script;
 
   return {
-    code,
-    language: codeBlock?.language,
+    code: descriptor.code,
+    language: descriptor.language,
     summary: query,
-    reasoningText,
+    description: descriptor.description,
+    descriptor,
+    inputSchema: response.data.inputSchema,
+    expectedOutputDescription: response.data.expectedOutputDescription ?? null,
     suggestedFileName: deriveSuggestedFileName(query, fileNameHint),
-    rawResponse: reasoningResponse
+    rawResponse: response
   };
+}
+
+function deriveExpectedOutputDescription(outputFormat?: string): string | undefined {
+  if (!outputFormat) {
+    return undefined;
+  }
+
+  const format = outputFormat.toLowerCase();
+  if (format === 'csv') {
+    return 'Das Tool soll eine CSV-Datei erzeugen und im aktuellen Arbeitsverzeichnis speichern.';
+  }
+  if (format === 'json') {
+    return 'Das Tool soll eine JSON-Datei mit strukturierten Ergebnissen erzeugen.';
+  }
+  return 'Das Tool soll eine Textausgabe erzeugen und speichern.';
+}
+
+function buildDefaultConstraints(inputMode?: ToolScriptInputMode): ToolScriptConstraints {
+  const constraints: ToolScriptConstraints = {
+    deterministic: true,
+    allowNetwork: false,
+    allowFilesystem: true
+  };
+
+  if (inputMode === 'environment') {
+    constraints.allowFilesystem = true;
+  }
+
+  return constraints;
 }

@@ -477,6 +477,112 @@ export interface ToolJob {
 }
 
 /**
+ * Validation metadata returned by the deterministic tooling generator.
+ */
+export interface ToolScriptValidationReport {
+  /** Indicates whether the generated script passed syntax verification */
+  syntaxValid: boolean;
+  /** Indicates whether the generator confirmed deterministic behaviour */
+  deterministic: boolean;
+  /** List of forbidden APIs detected during validation */
+  forbiddenApis: string[];
+  /** Additional warnings raised during validation */
+  warnings: string[];
+}
+
+/**
+ * Descriptor describing a generated tooling script.
+ */
+export interface ToolScriptDescriptor {
+  /** Generated source code (CommonJS module) */
+  code: string;
+  /** Programming language identifier */
+  language: 'javascript';
+  /** Entrypoint identifier (currently 'run') */
+  entrypoint: 'run';
+  /** Human readable description of the script purpose */
+  description: string;
+  /** Runtime that the script targets */
+  runtime: 'node18';
+  /** Whether the script is guaranteed to be deterministic */
+  deterministic: boolean;
+  /** External dependencies required for execution (should be empty) */
+  dependencies: string[];
+  /** Source metadata mirroring sandbox job descriptors */
+  source: ToolJobSourceInfo;
+  /** Validation metadata produced by the generator */
+  validation: ToolScriptValidationReport;
+  /** Additional notes provided by the generator */
+  notes: string[];
+}
+
+/**
+ * Optional schema describing the expected input parameters of a generated script.
+ */
+export interface ToolScriptInputSchemaProperty {
+  type?: string;
+  description?: string;
+  example?: unknown;
+}
+
+export interface ToolScriptInputSchema {
+  type?: 'object';
+  description?: string;
+  properties?: Record<string, ToolScriptInputSchemaProperty>;
+  required?: string[];
+}
+
+/**
+ * Constraints that can be applied when generating deterministic tooling scripts.
+ */
+export interface ToolScriptConstraints {
+  deterministic?: boolean;
+  allowNetwork?: boolean;
+  allowFilesystem?: boolean;
+  maxRuntimeMs?: number;
+}
+
+/**
+ * Request payload for the deterministic tooling generator endpoint.
+ */
+export interface GenerateToolScriptRequest {
+  /** Session owning the generated script */
+  sessionId: string;
+  /** Natural language instructions describing the desired tool */
+  instructions: string;
+  /** Optional JSON schema describing the expected input shape */
+  inputSchema?: ToolScriptInputSchema;
+  /** Optional description of the expected output */
+  expectedOutputDescription?: string;
+  /** Additional domain context or constraints */
+  additionalContext?: string;
+  /** Hard constraints for the execution environment */
+  constraints?: ToolScriptConstraints;
+}
+
+/**
+ * Response payload returned by the deterministic tooling generator endpoint.
+ */
+export interface GenerateToolScriptResponse {
+  /** Session identifier reused or created for the script */
+  sessionId: string;
+  /** Descriptor containing the generated script */
+  script: ToolScriptDescriptor;
+  /** Optional schema describing the expected input shape */
+  inputSchema?: ToolScriptInputSchema;
+  /** Optional description of the expected output */
+  expectedOutputDescription?: string | null;
+}
+
+/**
+ * Standard API wrapper around the deterministic tooling generator response.
+ */
+export interface GenerateToolScriptOperationResponse {
+  success: boolean;
+  data: GenerateToolScriptResponse;
+}
+
+/**
  * Request payload for creating a Node.js sandbox job.
  * Submit JavaScript/TypeScript code to be executed in a secure sandbox environment.
  *
