@@ -442,7 +442,7 @@ endlocal
 
 ### Tooling-Assistent: Skript-Generierung auf Zuruf
 
-Mit `willi-mako tools generate-script` sprichst du den deterministischen Skriptgenerator der API an. Sessions werden bei Bedarf automatisch erzeugt; das Ergebnis kann direkt auf der Konsole erscheinen, in eine Datei geschrieben oder als Artefakt gespeichert werden. Die CLI zeigt zusätzlich eventuelle Validierungswarnungen des Generators an.
+Mit `willi-mako tools generate-script` sprichst du den deterministischen Skriptgenerator der API an. Die CLI stößt einen asynchronen Job an, pollt den Fortschritt (`collecting-context`, `prompting`, `drafting`, …) und streamt Status-Updates sofort ins Terminal. Sessions werden bei Bedarf automatisch erzeugt; das Ergebnis kann direkt auf der Konsole erscheinen, in eine Datei geschrieben oder als Artefakt gespeichert werden. Nach Abschluss blendet die CLI erneut zusammengefasste Job-Informationen und etwaige Validierungswarnungen ein.
 
 ```bash
 # Skript generieren und lokal als Datei ablegen
@@ -457,6 +457,33 @@ willi-mako tools generate-script \
 ```
 
 > 💡 Über `--input-mode` (`file`, `stdin`, `environment`) und `--output-format` (`csv`, `json`, `text`) steuerst du, wie die generierten Skripte Ein- und Ausgabe handhaben sollen. Mit `--json` erhältst du die Antwort inklusive Skript als strukturiertes JSON.
+
+> ℹ️  JSON-Antworten enthalten neben dem beschriebenen Skript jetzt auch das vollständige Job-Objekt (`data.job`) inklusive `status`, `progress`, `attempts` und `warnings`. Beispiel:
+> ```json
+> {
+>   "data": {
+>     "code": "...",
+>     "suggestedFileName": "mscons-to-csv.js",
+>     "job": {
+>       "id": "job_123",
+>       "status": "succeeded",
+>       "progress": { "stage": "prompting", "message": "Verarbeite Kontext" },
+>       "attempts": 1,
+>       "warnings": []
+>     }
+>   }
+> }
+> ```
+
+### Lokale Tests wie nach einem Publish
+
+Um die npm-Veröffentlichung lokal zu simulieren, kannst du das Repository paketieren und global installieren:
+
+```bash
+./scripts/local-pack-install.sh
+```
+
+Das Skript führt Tests und Build aus, erstellt per `npm pack` das Release-Tarball und installiert es anschließend mit `npm install -g`. So bekommst du exakt das Artefakt, das später über `npm publish` ausgeliefert würde – ganz ohne manuelles Packen oder Linken.
 
 ### Tooling-Beispiel: MSCONS → CSV Converter
 

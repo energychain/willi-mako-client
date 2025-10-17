@@ -12,7 +12,15 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { ErrorCode, McpError } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
-import { WilliMakoClient, WilliMakoError, generateToolScript } from '../index.js';
+import {
+  WilliMakoClient,
+  WilliMakoError,
+  extractToolGenerationErrorDetails,
+  generateToolScript,
+  ToolGenerationJobFailedError,
+  ToolGenerationJobTimeoutError,
+  type GenerateToolScriptJob
+} from '../index.js';
 import type {
   ChatRequest,
   ClarificationAnalyzeRequest,
@@ -691,42 +699,155 @@ Resources:
           transportSessionId,
           sessionId
         );
-        const generation = await generateToolScript({
-          client: clientInstance,
-          sessionId: activeSessionId,
-          query: task,
-          preferredInputMode: inputMode,
-          outputFormat,
-          fileNameHint: artifactName,
-          additionalContext
-        });
+        const progressLog: Array<{
+          status: GenerateToolScriptJob['status'];
+          stage: string | null;
+          message: string | null;
+          attempt: number | null;
+          warnings: string[];
+          timestamp: string;
+        }> = [];
 
-        let artifactData: JsonLike | null = null;
-        if (persistArtifact) {
-          const persisted = await clientInstance.createArtifact({
-            sessionId: activeSessionId,
-            type: artifactType ?? 'tool-script',
-            name: artifactName ?? generation.suggestedFileName,
-            mimeType: 'text/javascript',
-            encoding: 'utf8',
-            content: generation.code,
-            description: `Automatisch generiertes Tool: ${generation.summary}`
+        const recordJobUpdate = (job: GenerateToolScriptJob) => {
+          const stage = job.progress?.stage ?? null;
+          const message = job.progress?.message ?? null;
+          const attempt =
+            typeof job.progress?.attempt === 'number'
+              ? job.progress?.attempt
+              : job.attempts > 0
+                ? job.attempts
+                : null;
+
+          const last = progressLog.at(-1);
+          if (
+            last &&
+            last.status === job.status &&
+            last.stage === stage &&
+            last.message === message &&
+            last.attempt === attempt
+          ) {
+            return;
+          }
+
+          progressLog.push({
+            status: job.status,
+            stage,
+            message,
+            attempt,
+            warnings: job.warnings,
+            timestamp: new Date().toISOString()
           });
-          artifactData = persisted.data as JsonLike;
-        }
 
-        return respond({
-          success: true,
-          sessionId: activeSessionId,
-          script: generation.code,
-          suggestedFileName: generation.suggestedFileName,
-          summary: generation.summary,
-          description: generation.description,
-          descriptor: generation.descriptor,
-          inputSchema: generation.inputSchema,
-          expectedOutputDescription: generation.expectedOutputDescription,
-          artifact: artifactData
-        });
+          options.logger?.(
+            `MCP generate-tool job ${job.id} – status=${job.status}` +
+              (stage ? ` stage=${stage}` : '') +
+              (message ? ` message=${message}` : '')
+          );
+        };
+
+        try {
+          const generation = await generateToolScript({
+            client: clientInstance,
+            sessionId: activeSessionId,
+            query: task,
+            preferredInputMode: inputMode,
+            outputFormat,
+            fileNameHint: artifactName,
+            additionalContext,
+            onJobUpdate: recordJobUpdate
+          });
+
+          recordJobUpdate(generation.job);
+
+          let artifactData: JsonLike | null = null;
+          if (persistArtifact) {
+            const persisted = await clientInstance.createArtifact({
+              sessionId: activeSessionId,
+              type: artifactType ?? 'tool-script',
+              name: artifactName ?? generation.suggestedFileName,
+              mimeType: 'text/javascript',
+              encoding: 'utf8',
+              content: generation.code,
+              description: `Automatisch generiertes Tool: ${generation.summary}`
+            });
+            artifactData = persisted.data as JsonLike;
+          }
+
+          return respond({
+            success: true,
+            sessionId: activeSessionId,
+            jobId: generation.job.id,
+            job: generation.job,
+            progressLog,
+            attempts: generation.job.attempts,
+            warnings: generation.job.warnings,
+            script: generation.code,
+            suggestedFileName: generation.suggestedFileName,
+            summary: generation.summary,
+            description: generation.description,
+            descriptor: generation.descriptor,
+            inputSchema: generation.inputSchema,
+            expectedOutputDescription: generation.expectedOutputDescription,
+            artifact: artifactData
+          });
+        } catch (error) {
+          if (error instanceof ToolGenerationJobTimeoutError) {
+            recordJobUpdate(error.job);
+            return respond({
+              success: false,
+              sessionId: activeSessionId,
+              jobId: error.job.id,
+              job: error.job,
+              progressLog,
+              error: {
+                status: null,
+                code: 'timeout',
+                message: error.message
+              }
+            });
+          }
+
+          if (error instanceof ToolGenerationJobFailedError) {
+            recordJobUpdate(error.job);
+            return respond({
+              success: false,
+              sessionId: activeSessionId,
+              jobId: error.job.id,
+              job: error.job,
+              progressLog,
+              error: {
+                status: null,
+                code: error.job.error?.code ?? null,
+                message: error.message
+              },
+              metadata: {
+                attempts: error.job.attempts,
+                warnings: error.job.warnings,
+                generator: error.job.error?.details ?? null
+              }
+            });
+          }
+
+          if (error instanceof WilliMakoError) {
+            const details = extractToolGenerationErrorDetails(error.body);
+            return respond({
+              success: false,
+              sessionId: activeSessionId,
+              progressLog,
+              error: {
+                status: error.status,
+                code: details?.code ?? null,
+                message: details?.message ?? error.message
+              },
+              metadata: {
+                attempts: details?.attempts ?? null,
+                generator: details?.metadata ?? null
+              }
+            });
+          }
+
+          throw error;
+        }
       })
   );
 

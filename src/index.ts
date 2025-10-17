@@ -26,7 +26,7 @@ import type {
   ClarificationAnalyzeRequest,
   ClarificationAnalyzeResponse,
   GenerateToolScriptRequest,
-  GenerateToolScriptOperationResponse
+  GenerateToolScriptJobOperationResponse
 } from './types.js';
 
 const require: NodeJS.Require = createRequire(import.meta.url);
@@ -561,8 +561,8 @@ export class WilliMakoClient {
    */
   public async generateToolScript(
     payload: GenerateToolScriptRequest
-  ): Promise<GenerateToolScriptOperationResponse> {
-    return this.request<GenerateToolScriptOperationResponse>('/tools/generate-script', {
+  ): Promise<GenerateToolScriptJobOperationResponse> {
+    return this.request<GenerateToolScriptJobOperationResponse>('/tools/generate-script', {
       method: 'POST',
       body: JSON.stringify(payload),
       headers: {

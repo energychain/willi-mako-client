@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   buildToolGenerationPrompt,
   deriveSuggestedFileName,
-  extractPrimaryCodeBlock
+  extractPrimaryCodeBlock,
+  extractToolGenerationErrorDetails
 } from '../src/tool-generation.js';
 
 describe('tool generation helpers', () => {
@@ -38,5 +39,26 @@ describe('tool generation helpers', () => {
     expect(prompt).toContain('STDIN');
     expect(prompt).toContain('JSON-Datei');
     expect(prompt).toContain('Erstelle ein eigenständig lauffähiges CommonJS-Skript');
+  });
+
+  it('extracts attempts metadata from error payloads', () => {
+    const body = {
+      error: { code: 'generation_failed', message: 'Unable to generate script' },
+      metadata: {
+        attempts: [
+          { attempt: 1, status: 'failed', message: 'Invalid instructions' },
+          { attempt: 2, status: 'failed', message: 'Timeout' }
+        ],
+        lastAttemptedAt: '2025-10-16T08:00:00.000Z'
+      }
+    };
+
+    const details = extractToolGenerationErrorDetails(body);
+    expect(details).not.toBeNull();
+    expect(details?.code).toBe('generation_failed');
+    expect(details?.message).toBe('Unable to generate script');
+    expect(Array.isArray(details?.attempts)).toBe(true);
+    expect((details?.attempts as unknown[]).length).toBe(2);
+    expect(details?.metadata?.lastAttemptedAt).toBe('2025-10-16T08:00:00.000Z');
   });
 });

@@ -400,6 +400,27 @@ export interface CreateArtifactResponse {
  */
 export type ToolJobStatus = 'queued' | 'running' | 'succeeded' | 'failed' | 'cancelled';
 
+export type GenerateScriptProgressStage =
+  | 'queued'
+  | 'collecting-context'
+  | 'prompting'
+  | 'repairing'
+  | 'validating'
+  | 'testing'
+  | 'completed';
+
+export interface ToolJobProgress {
+  stage: GenerateScriptProgressStage;
+  message?: string | null;
+  attempt?: number | null;
+}
+
+export interface ToolJobError {
+  message: string;
+  code?: string;
+  details?: Record<string, unknown> | null;
+}
+
 /**
  * Metadata about the source code submitted for execution.
  */
@@ -420,7 +441,7 @@ export interface ToolJobSourceInfo {
  * Execution result of a completed or failed job.
  * Contains output streams and timing information.
  */
-export interface ToolJobResult {
+export interface RunNodeScriptJobResult {
   /** ISO 8601 timestamp when execution completed */
   completedAt?: string;
   /** Execution duration in milliseconds */
@@ -436,7 +457,7 @@ export interface ToolJobResult {
 /**
  * Diagnostic information about job execution capabilities and constraints.
  */
-export interface ToolJobDiagnostics {
+export interface RunNodeScriptJobDiagnostics {
   /** Whether code execution is currently enabled for this job */
   executionEnabled: boolean;
   /** Additional notes about execution constraints or warnings */
@@ -449,11 +470,11 @@ export interface ToolJobDiagnostics {
  * Useful for testing EDIFACT parsing logic, validation rules, or data transformations
  * before deploying to production ETL pipelines.
  */
-export interface ToolJob {
+export interface ToolJobBase {
   /** Unique job identifier */
   id: string;
-  /** Job type (currently only 'run-node-script' is supported) */
-  type: 'run-node-script';
+  /** Job type identifier */
+  type: 'run-node-script' | 'generate-script';
   /** Session ID this job belongs to */
   sessionId: string;
   /** Current execution status */
@@ -462,6 +483,12 @@ export interface ToolJob {
   createdAt: string;
   /** ISO 8601 timestamp when the job was last updated */
   updatedAt: string;
+  /** Array of warning messages generated during processing */
+  warnings: string[];
+}
+
+export interface RunNodeScriptJob extends ToolJobBase {
+  type: 'run-node-script';
   /** Maximum execution time in milliseconds (500-60000) */
   timeoutMs: number;
   /** Optional custom metadata attached to the job */
@@ -469,12 +496,26 @@ export interface ToolJob {
   /** Information about the submitted source code */
   source: ToolJobSourceInfo;
   /** Execution result (null if job hasn't completed) */
-  result: ToolJobResult | null;
-  /** Array of warning messages generated during processing */
-  warnings: string[];
+  result: RunNodeScriptJobResult | null;
   /** Execution diagnostics and constraints */
-  diagnostics: ToolJobDiagnostics;
+  diagnostics: RunNodeScriptJobDiagnostics;
 }
+
+export interface GenerateToolScriptJob extends ToolJobBase {
+  type: 'generate-script';
+  /** Current progress information (null if not available) */
+  progress: ToolJobProgress | null;
+  /** Number of attempts performed by the generator */
+  attempts: number;
+  /** Optional custom metadata attached to the job */
+  metadata?: Record<string, unknown> | null;
+  /** Result payload containing the generated script when successful */
+  result: GenerateToolScriptResponse | null;
+  /** Error payload describing why the job failed */
+  error: ToolJobError | null;
+}
+
+export type ToolJob = RunNodeScriptJob | GenerateToolScriptJob;
 
 /**
  * Validation metadata returned by the deterministic tooling generator.
@@ -574,12 +615,19 @@ export interface GenerateToolScriptResponse {
   expectedOutputDescription?: string | null;
 }
 
+export interface GenerateToolScriptJobResponse {
+  /** Session identifier the job belongs to */
+  sessionId: string;
+  /** Job information allowing clients to poll for completion */
+  job: GenerateToolScriptJob;
+}
+
 /**
- * Standard API wrapper around the deterministic tooling generator response.
+ * Standard API wrapper around the asynchronous tooling generator response.
  */
-export interface GenerateToolScriptOperationResponse {
+export interface GenerateToolScriptJobOperationResponse {
   success: boolean;
-  data: GenerateToolScriptResponse;
+  data: GenerateToolScriptJobResponse;
 }
 
 /**

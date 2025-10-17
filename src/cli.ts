@@ -22,7 +22,8 @@ import {
   type SemanticSearchRequest,
   type ReasoningGenerateRequest,
   type ContextResolveRequest,
-  type ClarificationAnalyzeRequest
+  type ClarificationAnalyzeRequest,
+  type GenerateToolScriptJob
 } from './index.js';
 import {
   applyLoginEnvironmentToken,
@@ -33,7 +34,13 @@ import {
 } from './cli-utils.js';
 import { startWebDashboard } from './demos/web-dashboard.js';
 import { startMcpServer } from './demos/mcp-server.js';
-import { generateToolScript, type ToolScriptInputMode } from './tool-generation.js';
+import {
+  extractToolGenerationErrorDetails,
+  generateToolScript,
+  ToolGenerationJobFailedError,
+  ToolGenerationJobTimeoutError,
+  type ToolScriptInputMode
+} from './tool-generation.js';
 
 const program = new Command();
 let keepAlive = false;
@@ -386,95 +393,236 @@ tools
       let sessionId = options.session;
       let createdSessionId: string | null = null;
 
-      if (!sessionId) {
-        const sessionResponse = await client.createSession({});
-        sessionId = sessionResponse.data.sessionId;
-        createdSessionId = sessionId;
-        console.error(`ℹ️  Session ${sessionId} wurde temporär erstellt.`);
-      }
+      let lastStatus: string | null = null;
+      let lastStage: string | null = null;
+      let lastMessage: string | null = null;
 
-      const outputNameHint = options.output
-        ? options.output.split(/[/\\]/).pop()
-        : options.artifactName;
+      const logJobUpdate = (job: GenerateToolScriptJob, force = false) => {
+        const stage = job.progress?.stage ?? null;
+        const message = job.progress?.message ?? null;
+        const attemptLabel = job.progress?.attempt ?? (job.attempts > 0 ? job.attempts : null);
 
-      const generation = await generateToolScript({
-        client,
-        sessionId,
-        query: options.query,
-        preferredInputMode: options.inputMode,
-        outputFormat: options.outputFormat,
-        fileNameHint: outputNameHint,
-        includeShebang: options.shebang !== false,
-        additionalContext: options.context
-      });
+        const statusChanged = job.status !== lastStatus;
+        const stageChanged = stage !== lastStage;
+        const messageChanged = message !== lastMessage;
 
-      let artifactResponse: unknown = null;
-      if (options.artifact) {
-        const artifactName = options.artifactName ?? generation.suggestedFileName;
-        const artifactDescription = generation.description ?? generation.summary;
-        artifactResponse = await client.createArtifact({
+        if (force || statusChanged || stageChanged || messageChanged) {
+          const parts = [
+            `Status: ${job.status}`,
+            stage ? `Phase: ${stage}` : null,
+            typeof attemptLabel === 'number' ? `Versuch ${attemptLabel}` : null,
+            message ? `Hinweis: ${message}` : null
+          ].filter(Boolean);
+          console.error(`⏳ Generator-Job ${job.id} – ${parts.join(' | ')}`);
+        }
+
+        lastStatus = job.status;
+        lastStage = stage;
+        lastMessage = message;
+      };
+
+      const logJobAttempts = (job: GenerateToolScriptJob) => {
+        if (job.attempts > 1) {
+          console.error(`ℹ️  Der Generator benötigte ${job.attempts} Versuche.`);
+        }
+      };
+
+      const logJobWarnings = (job: GenerateToolScriptJob) => {
+        if (job.warnings.length > 0) {
+          job.warnings.forEach((warning) => {
+            console.error(`⚠️  Generator-Warnung: ${warning}`);
+          });
+        }
+      };
+
+      try {
+        if (!sessionId) {
+          const sessionResponse = await client.createSession({});
+          sessionId = sessionResponse.data.sessionId;
+          createdSessionId = sessionId;
+          console.error(`ℹ️  Session ${sessionId} wurde temporär erstellt.`);
+        }
+
+        const outputNameHint = options.output
+          ? options.output.split(/[/\\]/).pop()
+          : options.artifactName;
+
+        const generation = await generateToolScript({
+          client,
           sessionId,
-          type: options.artifactType ?? 'tool-script',
-          name: artifactName,
-          mimeType: 'text/javascript',
-          encoding: 'utf8',
-          content: generation.code,
-          description: `Automatisch generiertes Tool: ${artifactDescription}`
+          query: options.query,
+          preferredInputMode: options.inputMode,
+          outputFormat: options.outputFormat,
+          fileNameHint: outputNameHint,
+          includeShebang: options.shebang !== false,
+          additionalContext: options.context,
+          onJobUpdate: (job) => logJobUpdate(job)
         });
-        console.error(`✅ Skript als Artefakt "${artifactName}" gespeichert.`);
-      }
 
-      const validation = generation.descriptor.validation;
-      if (!validation.syntaxValid) {
-        console.error(
-          '⚠️  Syntaxprüfung fehlgeschlagen. Bitte prüfe das Skript vor der Ausführung.'
-        );
-      }
-      if (!validation.deterministic) {
-        console.error(
-          '⚠️  Das Skript wurde als nicht deterministisch markiert. Ergebnisse könnten variieren.'
-        );
-      }
-      if (validation.forbiddenApis.length > 0) {
-        console.error(
-          `⚠️  Verbotene APIs erkannt: ${validation.forbiddenApis.map((value) => `"${value}"`).join(', ')}.`
-        );
-      }
-      if (validation.warnings.length > 0) {
-        validation.warnings.forEach((warning) => {
-          console.error(`⚠️  Hinweis: ${warning}`);
-        });
-      }
-      if (generation.descriptor.notes.length > 0) {
-        generation.descriptor.notes.forEach((note) => {
-          console.error(`ℹ️  Generator-Hinweis: ${note}`);
-        });
-      }
+        const job = generation.job;
+        logJobAttempts(job);
+        logJobWarnings(job);
 
-      if (options.json) {
-        outputJson({
-          sessionId,
-          script: generation.code,
-          suggestedFileName: generation.suggestedFileName,
-          summary: generation.summary,
-          description: generation.description,
-          language: generation.language ?? 'javascript',
-          descriptor: generation.descriptor,
-          inputSchema: generation.inputSchema,
-          expectedOutputDescription: generation.expectedOutputDescription,
-          artifact: artifactResponse
-        });
-      } else if (options.output) {
-        await fs.writeFile(options.output, generation.code, 'utf8');
-        console.error(`✅ Skript nach ${options.output} geschrieben.`);
-      } else {
-        process.stdout.write(`${generation.code}\n`);
-      }
+        let artifactResponse: unknown = null;
+        if (options.artifact) {
+          const artifactName = options.artifactName ?? generation.suggestedFileName;
+          const artifactDescription = generation.description ?? generation.summary;
+          artifactResponse = await client.createArtifact({
+            sessionId,
+            type: options.artifactType ?? 'tool-script',
+            name: artifactName,
+            mimeType: 'text/javascript',
+            encoding: 'utf8',
+            content: generation.code,
+            description: `Automatisch generiertes Tool: ${artifactDescription}`
+          });
+          console.error(`✅ Skript als Artefakt "${artifactName}" gespeichert.`);
+        }
 
-      if (createdSessionId) {
-        console.error(
-          `ℹ️  Die Session ${createdSessionId} wurde automatisch erzeugt. Lösche sie bei Bedarf mit "willi-mako sessions delete ${createdSessionId}".`
-        );
+        const validation = generation.descriptor.validation;
+        if (!validation.syntaxValid) {
+          console.error(
+            '⚠️  Syntaxprüfung fehlgeschlagen. Bitte prüfe das Skript vor der Ausführung.'
+          );
+        }
+        if (!validation.deterministic) {
+          console.error(
+            '⚠️  Das Skript wurde als nicht deterministisch markiert. Ergebnisse könnten variieren.'
+          );
+        }
+        if (validation.forbiddenApis.length > 0) {
+          console.error(
+            `⚠️  Verbotene APIs erkannt: ${validation.forbiddenApis.map((value) => `"${value}"`).join(', ')}.`
+          );
+        }
+        if (validation.warnings.length > 0) {
+          validation.warnings.forEach((warning) => {
+            console.error(`⚠️  Hinweis: ${warning}`);
+          });
+        }
+        if (generation.descriptor.notes.length > 0) {
+          generation.descriptor.notes.forEach((note) => {
+            console.error(`ℹ️  Generator-Hinweis: ${note}`);
+          });
+        }
+
+        if (options.json) {
+          outputJson({
+            sessionId,
+            script: generation.code,
+            suggestedFileName: generation.suggestedFileName,
+            summary: generation.summary,
+            description: generation.description,
+            language: generation.language ?? 'javascript',
+            descriptor: generation.descriptor,
+            inputSchema: generation.inputSchema,
+            expectedOutputDescription: generation.expectedOutputDescription,
+            artifact: artifactResponse,
+            job,
+            attempts: job.attempts,
+            warnings: job.warnings
+          });
+        } else if (options.output) {
+          await fs.writeFile(options.output, generation.code, 'utf8');
+          console.error(`✅ Skript nach ${options.output} geschrieben.`);
+        } else {
+          process.stdout.write(`${generation.code}\n`);
+        }
+
+        if (createdSessionId) {
+          console.error(
+            `ℹ️  Die Session ${createdSessionId} wurde automatisch erzeugt. Lösche sie bei Bedarf mit "willi-mako sessions delete ${createdSessionId}".`
+          );
+        }
+      } catch (error) {
+        if (error instanceof ToolGenerationJobTimeoutError) {
+          const job = error.job;
+          console.error(`⏱️  Tool-Generierung abgebrochen: ${error.message}`);
+          logJobUpdate(job, true);
+          logJobAttempts(job);
+          logJobWarnings(job);
+
+          if (createdSessionId) {
+            console.error(
+              `ℹ️  Die Session ${createdSessionId} wurde automatisch erzeugt. Lösche sie bei Bedarf mit "willi-mako sessions delete ${createdSessionId}".`
+            );
+          }
+
+          process.exit(1);
+        }
+
+        if (error instanceof ToolGenerationJobFailedError) {
+          const job = error.job;
+          console.error(`❌ Tool-Generierung fehlgeschlagen: ${error.message}`);
+          if (job.error?.code) {
+            console.error(`   Fehlercode: ${job.error.code}`);
+          }
+          logJobUpdate(job, true);
+          logJobAttempts(job);
+          logJobWarnings(job);
+          if (job.error?.details) {
+            console.error('ℹ️  Fehlerdetails:');
+            console.error(inspect(job.error.details, false, 5, true));
+          }
+
+          if (createdSessionId) {
+            console.error(
+              `ℹ️  Die Session ${createdSessionId} wurde automatisch erzeugt. Lösche sie bei Bedarf mit "willi-mako sessions delete ${createdSessionId}".`
+            );
+          }
+
+          process.exit(1);
+        }
+
+        if (error instanceof WilliMakoError) {
+          const details = extractToolGenerationErrorDetails(error.body);
+          const message = details?.message ?? error.message ?? 'Tool-Generierung fehlgeschlagen.';
+          console.error(`❌ Tool-Generierung fehlgeschlagen: ${message}`);
+          if (details?.code) {
+            console.error(`   Fehlercode: ${details.code}`);
+          }
+
+          const attempts = details?.attempts;
+          if (Array.isArray(attempts) && attempts.length > 0) {
+            console.error('📋 Generator-Versuche:');
+            attempts.forEach((attempt, index) => {
+              const label = (attempt as Record<string, unknown>)?.attempt ?? index + 1;
+              const status = (attempt as Record<string, unknown>)?.status;
+              const reason =
+                (attempt as Record<string, unknown>)?.message ??
+                ((attempt as Record<string, unknown>)?.error as string | undefined);
+              const duration = (attempt as Record<string, unknown>)?.durationMs;
+              const prefix = `   #${label}`;
+              const statusPart = status ? ` [${status}]` : '';
+              const durationPart = typeof duration === 'number' ? ` (${duration} ms)` : '';
+              console.error(`${prefix}${statusPart}${durationPart}${reason ? ` – ${reason}` : ''}`);
+            });
+          } else if (typeof attempts === 'number') {
+            console.error(`📋 Generator-Versuche: ${attempts}`);
+          } else if (attempts !== undefined) {
+            console.error('📋 Generator-Versuche (unbekanntes Format):');
+            console.error(inspect(attempts, false, 5, true));
+          }
+
+          const metadata = details?.metadata;
+          if (metadata) {
+            const { attempts: _ignored, ...rest } = metadata;
+            if (Object.keys(rest).length > 0) {
+              console.error('ℹ️  Weitere Generator-Metadaten:');
+              console.error(inspect(rest, false, 5, true));
+            }
+          }
+
+          if (createdSessionId) {
+            console.error(
+              `ℹ️  Die Session ${createdSessionId} wurde automatisch erzeugt. Lösche sie bei Bedarf mit "willi-mako sessions delete ${createdSessionId}".`
+            );
+          }
+
+          process.exit(1);
+        }
+
+        throw error;
       }
     }
   );

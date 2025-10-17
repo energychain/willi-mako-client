@@ -219,6 +219,8 @@ cat data/mscons-clearing.json | willi-mako artifacts create \
   --mime "application/json"
 ```
 
+> 💡 `willi-mako tools generate-script` startet seit v0.3 eine asynchrone Job-Pipeline. Die CLI zeigt Live-Updates zu `status`, `progress.stage` (z. B. `collecting-context`, `prompting`, `drafting`) sowie etwaige Warnungen an und beendet sich erst, wenn der Job `succeeded` oder `failed` erreicht. Mit `--json` erhältst du neben dem generierten Skript auch das vollständige Job-Objekt (`data.job`) inklusive `attempts`, `warnings` und `progressLog`.
+
 ---
 
 ## Next Steps

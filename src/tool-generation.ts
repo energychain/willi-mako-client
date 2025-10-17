@@ -1,17 +1,24 @@
 import type {
+  GenerateToolScriptJob,
+  GenerateToolScriptJobOperationResponse,
   GenerateToolScriptRequest,
-  GenerateToolScriptOperationResponse,
+  GenerateToolScriptResponse,
+  GetToolJobResponse,
+  ToolJob,
   ToolScriptConstraints,
   ToolScriptDescriptor,
   ToolScriptInputSchema
 } from './types.js';
+
+type UnknownRecord = Record<string, unknown>;
 
 export type ToolScriptInputMode = 'stdin' | 'file' | 'environment';
 
 export interface ToolGenerationClient {
   generateToolScript(
     payload: GenerateToolScriptRequest
-  ): Promise<GenerateToolScriptOperationResponse>;
+  ): Promise<GenerateToolScriptJobOperationResponse>;
+  getToolJob(jobId: string): Promise<GetToolJobResponse>;
 }
 
 export interface GenerateToolScriptParams {
@@ -23,6 +30,10 @@ export interface GenerateToolScriptParams {
   fileNameHint?: string;
   includeShebang?: boolean;
   additionalContext?: string;
+  pollIntervalMs?: number;
+  timeoutMs?: number;
+  signal?: AbortSignal;
+  onJobUpdate?: (job: GenerateToolScriptJob) => void;
 }
 
 export interface GeneratedToolScript {
@@ -34,10 +45,42 @@ export interface GeneratedToolScript {
   inputSchema?: ToolScriptInputSchema;
   expectedOutputDescription?: string | null;
   suggestedFileName: string;
-  rawResponse: GenerateToolScriptOperationResponse;
+  job: GenerateToolScriptJob;
+  initialResponse: GenerateToolScriptJobOperationResponse;
+  result: GenerateToolScriptResponse;
 }
 
 const DEFAULT_OUTPUT_FORMAT = 'text';
+const DEFAULT_POLL_INTERVAL_MS = 2_000;
+const DEFAULT_TIMEOUT_MS = 120_000;
+
+export class ToolGenerationJobFailedError extends Error {
+  public readonly job: GenerateToolScriptJob;
+
+  constructor(job: GenerateToolScriptJob) {
+    super(job.error?.message ?? 'Tool generation job failed');
+    this.name = 'ToolGenerationJobFailedError';
+    this.job = job;
+  }
+}
+
+export class ToolGenerationJobTimeoutError extends Error {
+  public readonly job: GenerateToolScriptJob;
+
+  constructor(job: GenerateToolScriptJob, timeoutMs: number) {
+    super(`Tool generation job timed out after ${timeoutMs} ms`);
+    this.name = 'ToolGenerationJobTimeoutError';
+    this.job = job;
+  }
+}
+
+export interface ToolGenerationErrorDetails {
+  code?: string;
+  message?: string;
+  metadata?: UnknownRecord;
+  attempts?: unknown;
+  rawBody: unknown;
+}
 
 export function buildToolGenerationPrompt(
   query: string,
@@ -142,7 +185,11 @@ export async function generateToolScript({
   outputFormat,
   fileNameHint,
   includeShebang,
-  additionalContext
+  additionalContext,
+  pollIntervalMs = DEFAULT_POLL_INTERVAL_MS,
+  timeoutMs = DEFAULT_TIMEOUT_MS,
+  signal,
+  onJobUpdate
 }: GenerateToolScriptParams): Promise<GeneratedToolScript> {
   const instructions = buildToolGenerationPrompt(query, {
     preferredInputMode,
@@ -153,7 +200,7 @@ export async function generateToolScript({
   const expectedOutputDescription = deriveExpectedOutputDescription(outputFormat);
   const constraints = buildDefaultConstraints(preferredInputMode);
 
-  const response = await client.generateToolScript({
+  const initialResponse = await client.generateToolScript({
     sessionId,
     instructions,
     expectedOutputDescription,
@@ -161,7 +208,33 @@ export async function generateToolScript({
     constraints
   });
 
-  const descriptor = response.data.script;
+  let job = ensureGenerateScriptJob(initialResponse.data.job);
+  onJobUpdate?.(job);
+
+  const startedAt = Date.now();
+
+  while (!isTerminalStatus(job.status)) {
+    if (signal?.aborted) {
+      throw new Error('Tool generation aborted by caller');
+    }
+
+    if (Date.now() - startedAt > timeoutMs) {
+      throw new ToolGenerationJobTimeoutError(job, timeoutMs);
+    }
+
+    await delay(pollIntervalMs);
+
+    const pollResponse = await client.getToolJob(job.id);
+    job = ensureGenerateScriptJob(pollResponse.data.job);
+    onJobUpdate?.(job);
+  }
+
+  if (job.status !== 'succeeded' || !job.result) {
+    throw new ToolGenerationJobFailedError(job);
+  }
+
+  const result = job.result;
+  const descriptor = result.script;
 
   return {
     code: descriptor.code,
@@ -169,10 +242,12 @@ export async function generateToolScript({
     summary: query,
     description: descriptor.description,
     descriptor,
-    inputSchema: response.data.inputSchema,
-    expectedOutputDescription: response.data.expectedOutputDescription ?? null,
+    inputSchema: result.inputSchema,
+    expectedOutputDescription: result.expectedOutputDescription ?? null,
     suggestedFileName: deriveSuggestedFileName(query, fileNameHint),
-    rawResponse: response
+    job,
+    initialResponse,
+    result
   };
 }
 
@@ -203,4 +278,99 @@ function buildDefaultConstraints(inputMode?: ToolScriptInputMode): ToolScriptCon
   }
 
   return constraints;
+}
+
+function ensureGenerateScriptJob(job: ToolJob): GenerateToolScriptJob {
+  if (job.type !== 'generate-script') {
+    throw new Error(`Unexpected job type ${job.type}. Expected generate-script.`);
+  }
+
+  return job;
+}
+
+function isTerminalStatus(status: string): boolean {
+  return status === 'succeeded' || status === 'failed' || status === 'cancelled';
+}
+
+async function delay(ms: number): Promise<void> {
+  if (ms <= 0) {
+    return;
+  }
+
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isRecord(value: unknown): value is UnknownRecord {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function findAttemptsDeep(value: unknown, visited: Set<unknown> = new Set()): unknown {
+  if (value === null || value === undefined) {
+    return undefined;
+  }
+
+  if (visited.has(value)) {
+    return undefined;
+  }
+  visited.add(value);
+
+  if (Array.isArray(value)) {
+    for (const entry of value) {
+      const found = findAttemptsDeep(entry, visited);
+      if (found !== undefined) {
+        return found;
+      }
+    }
+    return undefined;
+  }
+
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  if ('attempts' in value) {
+    const attemptValue = (value as UnknownRecord).attempts;
+    if (Array.isArray(attemptValue) || typeof attemptValue === 'number') {
+      return attemptValue;
+    }
+  }
+
+  for (const nested of Object.values(value)) {
+    const found = findAttemptsDeep(nested, visited);
+    if (found !== undefined) {
+      return found;
+    }
+  }
+
+  return undefined;
+}
+
+export function extractToolGenerationErrorDetails(
+  body: unknown
+): ToolGenerationErrorDetails | null {
+  if (!isRecord(body)) {
+    return null;
+  }
+
+  const errorInfo = isRecord(body.error) ? (body.error as UnknownRecord) : undefined;
+
+  const primaryMetadata = (() => {
+    if (isRecord(body.metadata)) {
+      return body.metadata as UnknownRecord;
+    }
+    if (isRecord(body.data) && isRecord((body.data as UnknownRecord).metadata)) {
+      return (body.data as UnknownRecord).metadata as UnknownRecord;
+    }
+    return undefined;
+  })();
+
+  const attempts = findAttemptsDeep(primaryMetadata ?? body);
+
+  return {
+    code: typeof errorInfo?.code === 'string' ? (errorInfo.code as string) : undefined,
+    message: typeof errorInfo?.message === 'string' ? (errorInfo.message as string) : undefined,
+    metadata: primaryMetadata,
+    attempts,
+    rawBody: body
+  };
 }

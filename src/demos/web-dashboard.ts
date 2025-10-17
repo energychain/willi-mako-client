@@ -7,7 +7,8 @@ import { WilliMakoClient, WilliMakoError } from '../index.js';
 import type {
   ClarificationAnalyzeRequest,
   ContextResolveRequest,
-  ReasoningGenerateRequest
+  ReasoningGenerateRequest,
+  RunNodeScriptJob
 } from '../types.js';
 import { applyLoginEnvironmentToken } from '../cli-utils.js';
 
@@ -349,14 +350,18 @@ async function parseJsonBody(req: IncomingMessage): Promise<unknown> {
   return JSON.parse(raw);
 }
 
-async function waitForJob(client: WilliMakoClient, jobId: string) {
+async function waitForJob(client: WilliMakoClient, jobId: string): Promise<RunNodeScriptJob> {
   let attempt = 0;
   const maxAttempts = 15;
   while (attempt < maxAttempts) {
     const job = await client.getToolJob(jobId);
-    const state = job.data.job.status;
+    const jobData = job.data.job;
+    const state = jobData.status;
     if (state === 'succeeded' || state === 'failed') {
-      return job.data.job;
+      if (jobData.type !== 'run-node-script') {
+        throw new Error(`Unerwarteter Job-Typ ${jobData.type} beim Warten auf Analysejob.`);
+      }
+      return jobData;
     }
     attempt += 1;
     await new Promise((resolve) => setTimeout(resolve, 750));
