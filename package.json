@@ -1,6 +1,6 @@
 {
   "name": "willi-mako-client",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "Official TypeScript client & CLI for the Willi-Mako API v2 (Marktkommunikation, compliance & ETL automation)",
   "type": "module",
   "main": "dist/index.js",
@@ -16,9 +16,10 @@
     "./openapi.json": "./schemas/openapi.json"
   },
   "bin": {
-    "willi-mako": "dist/cli.js"
+    "willi-mako": "bin/willi-mako.cjs"
   },
   "files": [
+    "bin",
     "dist",
     "schemas/openapi.json",
     "README.md",

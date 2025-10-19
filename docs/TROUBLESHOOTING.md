@@ -98,6 +98,11 @@ This guide lists common issues encountered when using the Willi-Mako Client SDK 
 ### Reading from stdin hangs
 - Ensure you send EOF (`Ctrl+D` on Linux/macOS) when piping data interactively.
 
+### `Error [ERR_REQUIRE_ESM]` when starting via PM2
+- Ab Version 0.3 setzt der CLI-Einstiegspunkt auf native ES Modules. Globale Loader wie PM2 versuchen jedoch standardmäßig, das Skript per `require()` zu laden und schlagen dadurch fehl.
+- Installieren Sie mindestens Version 0.3.4 (oder neuer), die ein CommonJS-kompatibles Wrapper-Skript (`bin/willi-mako.cjs`) bereitstellt.
+- Alternativ können Sie das Wrapper-Skript direkt angeben: `pm2 start --name willi-mako-mcp $(npm root -g)/willi-mako-client/bin/willi-mako.cjs -- mcp`.
+
 ---
 
 ## Debugging Tips

@@ -8,6 +8,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 _Noch keine Änderungen._
 
+## [0.3.4] - 2025-10-19
+
+### Fixed
+- CLI stellt jetzt ein CommonJS-kompatibles Wrapper-Skript (`bin/willi-mako.cjs`) bereit, sodass Prozess-Manager wie PM2 oder ältere Node-Loader kein `ERR_REQUIRE_ESM` mehr auslösen. Globale Starts (`pm2 start --name willi-mako-mcp willi-mako -- mcp`) funktionieren damit ohne zusätzliche Flags.
+
+### Documentation
+- Troubleshooting-Guide ergänzt um Hinweise zur PM2-Nutzung und dem neuen Wrapper-Skript.
+
 ## [0.3.3] - 2025-10-19
 
 ### Added
@@ -104,7 +112,8 @@ _Noch keine Änderungen._
 - Vitest test suite covering core client behaviour.
 - Comprehensive documentation, onboarding guides, and community standards.
 
-[Unreleased]: https://github.com/energychain/willi-mako-client/compare/v0.3.3...HEAD
+[Unreleased]: https://github.com/energychain/willi-mako-client/compare/v0.3.4...HEAD
+[0.3.4]: https://github.com/energychain/willi-mako-client/compare/v0.3.3...v0.3.4
 [0.3.3]: https://github.com/energychain/willi-mako-client/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/energychain/willi-mako-client/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/energychain/willi-mako-client/compare/v0.3.0...v0.3.1
