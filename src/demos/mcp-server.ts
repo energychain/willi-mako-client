@@ -895,9 +895,10 @@ Resources:
     const originalUrl = req.url ?? '/mcp';
     let normalizedUrl = originalUrl;
     let pathToken: string | undefined;
+    let parsedUrl: URL | undefined;
 
     try {
-      const parsedUrl = new URL(originalUrl, 'http://localhost');
+      parsedUrl = new URL(originalUrl, 'http://localhost');
       const segments = parsedUrl.pathname.split('/').filter(Boolean);
 
       if (segments.length >= 2 && segments[0] !== 'mcp' && segments[1] === 'mcp') {
@@ -917,6 +918,25 @@ Resources:
 
     if (pathToken && !req.headers.authorization) {
       req.headers.authorization = `Bearer ${pathToken}`;
+    }
+
+    if (!req.headers['mcp-session-id']) {
+      const headerSession = req.headers['x-session-id'];
+      const normalizedHeaderSession = Array.isArray(headerSession)
+        ? headerSession.at(-1)
+        : headerSession;
+      const sanitizedHeaderSession =
+        typeof normalizedHeaderSession === 'string' ? normalizedHeaderSession.trim() : undefined;
+      const querySession =
+        parsedUrl?.searchParams.get('mcp-session-id')?.trim() ||
+        parsedUrl?.searchParams.get('sessionId')?.trim() ||
+        parsedUrl?.searchParams.get('session-id')?.trim() ||
+        parsedUrl?.searchParams.get('session')?.trim();
+
+      const resolvedSessionId = sanitizedHeaderSession || querySession || undefined;
+      if (resolvedSessionId) {
+        req.headers['mcp-session-id'] = resolvedSessionId;
+      }
     }
 
     if (req.method === 'OPTIONS') {

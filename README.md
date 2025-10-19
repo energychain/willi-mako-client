@@ -178,6 +178,8 @@ Expose die Plattform als **Model Context Protocol (MCP)**-Server, damit interne 
 
    👉 Für Schritt-für-Schritt-Anleitungen zu VS Code, Claude, ChatGPT, anythingLLM und n8n siehe [docs/INTEGRATIONS.md](./docs/INTEGRATIONS.md#schritt-für-schritt-mcp-integrationen-in-gängigen-umgebungen).
 
+   📚 Eine ausführliche Service-Dokumentation (Architektur, Deployment, Public Endpoint `https://mcp.stromhaltig.de/`) findest du in [docs/MCP_SERVICE.md](./docs/MCP_SERVICE.md).
+
 2. **Bereitgestellte Tools & Ressourcen**
    - `willi-mako-login`, `willi-mako-create-session`, `willi-mako-get-session`, `willi-mako-delete-session`
    - `willi-mako-chat`, `willi-mako-semantic-search`, `willi-mako-reasoning-generate`

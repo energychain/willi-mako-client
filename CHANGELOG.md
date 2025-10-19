@@ -8,6 +8,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 _Noch keine Änderungen._
 
+## [0.3.5] - 2025-10-19
+
+### Fixed
+- MCP-Server ergänzt `Mcp-Session-Id` automatisch aus `X-Session-Id`-Headern bzw. Query-Parametern, sodass Browser-basierte EventSource-Clients (z. B. VS Code MCP) sich mit dem gehosteten Endpoint `https://mcp.stromhaltig.de/` verbinden können.
+
+### Documentation
+- Neue Dokumentation [`docs/MCP_SERVICE.md`](./docs/MCP_SERVICE.md) beschreibt Architektur, Authentifizierung, Deployment-Optionen und den öffentlichen MCP-Service inkl. Token-in-URL-Workflow.
+
 ## [0.3.4] - 2025-10-19
 
 ### Fixed
@@ -112,7 +120,8 @@ _Noch keine Änderungen._
 - Vitest test suite covering core client behaviour.
 - Comprehensive documentation, onboarding guides, and community standards.
 
-[Unreleased]: https://github.com/energychain/willi-mako-client/compare/v0.3.4...HEAD
+[Unreleased]: https://github.com/energychain/willi-mako-client/compare/v0.3.5...HEAD
+[0.3.5]: https://github.com/energychain/willi-mako-client/compare/v0.3.4...v0.3.5
 [0.3.4]: https://github.com/energychain/willi-mako-client/compare/v0.3.3...v0.3.4
 [0.3.3]: https://github.com/energychain/willi-mako-client/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/energychain/willi-mako-client/compare/v0.3.1...v0.3.2
