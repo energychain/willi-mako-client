@@ -210,6 +210,58 @@ const remoteSchema = await client.getRemoteOpenApiDocument();
 
 > **Tip:** Compare bundled vs. remote schema to detect new endpoints before upgrading.
 
+### `generateToolScript(params)`
+
+Triggers the deterministic tooling generator. The helper wraps job polling and returns the final script once the asynchronous job succeeds.
+
+```typescript
+const generation = await generateToolScript({
+  client,
+  sessionId,
+  query: 'Bilanzkreistreue aus MSCONS prüfen',
+  preferredInputMode: 'file',
+  outputFormat: 'csv',
+  attachments: [
+    {
+      filename: 'leitfaden.md',
+      content: await fs.readFile('docs/leitfaden.md', 'utf8'),
+      description: 'Interne Validierungsregeln',
+      weight: 0.6
+    }
+  ]
+});
+
+console.log(generation.suggestedFileName, generation.descriptor.validation);
+```
+
+**Parameter**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `client` | `ToolGenerationClient` | ✅ | Minimal client with `generateToolScript`, `getToolJob` **und** `repairToolScript`. |
+| `sessionId` | `string` | ✅ | Session that owns the job and resulting artefacts. |
+| `query` | `string` | ✅ | Natürliche Sprache Beschreibung des gewünschten Tools. |
+| `preferredInputMode` | `'file' \| 'stdin' \| 'environment'` | ❌ | Steuerung der Eingabeverarbeitung im generierten Skript. |
+| `outputFormat` | `'csv' \| 'json' \| 'text'` | ❌ | Erwartetes Ausgabeformat. |
+| `includeShebang` | `boolean` | ❌ | Steuert, ob `#!/usr/bin/env node` vorangestellt wird (Standard: `true`). |
+| `additionalContext` | `string` | ❌ | Weitere fachliche Hinweise oder Randbedingungen. |
+| `attachments` | `ToolScriptAttachment[]` | ❌ | Bis zu vier Textdateien (≤ ≈ 1 MB Text je Datei, ≤ ≈ 2 MB kombiniert) mit optionalem MIME-Type, Beschreibung und Gewichtung zur Kontextanreicherung. |
+| `autoRepair` | `boolean` | ❌ | Aktiviert automatische Reparaturen bekannter Fehlercodes (Standard: `true`). |
+| `maxAutoRepairAttempts` | `number` | ❌ | Obergrenze für automatische Reparaturversuche (Standard: `3`). |
+| `repairAdditionalContext` | `string` | ❌ | Zusatzkontext (≤ 2000 Zeichen) für jede Reparaturanfrage. |
+| `repairInstructionBuilder` | `(job) => string \| undefined` | ❌ | Individueller Builder für Reparaturhinweise (Rückgabe von `undefined` nutzt Standardhinweise). |
+| `onJobUpdate` | `(job) => void` | ❌ | Callback für Live-Updates (`status`, `progress.stage`, `warnings`). |
+| `onRepairAttempt` | `(attempt) => void` | ❌ | Callback, sobald ein Reparaturversuch abgeschlossen wurde. |
+| `onPromptEnhancement` | `(enhancement) => void` | ❌ | Benachrichtigt über automatisch erzeugte Prompt-Optimierungen (z. B. Gemini). |
+
+> 💡 Wenn die Umgebungsvariable `GEMINI_API_KEY` gesetzt ist, verwendet der Client automatisch das Modell `gemini-2.5-pro`, um die Nutzeranforderung zu präzisieren und eine Validierungs-Checkliste vorzuschlagen. Die Optimierung läuft rein clientseitig und wird bei Fehlern stillschweigend übersprungen.
+
+**Rückgabewerte**
+
+`generateToolScript` liefert ein Objekt mit `code`, `descriptor`, `job`, `inputSchema`, `expectedOutputDescription`, `summary`, `description`, `suggestedFileName`, `repairHistory` **sowie** `promptEnhancement`. Letzteres beschreibt, welches Optimierungsmodell (z. B. Gemini) aktiv war, wie die Anfrage angepasst wurde und welche Validierungs-Checkliste hinzugefügt wurde.
+
+Laufen alle automatischen Versuche aus, bevor ein Erfolg erzielt wird, löst die Funktion eine `ToolGenerationRepairLimitReachedError` aus. Für nicht reparierbare Fehler oder deaktivierte Automatik wird weiterhin `ToolGenerationJobFailedError` geworfen.
+
 ### `createNodeScriptJob(payload)`
 
 Submits JavaScript/TypeScript code to the Willi-Mako tooling sandbox.

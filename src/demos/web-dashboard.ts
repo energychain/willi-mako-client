@@ -8,9 +8,52 @@ import type {
   ClarificationAnalyzeRequest,
   ContextResolveRequest,
   ReasoningGenerateRequest,
-  RunNodeScriptJob
+  RunNodeScriptJob,
+  ToolScriptAttachment
 } from '../types.js';
 import { applyLoginEnvironmentToken } from '../cli-utils.js';
+import {
+  generateToolScript,
+  ToolGenerationJobFailedError,
+  ToolGenerationJobTimeoutError,
+  normalizeToolScriptAttachments,
+  MAX_TOOL_SCRIPT_ATTACHMENTS,
+  MAX_TOOL_SCRIPT_ATTACHMENT_CHARS,
+  MAX_TOOL_SCRIPT_ATTACHMENT_TOTAL_CHARS,
+  type ToolScriptInputMode
+} from '../tool-generation.js';
+
+const ATTACHMENT_ITEM_TEMPLATE = `
+          <div class="attachment-grid">
+            <label>
+              Dateiname
+              <input type="text" name="filename" placeholder="z. B. clearing-plan.md" required />
+            </label>
+            <label>
+              MIME-Typ (optional)
+              <input type="text" name="mimeType" placeholder="text/plain" />
+            </label>
+            <label>
+              Gewichtung (0-1, optional)
+              <input type="number" name="weight" step="0.05" min="0" max="1" />
+            </label>
+          </div>
+          <label>
+            Beschreibung (optional)
+            <textarea name="description" placeholder="Beschreibe den Zweck des Anhangs"></textarea>
+          </label>
+          <label>
+            Inhalt
+            <textarea name="content" placeholder="Kontext oder Referenzdaten für den Generator" required></textarea>
+          </label>
+          <div class="attachment-meta">
+            <span class="attachment-index"></span>
+            <span class="char-count">0 / ${MAX_TOOL_SCRIPT_ATTACHMENT_CHARS} Zeichen</span>
+          </div>
+          <div class="attachment-actions">
+            <button type="button" data-action="remove">✖️ Entfernen</button>
+          </div>
+        `.trim();
 
 export interface WebDashboardOptions {
   /** Custom Willi-Mako client instance (primarily for testing). */
@@ -242,6 +285,121 @@ export async function startWebDashboard(
         const response = await client.analyzeClarification(payload);
         sendJson(res, 200, response);
       } catch (error) {
+        handleApiError(res, error);
+      }
+      return;
+    }
+
+    if (req.method === 'POST' && url.pathname === '/tool-generator') {
+      try {
+        const payload = (await parseJsonBody(req)) as {
+          sessionId?: string;
+          query?: string;
+          preferredInputMode?: string;
+          attachments?: ToolScriptAttachment[] | null;
+        } | null;
+
+        if (!payload?.sessionId || !payload?.query) {
+          sendJson(res, 400, { error: 'Felder "sessionId" und "query" sind erforderlich.' });
+          return;
+        }
+
+        let preferredInputMode: ToolScriptInputMode | undefined;
+        if (payload.preferredInputMode) {
+          const inputMode = payload.preferredInputMode;
+          if (inputMode === 'file' || inputMode === 'stdin' || inputMode === 'environment') {
+            preferredInputMode = inputMode;
+          } else {
+            sendJson(res, 400, {
+              error: 'Ungültiger Inputmodus. Erlaubt sind "file", "stdin" oder "environment".'
+            });
+            return;
+          }
+        }
+
+        let normalizedAttachments: ToolScriptAttachment[] | undefined;
+        if (payload.attachments) {
+          if (!Array.isArray(payload.attachments)) {
+            sendJson(res, 400, { error: 'Anhänge müssen als Array gesendet werden.' });
+            return;
+          }
+          try {
+            normalizedAttachments =
+              normalizeToolScriptAttachments(payload.attachments) ?? undefined;
+          } catch (error) {
+            sendJson(res, 400, { error: error instanceof Error ? error.message : String(error) });
+            return;
+          }
+        }
+
+        const progress: Array<{
+          status: string;
+          stage: string | null;
+          message: string | null;
+          attempt: number | null;
+          timestamp: string;
+        }> = [];
+
+        const generation = await generateToolScript({
+          client,
+          sessionId: payload.sessionId,
+          query: payload.query,
+          preferredInputMode,
+          attachments: normalizedAttachments,
+          onJobUpdate: (job) => {
+            progress.push({
+              status: job.status,
+              stage: job.progress?.stage ?? null,
+              message: job.progress?.message ?? null,
+              attempt:
+                typeof job.progress?.attempt === 'number'
+                  ? job.progress.attempt
+                  : job.attempts > 0
+                    ? job.attempts
+                    : null,
+              timestamp: new Date().toISOString()
+            });
+          }
+        });
+
+        const attachmentSummary = normalizedAttachments
+          ? {
+              count: normalizedAttachments.length,
+              totalChars: normalizedAttachments.reduce(
+                (sum, attachment) => sum + attachment.content.length,
+                0
+              )
+            }
+          : { count: 0, totalChars: 0 };
+
+        sendJson(res, 200, {
+          success: true,
+          data: {
+            sessionId: generation.result.sessionId,
+            summary: generation.summary,
+            description: generation.description,
+            suggestedFileName: generation.suggestedFileName,
+            language: generation.language ?? null,
+            code: generation.code,
+            descriptor: generation.descriptor,
+            expectedOutputDescription: generation.expectedOutputDescription ?? null,
+            inputSchema: generation.inputSchema ?? null,
+            job: generation.job,
+            initialResponse: generation.initialResponse,
+            progress,
+            attachments: normalizedAttachments ?? [],
+            attachmentSummary
+          }
+        });
+      } catch (error) {
+        if (error instanceof ToolGenerationJobTimeoutError) {
+          sendJson(res, 504, { error: error.message, job: error.job });
+          return;
+        }
+        if (error instanceof ToolGenerationJobFailedError) {
+          sendJson(res, 502, { error: error.message, job: error.job });
+          return;
+        }
         handleApiError(res, error);
       }
       return;
@@ -493,6 +651,7 @@ function createHtmlPage(params: { baseUrl: string; tokenConfigured: boolean }): 
       input[type="password"],
       input[type="email"],
       input[type="number"],
+      select,
       textarea {
         border: 1px solid rgba(27, 51, 140, 0.2);
         border-radius: 14px;
@@ -505,6 +664,7 @@ function createHtmlPage(params: { baseUrl: string; tokenConfigured: boolean }): 
         resize: vertical;
       }
       input:focus,
+      select:focus,
       textarea:focus {
         outline: none;
         border-color: #4f7df3;
@@ -554,6 +714,18 @@ function createHtmlPage(params: { baseUrl: string; tokenConfigured: boolean }): 
         font-size: 0.85rem;
         color: rgba(27, 51, 140, 0.7);
       }
+      #tool-generator-status[data-variant="progress"] {
+        color: #1b338c;
+        font-weight: 600;
+      }
+      #tool-generator-status[data-variant="success"] {
+        color: #0f766e;
+        font-weight: 600;
+      }
+      #tool-generator-status[data-variant="error"] {
+        color: #be123c;
+        font-weight: 600;
+      }
       .checkbox {
         flex-direction: row;
         align-items: center;
@@ -563,6 +735,45 @@ function createHtmlPage(params: { baseUrl: string; tokenConfigured: boolean }): 
       .checkbox input {
         width: 1rem;
         height: 1rem;
+      }
+      .attachment-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        margin-top: 0.6rem;
+      }
+      .attachment-item {
+        border: 1px dashed rgba(27, 51, 140, 0.25);
+        border-radius: 16px;
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.7);
+        display: grid;
+        gap: 0.75rem;
+      }
+      .attachment-grid {
+        display: grid;
+        gap: 0.75rem;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      }
+      .attachment-grid label {
+        font-size: 0.9rem;
+      }
+      .attachment-item textarea {
+        min-height: 140px;
+      }
+      .attachment-meta {
+        font-size: 0.8rem;
+        color: rgba(27, 51, 140, 0.6);
+      }
+      .attachment-item .attachment-actions {
+        display: flex;
+        justify-content: flex-end;
+      }
+      .attachment-item .attachment-actions button {
+        padding: 0.45rem 0.9rem;
+        font-size: 0.85rem;
+        box-shadow: none;
+        background: linear-gradient(135deg, #fb7185, #be123c);
       }
       @media (max-width: 720px) {
         main {
@@ -813,6 +1024,48 @@ function bodyContent(): string {
       </section>
 
       <section class="card">
+        <h2>Deterministischer Tool-Generator</h2>
+        <p class="hint">
+          Erstellt ein deterministisches CLI- oder MCP-Toolskript über <code>createDeterministicGeneratorScript</code>.
+          Unterstützt bis zu ${MAX_TOOL_SCRIPT_ATTACHMENTS} Anhänge mit jeweils ca.
+          ${(MAX_TOOL_SCRIPT_ATTACHMENT_CHARS / 1_000_000).toFixed(1)} MB Text (≈ ${MAX_TOOL_SCRIPT_ATTACHMENT_CHARS.toLocaleString('de-DE')} Zeichen)
+          und insgesamt höchstens ${(MAX_TOOL_SCRIPT_ATTACHMENT_TOTAL_CHARS / 1_000_000).toFixed(1)} MB.
+        </p>
+        <form id="tool-generator-form">
+          <label>
+            Session-ID (optional)
+            <input type="text" name="sessionId" placeholder="Verwendet aktive Session" data-sync-session="true" />
+          </label>
+          <label>
+            Aufgabenbeschreibung
+            <textarea name="prompt" placeholder="Beschreibe das gewünschte deterministische Tool." required></textarea>
+          </label>
+          <label>
+            Bevorzugter Inputmodus
+            <select name="inputMode">
+              <option value="">Automatisch</option>
+              <option value="file">Datei (argv)</option>
+              <option value="stdin">STDIN</option>
+              <option value="environment">Umgebungsvariable</option>
+            </select>
+          </label>
+          <label>
+            Anhänge
+            <div class="attachment-list" id="generator-attachments"></div>
+          </label>
+          <div class="inline-controls">
+            <button type="button" id="add-attachment">➕ Anhang hinzufügen</button>
+            <button type="submit">🛠️ Skript generieren</button>
+            <span id="tool-generator-status" class="hint">Bereit</span>
+          </div>
+        </form>
+        <h3>Generiertes Skript</h3>
+        <pre id="tool-generator-output">Noch kein Skript generiert.</pre>
+        <h3>Metadaten</h3>
+        <pre id="tool-generator-meta">Noch keine Metadaten verfügbar.</pre>
+      </section>
+
+      <section class="card">
         <h2>Sandbox Schnelltest (Node Script)</h2>
         <p class="hint">
           Führt ein Node.js-Skript über <code>createNodeScriptJob</code> aus und zeigt Ergebnis & Artefaktvorschlag an.
@@ -846,6 +1099,18 @@ function clientScript(bootstrapState: string): string {
         lastLogin: null,
         baseUrl: bootstrap.baseUrl
       };
+
+      const toolGeneratorLimits = {
+        maxAttachments: ${MAX_TOOL_SCRIPT_ATTACHMENTS},
+        maxAttachmentChars: ${MAX_TOOL_SCRIPT_ATTACHMENT_CHARS},
+        maxTotalChars: ${MAX_TOOL_SCRIPT_ATTACHMENT_TOTAL_CHARS}
+      };
+
+      let generatorAttachmentContainer = null;
+      let generatorAddButton = null;
+      let generatorStatusElement = null;
+      let generatorFormElement = null;
+      let generatorBusy = false;
 
       const statusSession = document.getElementById('current-session');
       const statusToken = document.getElementById('token-status');
@@ -905,6 +1170,236 @@ function clientScript(bootstrapState: string): string {
         return sessionId;
       }
 
+      function setGeneratorStatus(text, variant = 'neutral') {
+        if (!generatorStatusElement) {
+          return;
+        }
+        generatorStatusElement.textContent = text;
+        generatorStatusElement.dataset.variant = variant;
+      }
+
+      function calculateTotalAttachmentChars() {
+        if (!generatorAttachmentContainer) {
+          return 0;
+        }
+        let total = 0;
+        generatorAttachmentContainer
+          .querySelectorAll('textarea[name="content"]')
+          .forEach((field) => {
+            if (field instanceof HTMLTextAreaElement) {
+              total += field.value.length;
+            }
+          });
+        return total;
+      }
+
+      function syncGeneratorIdleStatus() {
+        if (!generatorStatusElement || generatorBusy) {
+          return;
+        }
+        const count = generatorAttachmentContainer?.childElementCount ?? 0;
+        const totalChars = calculateTotalAttachmentChars();
+        const attachmentSummary =
+          count === 0 ? 'keine Anhänge' : count + ' Anhang' + (count === 1 ? '' : 'e');
+        const charSummary = totalChars > 0 ? ', ' + totalChars + ' Zeichen' : '';
+        setGeneratorStatus('Bereit — ' + attachmentSummary + charSummary, 'neutral');
+      }
+
+      function updateGeneratorAddButtonState() {
+        if (!generatorAddButton || !generatorAttachmentContainer) {
+          return;
+        }
+        const count = generatorAttachmentContainer.childElementCount;
+        generatorAddButton.disabled = count >= toolGeneratorLimits.maxAttachments;
+      }
+
+      function refreshAttachmentIndices() {
+        if (!generatorAttachmentContainer) {
+          return;
+        }
+        const items = generatorAttachmentContainer.querySelectorAll('.attachment-item');
+        items.forEach((item, index) => {
+          const indexEl = item.querySelector('.attachment-index');
+          if (indexEl) {
+            indexEl.textContent = 'Anhang ' + (index + 1);
+          }
+        });
+      }
+
+      function updateGeneratorAttachmentState() {
+        refreshAttachmentIndices();
+        updateGeneratorAddButtonState();
+        if (!generatorStatusElement || generatorStatusElement.dataset.variant !== 'neutral') {
+          return;
+        }
+        syncGeneratorIdleStatus();
+      }
+
+      function createAttachmentItem() {
+        if (!generatorAttachmentContainer) {
+          throw new Error('Attachment-Liste nicht initialisiert.');
+        }
+        const wrapper = document.createElement('div');
+        wrapper.className = 'attachment-item';
+        wrapper.innerHTML = ${JSON.stringify(ATTACHMENT_ITEM_TEMPLATE)};
+
+        const contentField = wrapper.querySelector('textarea[name="content"]');
+        const charCount = wrapper.querySelector('.char-count');
+        if (contentField instanceof HTMLTextAreaElement && charCount instanceof HTMLElement) {
+          contentField.setAttribute('maxlength', String(toolGeneratorLimits.maxAttachmentChars));
+          const updateCharCount = () => {
+            const length = contentField.value.length;
+            charCount.textContent =
+              length + ' / ' + toolGeneratorLimits.maxAttachmentChars + ' Zeichen';
+            charCount.style.color =
+              length > toolGeneratorLimits.maxAttachmentChars ? '#be123c' : 'rgba(27, 51, 140, 0.7)';
+            if (generatorStatusElement?.dataset.variant === 'neutral') {
+              syncGeneratorIdleStatus();
+            }
+          };
+          contentField.addEventListener('input', updateCharCount);
+          updateCharCount();
+        }
+
+        const removeButton = wrapper.querySelector('[data-action="remove"]');
+        if (removeButton instanceof HTMLButtonElement) {
+          removeButton.addEventListener('click', () => {
+            wrapper.remove();
+            updateGeneratorAttachmentState();
+          });
+        }
+
+        return wrapper;
+      }
+
+      function collectToolGeneratorAttachments() {
+        if (!generatorAttachmentContainer) {
+          return [];
+        }
+        const items = Array.from(generatorAttachmentContainer.querySelectorAll('.attachment-item'));
+        const attachments = [];
+        let totalChars = 0;
+
+        for (const [index, item] of items.entries()) {
+          const filenameInput = item.querySelector('input[name="filename"]');
+          const mimeInput = item.querySelector('input[name="mimeType"]');
+          const weightInput = item.querySelector('input[name="weight"]');
+          const descriptionInput = item.querySelector('textarea[name="description"]');
+          const contentInput = item.querySelector('textarea[name="content"]');
+
+          const filename = filenameInput instanceof HTMLInputElement ? filenameInput.value.trim() : '';
+          if (!filename) {
+            throw new Error('Anhang ' + (index + 1) + ' benötigt einen Dateinamen.');
+          }
+
+          const content = contentInput instanceof HTMLTextAreaElement ? contentInput.value : '';
+          if (!content || content.trim().length === 0) {
+            throw new Error('Anhang "' + filename + '" darf keinen leeren Inhalt haben.');
+          }
+
+          if (content.length > toolGeneratorLimits.maxAttachmentChars) {
+            throw new Error(
+              'Anhang "' +
+                filename +
+                '" überschreitet die maximale Länge von ' +
+                toolGeneratorLimits.maxAttachmentChars +
+                ' Zeichen.'
+            );
+          }
+
+          totalChars += content.length;
+
+          const attachment = {
+            filename,
+            content
+          };
+
+          if (mimeInput instanceof HTMLInputElement && mimeInput.value.trim()) {
+            attachment.mimeType = mimeInput.value.trim();
+          }
+
+          if (descriptionInput instanceof HTMLTextAreaElement && descriptionInput.value.trim()) {
+            attachment.description = descriptionInput.value.trim();
+          }
+
+          if (weightInput instanceof HTMLInputElement && weightInput.value.trim()) {
+            const weight = Number.parseFloat(weightInput.value);
+            if (!Number.isFinite(weight) || weight < 0 || weight > 1) {
+              throw new Error(
+                'Anhang "' +
+                  filename +
+                  '" besitzt eine ungültige Gewichtung. Erlaubt ist ein Wert zwischen 0 und 1.'
+              );
+            }
+            attachment.weight = weight;
+          }
+
+          attachments.push(attachment);
+        }
+
+        if (attachments.length > toolGeneratorLimits.maxAttachments) {
+          throw new Error(
+            'Zu viele Anhänge ausgewählt. Maximal ' +
+              toolGeneratorLimits.maxAttachments +
+              ' erlaubt.'
+          );
+        }
+
+        if (totalChars > toolGeneratorLimits.maxTotalChars) {
+          throw new Error(
+            'Gesamtlänge der Anhänge (' +
+              totalChars +
+              ' Zeichen) überschreitet das Limit von ' +
+              toolGeneratorLimits.maxTotalChars +
+              ' Zeichen.'
+          );
+        }
+
+        return attachments;
+      }
+
+      function initializeToolGeneratorUI() {
+        generatorAttachmentContainer = document.getElementById('generator-attachments');
+        generatorAddButton = document.getElementById('add-attachment');
+        generatorStatusElement = document.getElementById('tool-generator-status');
+        generatorFormElement = document.getElementById('tool-generator-form');
+
+        if (
+          !generatorAttachmentContainer ||
+          !generatorAddButton ||
+          !generatorStatusElement ||
+          !generatorFormElement
+        ) {
+          return;
+        }
+
+        generatorStatusElement.dataset.variant = 'neutral';
+
+        generatorAddButton.addEventListener('click', () => {
+          if (generatorAttachmentContainer.childElementCount >= toolGeneratorLimits.maxAttachments) {
+            setGeneratorStatus(
+              'Maximal ' + toolGeneratorLimits.maxAttachments + ' Anhänge erlaubt.',
+              'error'
+            );
+            setTimeout(() => {
+              setGeneratorStatus('Bereit', 'neutral');
+              syncGeneratorIdleStatus();
+            }, 2500);
+            return;
+          }
+          const item = createAttachmentItem();
+          generatorAttachmentContainer.appendChild(item);
+          updateGeneratorAttachmentState();
+        });
+
+        generatorFormElement.addEventListener('reset', () => {
+          generatorAttachmentContainer.innerHTML = '';
+          updateGeneratorAttachmentState();
+        });
+
+        updateGeneratorAttachmentState();
+      }
+
       function attachFormHandler(id, submit, fallbackOutputId) {
         const form = document.getElementById(id);
         if (!form) {
@@ -933,6 +1428,8 @@ function clientScript(bootstrapState: string): string {
           }
         });
       }
+
+      initializeToolGeneratorUI();
 
       attachFormHandler('login-form', async (formData) => {
         const persist = formData.get('persist') !== null;
@@ -1099,6 +1596,99 @@ function clientScript(bootstrapState: string): string {
         }
         return { outputId: 'clarification-output', data };
       }, 'clarification-output');
+
+      attachFormHandler('tool-generator-form', async (formData) => {
+        if (!generatorFormElement) {
+          throw new Error('Tool-Generator Formular nicht initialisiert.');
+        }
+        const submitButton = generatorFormElement.querySelector('button[type="submit"]');
+        if (submitButton instanceof HTMLButtonElement) {
+          submitButton.disabled = true;
+        }
+        generatorBusy = true;
+        setGeneratorStatus('Generiere…', 'progress');
+        try {
+          const sessionId = resolveSessionId(formData.get('sessionId'));
+          const queryValue = (formData.get('prompt') ?? '').toString().trim();
+          if (!queryValue) {
+            throw new Error('Bitte eine Aufgabenbeschreibung eingeben.');
+          }
+
+          const inputModeRaw = (formData.get('inputMode') ?? '').toString().trim();
+          const attachments = collectToolGeneratorAttachments();
+
+          const payload = {
+            sessionId,
+            query: queryValue
+          };
+
+          if (inputModeRaw) {
+            payload.preferredInputMode = inputModeRaw;
+          }
+          if (attachments.length > 0) {
+            payload.attachments = attachments;
+          }
+
+          const response = await fetch('/tool-generator', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const data = await response.json();
+          if (!response.ok) {
+            const errorMessage = data?.error ?? 'Toolscript-Generierung fehlgeschlagen';
+            throw new Error(errorMessage);
+          }
+
+          const payloadData = data?.data ?? data;
+          if (payloadData && typeof payloadData === 'object') {
+            const scriptOutput =
+              typeof payloadData.code === 'string' ? payloadData.code : payloadData;
+            setOutput('tool-generator-output', scriptOutput);
+            const metadata = Object.assign({}, payloadData);
+            if (typeof metadata.code === 'string') {
+              delete metadata.code;
+            }
+            if (Array.isArray(metadata.attachments)) {
+              metadata.attachments = metadata.attachments.map((attachment) => ({
+                filename: attachment.filename,
+                mimeType: attachment.mimeType ?? null,
+                description: attachment.description ?? null,
+                weight: attachment.weight ?? null,
+                contentLength:
+                  typeof attachment.content === 'string' ? attachment.content.length : null
+              }));
+            }
+            setOutput('tool-generator-meta', metadata);
+          } else {
+            setOutput('tool-generator-output', data);
+            setOutput('tool-generator-meta', data);
+          }
+
+          setGeneratorStatus('Fertig', 'success');
+          setTimeout(() => {
+            setGeneratorStatus('Bereit', 'neutral');
+            updateGeneratorAttachmentState();
+          }, 2000);
+          return null;
+        } catch (error) {
+          setGeneratorStatus(
+            error instanceof Error ? 'Fehler: ' + error.message : 'Unbekannter Fehler',
+            'error'
+          );
+          setTimeout(() => {
+            setGeneratorStatus('Bereit', 'neutral');
+            updateGeneratorAttachmentState();
+          }, 4000);
+          throw error;
+        } finally {
+          generatorBusy = false;
+          if (submitButton instanceof HTMLButtonElement) {
+            submitButton.disabled = false;
+          }
+          updateGeneratorAttachmentState();
+        }
+      }, 'tool-generator-output');
 
       attachFormHandler('analyze-form', async (formData) => {
         const statusIndicator = document.getElementById('analysis-status');

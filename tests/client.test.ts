@@ -5,10 +5,14 @@ import {
   WilliMakoError,
   bundledOpenApiDocument
 } from '../src/index.js';
-import type { RunNodeScriptJobRequest, CreateArtifactRequest } from '../src/types.js';
+import type {
+  RunNodeScriptJobRequest,
+  CreateArtifactRequest,
+  GenerateToolScriptRequest
+} from '../src/types.js';
 
 const createFetchMock = () =>
-  vi.fn<[RequestInfo | URL, RequestInit | undefined], Promise<Response>>();
+  vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>();
 
 describe('WilliMakoClient', () => {
   beforeEach(() => {
@@ -50,7 +54,7 @@ describe('WilliMakoClient', () => {
 
   describe('Authentication', () => {
     it('creates a tooling job with authorization header', async () => {
-      const fetchMock = vi.fn<[RequestInfo | URL, RequestInit | undefined], Promise<Response>>(
+      const fetchMock = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>(
         async () =>
           new Response(
             JSON.stringify({
@@ -195,6 +199,187 @@ describe('WilliMakoClient', () => {
       expect(result.success).toBe(true);
       expect(result.data.artifact.name).toBe('report.json');
       expect(result.data.artifact.tags).toEqual(['test', 'validation']);
+    });
+
+    it('sends attachments when generating tool scripts', async () => {
+      const responsePayload = {
+        success: true,
+        data: {
+          sessionId: 'session-123',
+          job: { id: 'job-1', status: 'queued' }
+        }
+      };
+
+      const fetchMock = createFetchMock();
+      fetchMock.mockImplementation(
+        async () =>
+          new Response(JSON.stringify(responsePayload), {
+            status: 202,
+            headers: { 'Content-Type': 'application/json' }
+          })
+      );
+
+      const client = new WilliMakoClient({ token: 'secret', fetch: fetchMock });
+      const request: GenerateToolScriptRequest = {
+        sessionId: 'session-123',
+        instructions: 'Erstelle ein Tool',
+        attachments: [
+          {
+            filename: 'kontext.md',
+            content: '# Kontext',
+            description: 'Fachliche Rahmenbedingungen'
+          }
+        ]
+      };
+
+      await client.generateToolScript(request);
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      const [, init] = fetchMock.mock.calls[0] ?? [];
+      const payload = init?.body ? JSON.parse(String(init.body)) : null;
+      expect(payload).not.toBeNull();
+      expect(payload.attachments).toEqual([
+        expect.objectContaining({
+          filename: 'kontext.md',
+          content: '# Kontext',
+          description: 'Fachliche Rahmenbedingungen'
+        })
+      ]);
+    });
+  });
+
+  describe('Tool generation heuristics', () => {
+    it('surfaces MSCONS metadata when UTILMD distractors are filtered', async () => {
+      const responsePayload = {
+        success: true,
+        data: {
+          sessionId: 'session-mscons',
+          job: {
+            id: 'job-mscons',
+            type: 'generate-script' as const,
+            sessionId: 'session-mscons',
+            status: 'succeeded' as const,
+            createdAt: '2025-10-19T00:00:00.000Z',
+            updatedAt: '2025-10-19T00:00:05.000Z',
+            warnings: [],
+            progress: {
+              stage: 'completed' as const,
+              message: 'Skript erfolgreich generiert',
+              attempt: 1
+            },
+            attempts: 1,
+            metadata: {
+              detectedMessageTypes: ['MSCONS', 'UTILMD'],
+              primaryMessageType: 'MSCONS',
+              filteredSnippets: ['UTILMD_PSEUDOCODE']
+            },
+            result: {
+              sessionId: 'session-mscons',
+              script: {
+                code: "module.exports = { run: async () => ({ code: 'success' }) };",
+                language: 'javascript' as const,
+                entrypoint: 'run' as const,
+                description: 'Konvertiert MSCONS in CSV',
+                runtime: 'node18' as const,
+                deterministic: true,
+                dependencies: [] as string[],
+                source: {
+                  language: 'node' as const,
+                  hash: 'abc123',
+                  bytes: 256,
+                  preview: 'module.exports = { run: async () => ({ code: "success" }) };',
+                  lineCount: 3
+                },
+                validation: {
+                  syntaxValid: true,
+                  deterministic: true,
+                  forbiddenApis: [] as string[],
+                  warnings: [] as string[]
+                },
+                notes: [] as string[]
+              },
+              expectedOutputDescription: 'CSV-Datei mit Lastgangdaten',
+              warnings: ['Fokus: MSCONS – UTILMD Snippets verworfen.'],
+              promptEnhancement: {
+                engine: 'gemini' as const,
+                model: 'gemini-pro',
+                originalQuery: 'Konvertiere MSCONS Lastgang in CSV',
+                enhancedQuery: 'Konvertiere MSCONS Lastgang in CSV'
+              },
+              contextSnippets: [
+                {
+                  id: 'MSCONS.edi#part-1',
+                  title: 'Beispiel MSCONS Extrakt',
+                  snippet: 'UNH+1+MSCONS:D:04B:UN:2.4c',
+                  origin: 'reference',
+                  score: 50,
+                  weight: 80
+                },
+                {
+                  id: 'knowledge-base-mscons-guide',
+                  title: 'MSCONS Leitfaden',
+                  snippet: 'Segment-Übersicht MSCONS',
+                  origin: 'retrieval',
+                  score: 0.92,
+                  weight: 60
+                }
+              ],
+              repairHistory: [] as unknown[],
+              detectedMessageTypes: ['MSCONS'],
+              primaryMessageType: 'MSCONS'
+            },
+            error: null
+          }
+        }
+      } satisfies Awaited<ReturnType<WilliMakoClient['generateToolScript']>>;
+
+      const fetchMock = createFetchMock();
+      fetchMock.mockImplementation(
+        async () =>
+          new Response(JSON.stringify(responsePayload), {
+            status: 202,
+            headers: { 'Content-Type': 'application/json' }
+          })
+      );
+
+      const client = new WilliMakoClient({ token: 'secret', fetch: fetchMock });
+      const request: GenerateToolScriptRequest = {
+        sessionId: 'session-mscons',
+        instructions: 'Konvertiere MSCONS Lastgang in CSV',
+        attachments: [
+          {
+            filename: 'MSCONS.edi',
+            content: 'UNH+1+MSCONS:D:04B:UN:2.4c\nBGM+Z06+12345',
+            description: 'Original MSCONS Ausschnitt'
+          },
+          {
+            filename: 'UTILMD-distractor.edi',
+            content: 'UNH+1+UTILMD:D:04B:UN:2.3e\nBGM+Z01+6789',
+            description: 'Fachfremdes UTILMD Beispiel'
+          }
+        ]
+      };
+
+      const response = await client.generateToolScript(request);
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      const [, init] = fetchMock.mock.calls[0] ?? [];
+      const body = init?.body ? JSON.parse(String(init.body)) : null;
+      expect(body?.attachments).toHaveLength(2);
+
+      const job = response.data.job;
+      expect(job.metadata?.primaryMessageType).toBe('MSCONS');
+      expect(job.metadata?.detectedMessageTypes).toEqual(['MSCONS', 'UTILMD']);
+
+      const snippets = job.result?.contextSnippets ?? [];
+      expect(snippets.length).toBeGreaterThanOrEqual(2);
+      expect(snippets.some((snippet) => snippet.origin === 'reference')).toBe(true);
+      expect(
+        snippets.every(
+          (snippet) => !/UTILMD/i.test(snippet.id ?? '') && !/UTILMD/i.test(snippet.title ?? '')
+        )
+      ).toBe(true);
+      expect(job.result?.warnings).toContain('Fokus: MSCONS – UTILMD Snippets verworfen.');
     });
   });
 

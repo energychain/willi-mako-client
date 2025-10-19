@@ -1,6 +1,6 @@
 {
   "name": "willi-mako-client",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Official TypeScript client & CLI for the Willi-Mako API v2 (Marktkommunikation, compliance & ETL automation)",
   "type": "module",
   "main": "dist/index.js",
@@ -90,6 +90,7 @@
   },
   "sideEffects": false,
   "dependencies": {
+    "@google/generative-ai": "^0.18.0",
     "@modelcontextprotocol/sdk": "^1.20.0",
     "commander": "^11.1.0",
     "zod": "^3.25.76"

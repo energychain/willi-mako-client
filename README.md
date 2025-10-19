@@ -172,25 +172,27 @@ Expose die Plattform als **Model Context Protocol (MCP)**-Server, damit interne 
    Authentifizierungsmöglichkeiten:
    - **Bearer**: Sende einen `Authorization: Bearer <token>`-Header oder setze `WILLI_MAKO_TOKEN`. Die CLI akzeptiert weiterhin `--token`.
    - **Basic**: Alternativ können Clients `Authorization: Basic base64(email:password)` schicken. Der Server tauscht die Credentials automatisch gegen einen JWT und cached ihn.
-   - **Tool-Login**: Ohne Header lässt sich `willi-mako.login` nutzen; das Token wird pro MCP-Session gespeichert.
+   - **URL-Bearer**: Optional den JWT als erstes Pfadsegment übergeben (`/{token}/mcp`). Der Server interpretiert das Segment als Bearer-Token, entfernt es aus der weitergeleiteten URL und protokolliert nur den bereinigten Pfad.
+   - **Tool-Login**: Ohne Header lässt sich `willi-mako-login` nutzen; das Token wird pro MCP-Session gespeichert.
    - **Ad-hoc Sessions**: Wenn Tools ohne `sessionId` aufgerufen werden, erstellt der Server automatisch eine Session und gibt die ID im Response-Body zurück.
 
    👉 Für Schritt-für-Schritt-Anleitungen zu VS Code, Claude, ChatGPT, anythingLLM und n8n siehe [docs/INTEGRATIONS.md](./docs/INTEGRATIONS.md#schritt-für-schritt-mcp-integrationen-in-gängigen-umgebungen).
 
 2. **Bereitgestellte Tools & Ressourcen**
-   - `willi-mako.login`, `willi-mako.create-session`, `willi-mako.get-session`, `willi-mako.delete-session`
-   - `willi-mako.chat`, `willi-mako.semantic-search`, `willi-mako.reasoning-generate`
-   - `willi-mako.resolve-context`, `willi-mako.clarification-analyze`
-   - `willi-mako.generate-tool` – erstellt auf Zuruf lauffähige Node.js-Skripte für MaKo-Workflows
-   - `willi-mako.create-node-script`, `willi-mako.get-tool-job`, `willi-mako.create-artifact`
+   - `willi-mako-login`, `willi-mako-create-session`, `willi-mako-get-session`, `willi-mako-delete-session`
+   - `willi-mako-chat`, `willi-mako-semantic-search`, `willi-mako-reasoning-generate`
+   - `willi-mako-resolve-context`, `willi-mako-clarification-analyze`
+   - `willi-mako-create-node-script`, `willi-mako-get-tool-job`, `willi-mako-create-artifact`
    - Ressource `willi-mako://openapi` – liefert die aktuelle OpenAPI-Spezifikation
+
+   💡 **Domänenwissen an Bord:** Chat & Reasoning decken tiefgehende Prozesse der Energiewirtschaft ab (GPKE, WiM, GeLi Gas, Mehr-/Mindermengen, Lieferantenwechsel), berücksichtigen Regularien wie EnWG, StromNZV, StromNEV, EEG sowie MessEG/MessEV und kennen die Spezifika der EDIFACT/edi@energy-Formate (BDEW MaKo, UTILMD, MSCONS, ORDERS, PRICAT, INVOIC). Für wiederkehrende Prüf-Checklisten können Sie zusätzliche MCP-Tools definieren, die das Chat-Tool mit vordefinierten Prompts aufrufen, statt eigene Skripte zu pflegen.
 
 3. **VS Code / GitHub Copilot verbinden**:
    ```bash
    code --add-mcp '{"name":"willi-mako","type":"http","url":"http://localhost:7337/mcp"}'
    ```
 
-   Danach lassen sich die Tools direkt in Copilot-Chat verwenden (z. B. `@willi-mako.semantic-search`).
+   Danach lassen sich die Tools direkt in Copilot-Chat verwenden (z. B. `@willi-mako-semantic-search`).
 
 4. **Weitere Clients**: Claude Desktop, Cursor, LangChain, Semantic Kernel etc. sprechen ebenfalls den Streamable-HTTP-Transport an. Details siehe [`docs/INTEGRATIONS.md`](./docs/INTEGRATIONS.md#mcp-server-und-ki-entwicklungsumgebungen).
 
@@ -454,9 +456,18 @@ willi-mako tools generate-script \
 willi-mako tools generate-script \
    --query "Generiere ein Prüftool für UTILMD und liefere JSON-Ausgabe" \
    --artifact --artifact-name utilmd-validator.js
+
+# Zusätzliche Referenzen einbinden (max. 4 Anhänge, <= 60k Zeichen je Datei)
+willi-mako tools generate-script \
+   --query "Erstelle ein Abrechnungstool für MSCONS mit ausführlichen Plausibilitätschecks" \
+   --attachment "./docs/mscons-checkliste.md|text/markdown|MSCONS Prüfhinweise" \
+   --attachment '{"path":"./samples/mscons-probe.csv","mimeType":"text/csv","description":"Realdaten Q1 2024","weight":0.4}'
 ```
 
+
+> 📎 Mit `--attachment` (mehrfach wiederholbar) fütterst du den Generator mit zusätzlichen Textdateien – beispielsweise bestehender ETL-Logik, Mapping-Tabellen oder Prozessbeschreibungen. Akzeptiert werden Dateipfade (`path|mimeType|Beschreibung|Gewicht`) oder JSON-Objekte (`{"path":"...","description":"...","weight":0.5}`). Pro Job sind max. vier Anhänge mit jeweils ≤ 60 000 Zeichen (kombiniert ≤ 160 000 Zeichen) erlaubt. Gewichte zwischen 0 und 1 priorisieren besonders relevante Quellen.
 > 💡 Über `--input-mode` (`file`, `stdin`, `environment`) und `--output-format` (`csv`, `json`, `text`) steuerst du, wie die generierten Skripte Ein- und Ausgabe handhaben sollen. Mit `--json` erhältst du die Antwort inklusive Skript als strukturiertes JSON.
+> 🤖 Sobald die Umgebungsvariable `GEMINI_API_KEY` gesetzt ist, verfeinert die CLI die Nutzeranforderung automatisch mit dem Modell `gemini-2.5-pro`, ergänzt eine Validierungs-Checkliste und protokolliert das Ergebnis (sowie mögliche Fehler) im Terminal. Das Verhalten lässt sich ohne zusätzliche Flags nutzen und greift auch in der SDK-Hilfsfunktion `generateToolScript`.
 
 > ℹ️  JSON-Antworten enthalten neben dem beschriebenen Skript jetzt auch das vollständige Job-Objekt (`data.job`) inklusive `status`, `progress`, `attempts` und `warnings`. Beispiel:
 > ```json

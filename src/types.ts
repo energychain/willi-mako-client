@@ -477,6 +477,8 @@ export interface ToolJobBase {
   type: 'run-node-script' | 'generate-script';
   /** Session ID this job belongs to */
   sessionId: string;
+  /** Previous job identifier if this job continues a failed attempt */
+  continuedFromJobId?: string | null;
   /** Current execution status */
   status: ToolJobStatus;
   /** ISO 8601 timestamp when the job was created */
@@ -508,7 +510,7 @@ export interface GenerateToolScriptJob extends ToolJobBase {
   /** Number of attempts performed by the generator */
   attempts: number;
   /** Optional custom metadata attached to the job */
-  metadata?: Record<string, unknown> | null;
+  metadata?: GenerateToolScriptJobMetadata | null;
   /** Result payload containing the generated script when successful */
   result: GenerateToolScriptResponse | null;
   /** Error payload describing why the job failed */
@@ -558,6 +560,39 @@ export interface ToolScriptDescriptor {
 }
 
 /**
+ * Context snippet that was fed into the tooling generator prompt.
+ */
+export interface ToolScriptContextSnippet {
+  /** Unique identifier of the snippet (attachment name, retrieval ID, …) */
+  id: string;
+  /** Optional display title */
+  title?: string;
+  /** Highlighted text snippet */
+  snippet?: string;
+  /** Optional free-form description */
+  description?: string;
+  /** MIME type if available */
+  mimeType?: string;
+  /** Origin of the snippet ("reference", "retrieval", …) */
+  origin?: string | null;
+  /** Retrieval score, if applicable */
+  score?: number | null;
+  /** Prompt weighting applied by the backend */
+  weight?: number | null;
+  /** Additional metadata for debugging */
+  metadata?: Record<string, unknown>;
+}
+
+/**
+ * Metadata emitted by the generator job, including detected EDIFACT message types.
+ */
+export interface GenerateToolScriptJobMetadata {
+  detectedMessageTypes?: string[];
+  primaryMessageType?: string | null;
+  [key: string]: unknown;
+}
+
+/**
  * Optional schema describing the expected input parameters of a generated script.
  */
 export interface ToolScriptInputSchemaProperty {
@@ -571,6 +606,42 @@ export interface ToolScriptInputSchema {
   description?: string;
   properties?: Record<string, ToolScriptInputSchemaProperty>;
   required?: string[];
+}
+
+/**
+ * Supplementary document or snippet that biases the tooling generator.
+ */
+export interface ToolScriptAttachment {
+  /** File name displayed to the generator */
+  filename: string;
+  /** UTF-8 encoded textual content */
+  content: string;
+  /** Optional MIME type describing the content */
+  mimeType?: string;
+  /** Optional free-form description that explains the attachment */
+  description?: string;
+  /** Optional weight (0-100) to bias prompting towards this attachment */
+  weight?: number;
+}
+
+/**
+ * Metadata describing how a prompt was enhanced before submitting to the generator.
+ */
+export interface ToolPromptEnhancement {
+  /** Engine used for the enhancement (currently only Gemini). */
+  engine: 'gemini';
+  /** Model identifier used within the engine. */
+  model: string;
+  /** Original user-provided query before enhancement. */
+  originalQuery: string;
+  /** Enhanced query text applied to the generator request (if different). */
+  enhancedQuery?: string;
+  /** Additional context added to the request (if any). */
+  additionalContext?: string;
+  /** Validation checklist injected into the request for local review. */
+  validationChecklist?: string[];
+  /** Raw text returned by the enhancer for debugging or telemetry. */
+  rawText?: string;
 }
 
 /**
@@ -597,6 +668,8 @@ export interface GenerateToolScriptRequest {
   expectedOutputDescription?: string;
   /** Additional domain context or constraints */
   additionalContext?: string;
+  /** Optional reference snippets that should influence the generator */
+  attachments?: ToolScriptAttachment[];
   /** Hard constraints for the execution environment */
   constraints?: ToolScriptConstraints;
 }
@@ -613,6 +686,18 @@ export interface GenerateToolScriptResponse {
   inputSchema?: ToolScriptInputSchema;
   /** Optional description of the expected output */
   expectedOutputDescription?: string | null;
+  /** Additional warnings returned by the generator */
+  warnings?: string[];
+  /** Prompt enhancement metadata, if applied */
+  promptEnhancement?: ToolPromptEnhancement | null;
+  /** Context snippets that were injected into the prompt */
+  contextSnippets?: ToolScriptContextSnippet[];
+  /** Previous repair attempts recorded by the backend */
+  repairHistory?: unknown[];
+  /** Detected EDIFACT message types for this request */
+  detectedMessageTypes?: string[];
+  /** Primary EDIFACT message type inferred by the backend */
+  primaryMessageType?: string | null;
 }
 
 export interface GenerateToolScriptJobResponse {
@@ -620,6 +705,31 @@ export interface GenerateToolScriptJobResponse {
   sessionId: string;
   /** Job information allowing clients to poll for completion */
   job: GenerateToolScriptJob;
+}
+
+/**
+ * Request payload when asking the platform to repair a failed tooling job.
+ */
+export interface RepairGenerateToolScriptRequest {
+  /** Session identifier that owns the original job */
+  sessionId: string;
+  /** Failed job that should be repaired */
+  jobId: string;
+  /** Short instruction (≤ 600 characters) describing the repair intent */
+  repairInstructions?: string;
+  /** Optional extended context (≤ 2000 characters) */
+  additionalContext?: string;
+  /** Optional new attachments to merge with existing ones */
+  attachments?: ToolScriptAttachment[];
+}
+
+/**
+ * Response payload when scheduling a repair attempt for a tooling job.
+ * Mirrors the shape of {@link GenerateToolScriptJobOperationResponse}.
+ */
+export interface RepairGenerateToolScriptResponse {
+  success: boolean;
+  data: GenerateToolScriptJobResponse;
 }
 
 /**

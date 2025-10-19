@@ -1,6 +1,20 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { startWebDashboard } from '../src/demos/web-dashboard.js';
 import type { WilliMakoClient } from '../src/index.js';
+
+const originalGeminiKey = process.env.GEMINI_API_KEY;
+
+beforeAll(() => {
+  delete process.env.GEMINI_API_KEY;
+});
+
+afterAll(() => {
+  if (originalGeminiKey !== undefined) {
+    process.env.GEMINI_API_KEY = originalGeminiKey;
+  } else {
+    delete process.env.GEMINI_API_KEY;
+  }
+});
 
 const createMockClient = (): WilliMakoClient => {
   const now = new Date().toISOString();
@@ -13,6 +27,78 @@ const createMockClient = (): WilliMakoClient => {
       policyFlags: {},
       preferences: {},
       expiresAt: now
+    }
+  };
+
+  const toolScriptDescriptor = {
+    code: "module.exports = { run: async () => console.log('hi') };",
+    language: 'javascript' as const,
+    entrypoint: 'run' as const,
+    description: 'Sample deterministic tool',
+    runtime: 'node18' as const,
+    deterministic: true,
+    dependencies: [],
+    source: {
+      language: 'node' as const,
+      hash: 'abc123',
+      bytes: 128,
+      preview: "module.exports = { run: async () => console.log('hi') };",
+      lineCount: 1
+    },
+    validation: {
+      syntaxValid: true,
+      deterministic: true,
+      forbiddenApis: [],
+      warnings: []
+    },
+    notes: []
+  };
+
+  const toolJob = {
+    id: 'tool-job-1',
+    type: 'generate-script' as const,
+    sessionId: 'session-1',
+    status: 'succeeded' as const,
+    createdAt: now,
+    updatedAt: now,
+    warnings: [],
+    progress: { stage: 'completed' as const, message: null, attempt: 1 },
+    attempts: 1,
+    metadata: null,
+    result: {
+      sessionId: 'session-1',
+      script: toolScriptDescriptor,
+      inputSchema: undefined,
+      expectedOutputDescription: null
+    },
+    error: null
+  };
+
+  const nodeScriptJob = {
+    id: 'job-1',
+    type: 'run-node-script' as const,
+    sessionId: 'session-1',
+    status: 'succeeded' as const,
+    createdAt: now,
+    updatedAt: now,
+    warnings: [],
+    timeoutMs: 5000,
+    metadata: null,
+    source: {
+      language: 'node' as const,
+      hash: 'def456',
+      bytes: 64,
+      preview: 'console.log("ok")',
+      lineCount: 1
+    },
+    result: {
+      stdout: '{}',
+      completedAt: now,
+      durationMs: 100
+    },
+    diagnostics: {
+      executionEnabled: true,
+      notes: []
     }
   };
 
@@ -69,22 +155,42 @@ const createMockClient = (): WilliMakoClient => {
       data: {
         sessionId: 'session-1',
         job: {
-          id: 'job-1',
-          status: 'queued'
+          id: nodeScriptJob.id,
+          type: nodeScriptJob.type,
+          sessionId: nodeScriptJob.sessionId,
+          status: 'queued' as const,
+          createdAt: now,
+          updatedAt: now,
+          warnings: []
         }
       }
     })),
-    getToolJob: vi.fn(async () => ({
+    generateToolScript: vi.fn(async () => ({
       success: true,
       data: {
-        job: {
-          status: 'succeeded',
-          result: {
-            stdout: '{}'
-          }
-        }
+        sessionId: 'session-1',
+        job: toolJob
       }
     })),
+    getToolJob: vi.fn(async (jobId: string) => {
+      if (jobId === toolJob.id) {
+        return {
+          success: true,
+          data: {
+            job: toolJob
+          }
+        };
+      }
+      if (jobId === nodeScriptJob.id) {
+        return {
+          success: true,
+          data: {
+            job: nodeScriptJob
+          }
+        };
+      }
+      throw new Error(`Unknown job ${jobId}`);
+    }),
     createArtifact: vi.fn(async () => ({
       success: true,
       data: {
@@ -125,6 +231,49 @@ describe('startWebDashboard', () => {
     expect(instance.port).toBeGreaterThan(0);
     expect(instance.url).toMatch(/^http:\/\/localhost:\d+$/);
     expect(logger).toHaveBeenCalledWith(expect.stringMatching(/Willi-Mako Dashboard läuft/));
+
+    await instance.stop();
+  });
+
+  it('handles deterministic tool generator requests', async () => {
+    const mockClient = createMockClient();
+    const instance = await startWebDashboard({ client: mockClient, port: 0 });
+
+    const response = await fetch(`${instance.url}/tool-generator`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sessionId: 'session-1',
+        query: 'Erstelle ein Tool für UTILMD Validierung',
+        preferredInputMode: 'stdin',
+        attachments: [
+          {
+            filename: 'context.txt',
+            content: 'UTILMD enthält Stammdaten für den Lieferantenwechsel',
+            description: 'Kurzleitfaden'
+          }
+        ]
+      })
+    });
+
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.success).toBe(true);
+    expect(body.data.code).toContain('module.exports');
+    expect(body.data.attachments).toHaveLength(1);
+    expect(body.data.attachmentSummary).toMatchObject({ count: 1 });
+    expect(Array.isArray(body.data.progress)).toBe(true);
+    expect(body.data.progress.length).toBeGreaterThan(0);
+
+    const generateMock = mockClient.generateToolScript as unknown as ReturnType<typeof vi.fn>;
+    expect(generateMock).toHaveBeenCalledTimes(1);
+    expect(generateMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sessionId: 'session-1',
+        instructions: expect.stringContaining('UTILMD'),
+        attachments: expect.arrayContaining([expect.objectContaining({ filename: 'context.txt' })])
+      })
+    );
 
     await instance.stop();
   });

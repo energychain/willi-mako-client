@@ -8,6 +8,7 @@
 import { Command } from 'commander';
 import { Buffer } from 'node:buffer';
 import { promises as fs } from 'node:fs';
+import { basename, resolve } from 'node:path';
 import process from 'node:process';
 import { inspect } from 'node:util';
 import {
@@ -23,7 +24,9 @@ import {
   type ReasoningGenerateRequest,
   type ContextResolveRequest,
   type ClarificationAnalyzeRequest,
-  type GenerateToolScriptJob
+  type GenerateToolScriptJob,
+  type ToolScriptAttachment,
+  type ToolPromptEnhancement
 } from './index.js';
 import {
   applyLoginEnvironmentToken,
@@ -39,8 +42,15 @@ import {
   generateToolScript,
   ToolGenerationJobFailedError,
   ToolGenerationJobTimeoutError,
-  type ToolScriptInputMode
+  ToolGenerationRepairLimitReachedError,
+  type ToolGenerationRepairAttempt,
+  type ToolScriptInputMode,
+  normalizeToolScriptAttachments,
+  MAX_TOOL_SCRIPT_ATTACHMENTS,
+  MAX_TOOL_SCRIPT_ATTACHMENT_CHARS,
+  MAX_TOOL_SCRIPT_ATTACHMENT_TOTAL_CHARS
 } from './tool-generation.js';
+import { buildAutoToolHints, type AutoToolHints } from './tool-hints.js';
 
 const program = new Command();
 let keepAlive = false;
@@ -371,9 +381,23 @@ tools
     'Artifact type used when persisting (default: tool-script)',
     'tool-script'
   )
+  .option(
+    '--attachment <spec>',
+    `Reference attachment (path or JSON). Repeatable. Max ${MAX_TOOL_SCRIPT_ATTACHMENTS} attachments (≤ ${(MAX_TOOL_SCRIPT_ATTACHMENT_CHARS / 1_000_000).toFixed(1)} MB text each, ${(MAX_TOOL_SCRIPT_ATTACHMENT_TOTAL_CHARS / 1_000_000).toFixed(1)} MB combined).`,
+    collectAttachmentOption,
+    []
+  )
   .option('--json', 'Print JSON metadata (including script) instead of raw script output', false)
   .option('--no-shebang', 'Omit the Node.js shebang from the generated script', false)
   .option('--context <text>', 'Additional context or constraints for the generator')
+  .option('--no-auto-repair', 'Disable automatic repair attempts for bekannte Fehlertypen', false)
+  .option(
+    '--repair-attempts <count>',
+    'Maximum automatic repair attempts (default: 3)',
+    parseIntBase10
+  )
+  .option('--repair-context <text>', 'Additional context appended to repair requests')
+  .option('--repair-instructions <text>', 'Custom repair hint passed to each attempt')
   .action(
     async (options: {
       query: string;
@@ -384,9 +408,14 @@ tools
       artifact?: boolean;
       artifactName?: string;
       artifactType?: string;
+      attachment?: AttachmentOption[];
       json?: boolean;
       shebang?: boolean;
       context?: string;
+      autoRepair?: boolean;
+      repairAttempts?: number;
+      repairContext?: string;
+      repairInstructions?: string;
     }) => {
       const client = createClient({ requireToken: true });
 
@@ -435,7 +464,96 @@ tools
         }
       };
 
+      const truncateForLog = (text: string, maxLength = 200) =>
+        text.length > maxLength ? `${text.slice(0, maxLength - 1)}…` : text;
+
+      const logRepairAttempt = (attempt: ToolGenerationRepairAttempt) => {
+        const previousCode = attempt.previousJob.error?.code ?? 'unbekannt';
+        const status = attempt.repairJob.status;
+        const statusLabel =
+          status === 'succeeded'
+            ? 'erfolgreich'
+            : status === 'failed'
+              ? `fehlgeschlagen${attempt.repairJob.error?.code ? ` (${attempt.repairJob.error.code})` : ''}`
+              : status;
+        console.error(
+          `♻️  Reparaturversuch ${attempt.attempt} (${attempt.repairJob.id}) – ${statusLabel} nach Fehler ${previousCode}.`
+        );
+        if (attempt.instructions) {
+          console.error(`    Hinweis: ${truncateForLog(attempt.instructions)}`);
+        }
+        if (status === 'failed' && attempt.repairJob.error?.message) {
+          console.error(`    Fehler: ${attempt.repairJob.error.message}`);
+        }
+      };
+
+      const logRepairHistory = (repairs: ToolGenerationRepairAttempt[]) => {
+        if (!repairs || repairs.length === 0) {
+          return;
+        }
+        repairs.forEach((attempt) => logRepairAttempt(attempt));
+      };
+
+      let promptEnhancement: ToolPromptEnhancement | null = null;
+
+      const capturePromptEnhancement = (enhancement: ToolPromptEnhancement) => {
+        promptEnhancement = enhancement;
+
+        const hasError = enhancement.rawText?.startsWith('ERROR:');
+        if (hasError) {
+          console.error(
+            `⚠️  Gemini-Promptoptimierung fehlgeschlagen (${enhancement.rawText?.slice(7) ?? 'Unbekannter Fehler'}).`
+          );
+          return;
+        }
+
+        const changedQuery =
+          enhancement.enhancedQuery &&
+          enhancement.enhancedQuery.trim() !== enhancement.originalQuery.trim();
+
+        if (changedQuery) {
+          console.error(`🤖 Gemini (${enhancement.model}) hat die Anforderung präzisiert.`);
+        } else {
+          console.error(`🤖 Gemini (${enhancement.model}) hat die Anforderung bestätigt.`);
+        }
+
+        if (enhancement.validationChecklist && enhancement.validationChecklist.length > 0) {
+          console.error('   Validierungs-Checkliste:');
+          enhancement.validationChecklist.forEach((item) => console.error(`   - ${item}`));
+        }
+      };
+
+      const attachmentSpecs = options.attachment ?? [];
+      let attachmentsForRequest: ToolScriptAttachment[] | undefined;
+      let autoHints: AutoToolHints | null = null;
+
       try {
+        let resolvedAttachments: ToolScriptAttachment[] | undefined;
+        if (attachmentSpecs.length > 0) {
+          resolvedAttachments = await resolveAttachmentFiles(attachmentSpecs);
+          autoHints = buildAutoToolHints(options.query, resolvedAttachments);
+          const normalizedAttachments = normalizeToolScriptAttachments(resolvedAttachments);
+          if (normalizedAttachments && normalizedAttachments.length > 0) {
+            attachmentsForRequest = normalizedAttachments;
+            const filenames = normalizedAttachments.map((attachment) => attachment.filename);
+            console.error(
+              `📎 Eingebundene Anhänge (${normalizedAttachments.length}): ${filenames.join(', ')}`
+            );
+          }
+        } else {
+          autoHints = buildAutoToolHints(options.query, undefined);
+        }
+
+        const finalAdditionalContext = combineContext(
+          options.context,
+          autoHints?.additionalContext
+        );
+        const finalRepairContext = combineContext(options.repairContext, autoHints?.repairContext);
+
+        if (autoHints?.summary) {
+          console.error(`🧠 ${autoHints.summary}.`);
+        }
+
         if (!sessionId) {
           const sessionResponse = await client.createSession({});
           sessionId = sessionResponse.data.sessionId;
@@ -455,7 +573,16 @@ tools
           outputFormat: options.outputFormat,
           fileNameHint: outputNameHint,
           includeShebang: options.shebang !== false,
-          additionalContext: options.context,
+          additionalContext: finalAdditionalContext,
+          attachments: attachmentsForRequest,
+          autoRepair: options.autoRepair,
+          maxAutoRepairAttempts: options.repairAttempts,
+          repairAdditionalContext: finalRepairContext,
+          repairInstructionBuilder: options.repairInstructions
+            ? async () => options.repairInstructions
+            : undefined,
+          onRepairAttempt: (attempt) => logRepairAttempt(attempt),
+          onPromptEnhancement: (enhancement) => capturePromptEnhancement(enhancement),
           onJobUpdate: (job) => logJobUpdate(job)
         });
 
@@ -518,9 +645,12 @@ tools
             inputSchema: generation.inputSchema,
             expectedOutputDescription: generation.expectedOutputDescription,
             artifact: artifactResponse,
+            attachments: attachmentsForRequest,
             job,
             attempts: job.attempts,
-            warnings: job.warnings
+            warnings: job.warnings,
+            repairHistory: generation.repairHistory,
+            promptEnhancement
           });
         } else if (options.output) {
           await fs.writeFile(options.output, generation.code, 'utf8');
@@ -551,6 +681,25 @@ tools
           process.exit(1);
         }
 
+        if (error instanceof ToolGenerationRepairLimitReachedError) {
+          const job = error.job;
+          console.error(
+            '♻️  Reparaturlimit erreicht. Weitere automatische Versuche wurden gestoppt.'
+          );
+          logJobUpdate(job, true);
+          logJobAttempts(job);
+          logJobWarnings(job);
+          logRepairHistory(error.repairs);
+
+          if (createdSessionId) {
+            console.error(
+              `ℹ️  Die Session ${createdSessionId} wurde automatisch erzeugt. Lösche sie bei Bedarf mit "willi-mako sessions delete ${createdSessionId}".`
+            );
+          }
+
+          process.exit(1);
+        }
+
         if (error instanceof ToolGenerationJobFailedError) {
           const job = error.job;
           console.error(`❌ Tool-Generierung fehlgeschlagen: ${error.message}`);
@@ -560,6 +709,7 @@ tools
           logJobUpdate(job, true);
           logJobAttempts(job);
           logJobWarnings(job);
+          logRepairHistory(error.repairs);
           if (job.error?.details) {
             console.error('ℹ️  Fehlerdetails:');
             console.error(inspect(job.error.details, false, 5, true));
@@ -782,6 +932,87 @@ program.parseAsync(process.argv).catch((error) => {
   process.exit(1);
 });
 
+interface AttachmentOption {
+  path?: string;
+  filename?: string;
+  mimeType?: string;
+  description?: string;
+  weight?: number;
+  content?: string;
+}
+
+function collectAttachmentOption(
+  value: string,
+  previous: AttachmentOption[] = []
+): AttachmentOption[] {
+  return [...previous, parseAttachmentOption(value)];
+}
+
+function parseAttachmentOption(raw: string): AttachmentOption {
+  const value = raw.trim();
+  if (!value) {
+    throw new Error('Attachment specification cannot be empty.');
+  }
+
+  if (value.startsWith('{')) {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(value);
+    } catch (error) {
+      throw new Error(`Invalid attachment JSON: ${(error as Error).message}`);
+    }
+
+    if (!parsed || typeof parsed !== 'object') {
+      throw new Error('Attachment JSON must describe an object.');
+    }
+
+    const record = parsed as Record<string, unknown>;
+    const option: AttachmentOption = {
+      path: typeof record.path === 'string' ? record.path : (record.file as string | undefined),
+      filename:
+        typeof record.filename === 'string' ? record.filename : (record.name as string | undefined),
+      mimeType:
+        typeof record.mimeType === 'string' ? record.mimeType : (record.type as string | undefined),
+      description: typeof record.description === 'string' ? record.description : undefined,
+      weight: record.weight as number | undefined,
+      content: typeof record.content === 'string' ? record.content : undefined
+    };
+
+    if (!option.path && !option.content) {
+      throw new Error('Attachment JSON requires either a "path" or "content" property.');
+    }
+
+    return option;
+  }
+
+  const [path, mimeType, description, weightRaw] = value.split('|');
+  const option: AttachmentOption = {
+    path: path?.trim()
+  };
+
+  if (!option.path) {
+    throw new Error('Attachment specification must start with a file path or JSON object.');
+  }
+
+  if (mimeType?.trim()) {
+    option.mimeType = mimeType.trim();
+  }
+
+  if (description?.trim()) {
+    option.description = description.trim();
+  }
+
+  if (weightRaw?.trim()) {
+    const parsedWeight = Number.parseFloat(weightRaw.trim());
+    if (Number.isNaN(parsedWeight)) {
+      throw new Error(`Invalid attachment weight: ${weightRaw}`);
+    }
+    option.weight = parsedWeight;
+  }
+
+  return option;
+}
+
 function parseIntBase10(value: string): number {
   const parsed = Number.parseInt(value, 10);
   if (Number.isNaN(parsed)) {
@@ -825,12 +1056,141 @@ function parseCommaList(value: string): string[] {
     .filter(Boolean);
 }
 
+function combineContext(primary?: string, secondary?: string | null): string | undefined {
+  const first = typeof primary === 'string' ? primary.trim() : '';
+  const second = typeof secondary === 'string' ? secondary.trim() : '';
+
+  if (first && second) {
+    return `${first}\n\n${second}`;
+  }
+
+  if (first) {
+    return first;
+  }
+
+  if (second) {
+    return second;
+  }
+
+  return undefined;
+}
+
 function outputJson(value: unknown): void {
   process.stdout.write(`${JSON.stringify(value, null, 2)}\n`);
 }
 
 interface ClientFactoryOptions {
   requireToken?: boolean;
+}
+
+async function resolveAttachmentFiles(specs: AttachmentOption[]): Promise<ToolScriptAttachment[]> {
+  const attachments: ToolScriptAttachment[] = [];
+
+  for (let index = 0; index < specs.length; index++) {
+    const spec = specs[index];
+    const prepared = await resolveAttachment(spec, index);
+    attachments.push(prepared);
+  }
+
+  return attachments;
+}
+
+async function resolveAttachment(
+  spec: AttachmentOption,
+  index: number
+): Promise<ToolScriptAttachment> {
+  const inlineContent = spec.content;
+  const suppliedFilename =
+    typeof spec.filename === 'string' && spec.filename.trim().length > 0
+      ? spec.filename.trim()
+      : undefined;
+
+  let resolvedFilename = suppliedFilename;
+  let content: string;
+
+  if (typeof inlineContent === 'string') {
+    content = inlineContent;
+  } else {
+    const path = spec.path;
+    if (!path) {
+      throw new Error('Attachment requires either inline content or a file path.');
+    }
+
+    const absolutePath = resolve(path);
+    try {
+      content = await fs.readFile(absolutePath, 'utf8');
+    } catch (error) {
+      throw new Error(
+        `Unable to read attachment file at ${absolutePath}: ${(error as Error).message}`
+      );
+    }
+
+    if (!resolvedFilename) {
+      resolvedFilename = basename(absolutePath);
+    }
+  }
+
+  if (!resolvedFilename) {
+    resolvedFilename = `attachment-${index + 1}.txt`;
+  }
+
+  const description =
+    typeof spec.description === 'string' && spec.description.trim().length > 0
+      ? spec.description.trim()
+      : undefined;
+
+  let weight: number | undefined;
+  if (spec.weight !== undefined && spec.weight !== null) {
+    const numericWeight = Number(spec.weight);
+    if (!Number.isFinite(numericWeight)) {
+      throw new Error(`Attachment "${resolvedFilename}" has an invalid weight value.`);
+    }
+    weight = numericWeight;
+  }
+
+  const mimeType =
+    typeof spec.mimeType === 'string' && spec.mimeType.trim().length > 0
+      ? spec.mimeType.trim()
+      : inferMimeType(resolvedFilename);
+
+  return {
+    filename: resolvedFilename,
+    content,
+    mimeType,
+    description,
+    weight
+  } satisfies ToolScriptAttachment;
+}
+
+function inferMimeType(filename: string): string {
+  const extension = filename.toLowerCase().split('.').pop() ?? '';
+
+  switch (extension) {
+    case 'json':
+      return 'application/json';
+    case 'csv':
+      return 'text/csv';
+    case 'md':
+    case 'markdown':
+      return 'text/markdown';
+    case 'yaml':
+    case 'yml':
+      return 'application/yaml';
+    case 'xml':
+      return 'application/xml';
+    case 'html':
+      return 'text/html';
+    case 'tsv':
+      return 'text/tab-separated-values';
+    case 'edi':
+    case 'edifact':
+      return 'text/plain';
+    case 'js':
+    case 'ts':
+    case 'txt':
+    default:
+      return 'text/plain';
+  }
 }
 
 function enableKeepAlive(): void {

@@ -662,6 +662,55 @@
         }
       }
     },
+      "/tools/generate-script": {
+        "post": {
+          "summary": "Deterministisches Tool generieren",
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenerateToolScriptRequest"
+                }
+              }
+            }
+          },
+          "responses": {
+            "202": {
+              "description": "Generierungsjob wurde registriert.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean"
+                      },
+                      "data": {
+                        "type": "object",
+                        "properties": {
+                          "sessionId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "job": {
+                            "$ref": "#/components/schemas/ToolJob"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
     "/tools/run-node-script": {
       "post": {
         "summary": "Node.js Skript als Sandbox-Job registrieren",
@@ -1077,6 +1126,38 @@
           }
         }
       },
+      "ToolScriptAttachment": {
+        "type": "object",
+        "required": [
+          "filename",
+          "content"
+        ],
+        "properties": {
+          "filename": {
+            "type": "string",
+            "maxLength": 180
+          },
+          "content": {
+            "type": "string",
+            "description": "UTF-8 encoded attachment content used to bias the generator.",
+            "maxLength": 60000
+          },
+          "mimeType": {
+            "type": "string",
+            "description": "Optional MIME type hint (defaults to text/plain)."
+          },
+          "description": {
+            "type": "string",
+            "description": "Optional description surfaced to the generator UI."
+          },
+          "weight": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Weighting factor influencing prompt emphasis (0-1)."
+          }
+        }
+      },
       "ToolJobSourceInfo": {
         "type": "object",
         "properties": {
@@ -1140,6 +1221,47 @@
           }
         }
       },
+      "GenerateToolScriptRequest": {
+        "type": "object",
+        "required": [
+          "sessionId",
+          "instructions"
+        ],
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "instructions": {
+            "type": "string",
+            "description": "Natural language instructions for the generator."
+          },
+          "inputSchema": {
+            "type": "object",
+            "description": "Optional JSON schema describing expected tool input."
+          },
+          "expectedOutputDescription": {
+            "type": "string",
+            "description": "Optional description of the expected tool output."
+          },
+          "additionalContext": {
+            "type": "string",
+            "description": "Additional constraints or business context."
+          },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ToolScriptAttachment"
+            },
+            "maxItems": 4,
+            "description": "Reference documents to bias the generator (max 4 attachments)."
+          },
+          "constraints": {
+            "type": "object",
+            "description": "Execution constraints (deterministic flag, filesystem allowance, etc.)."
+          }
+        }
+      },
       "ToolJob": {
         "type": "object",
         "properties": {
@@ -1150,7 +1272,8 @@
           "type": {
             "type": "string",
             "enum": [
-              "run-node-script"
+              "run-node-script",
+              "generate-script"
             ]
           },
           "sessionId": {
@@ -1183,12 +1306,44 @@
             "nullable": true
           },
           "source": {
-            "$ref": "#/components/schemas/ToolJobSourceInfo"
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ToolJobSourceInfo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "progress": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "stage": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "attempt": {
+                "type": "integer"
+              }
+            }
+          },
+          "attempts": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Number of generator attempts that were performed."
           },
           "result": {
             "oneOf": [
               {
                 "$ref": "#/components/schemas/ToolJobResult"
+              },
+              {
+                "type": "object",
+                "description": "Result payload for generate-script jobs (descriptor, validation, etc.).",
+                "additionalProperties": true
               },
               {
                 "type": "null"
@@ -1202,7 +1357,19 @@
             }
           },
           "diagnostics": {
-            "$ref": "#/components/schemas/ToolJobDiagnostics"
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ToolJobDiagnostics"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": true
           }
         }
       },

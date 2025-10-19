@@ -26,7 +26,8 @@ import type {
   ClarificationAnalyzeRequest,
   ClarificationAnalyzeResponse,
   GenerateToolScriptRequest,
-  GenerateToolScriptJobOperationResponse
+  GenerateToolScriptJobOperationResponse,
+  RepairGenerateToolScriptRequest
 } from './types.js';
 
 const require: NodeJS.Require = createRequire(import.meta.url);
@@ -563,6 +564,21 @@ export class WilliMakoClient {
     payload: GenerateToolScriptRequest
   ): Promise<GenerateToolScriptJobOperationResponse> {
     return this.request<GenerateToolScriptJobOperationResponse>('/tools/generate-script', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+  }
+
+  /**
+   * Requests an automatic repair attempt for a failed tooling generation job.
+   */
+  public async repairToolScript(
+    payload: RepairGenerateToolScriptRequest
+  ): Promise<GenerateToolScriptJobOperationResponse> {
+    return this.request<GenerateToolScriptJobOperationResponse>('/tools/generate-script/repair', {
       method: 'POST',
       body: JSON.stringify(payload),
       headers: {

@@ -3,15 +3,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from 'node:ht
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { z } from 'zod';
-import {
-  WilliMakoClient,
-  WilliMakoError,
-  ToolGenerationJobFailedError,
-  ToolGenerationJobTimeoutError,
-  generateToolScript,
-  extractToolGenerationErrorDetails,
-  type GenerateToolScriptJob
-} from '../src/index.js';
+import { WilliMakoClient, WilliMakoError } from '../src/index.js';
 import type {
   ChatRequest,
   ClarificationAnalyzeRequest,
@@ -39,15 +31,20 @@ Tools:
 - willi-mako.create-session – Create a new workspace session with optional preferences/context
 - willi-mako.get-session – Retrieve metadata for an existing session
 - willi-mako.delete-session – Terminate a session and associated artefacts/jobs
-- willi-mako.chat – Send conversational messages to the Willi-Mako assistant
+- willi-mako.chat – Fast Q&A with the energy-market assistant (grounded MaKo expertise)
 - willi-mako.semantic-search – Execute a hybrid semantic search within the knowledge graph
-- willi-mako.reasoning-generate – Run the advanced reasoning pipeline for complex tasks
+- willi-mako.reasoning-generate – Multi-step investigations across energy-market data sets
 - willi-mako.resolve-context – Resolve contextual decisions and resources for user intents
 - willi-mako.clarification-analyze – Analyse whether clarification questions are required
-- willi-mako.generate-tool – Generate Node.js tooling scripts via the deterministic generator (includes live progress & job metadata)
 - willi-mako.create-node-script – Execute ETL/validation logic in the managed Node sandbox
 - willi-mako.get-tool-job – Poll job status and receive stdout/stderr
 - willi-mako.create-artifact – Persist compliance results or EDI snapshots
+
+Capabilities:
+- Deep coverage of German energy-market processes and market roles (GPKE, WiM, GeLi Gas, Mehr-/Mindermengen, Lieferantenwechsel, …).
+- Regulatory context spanning EnWG, StromNZV, StromNEV, EEG, MessEG/MessEV and current BNetzA guidance.
+- Authoritative format knowledge for EDIFACT/edi@energy, BDEW MaKo-Richtlinien, UTILMD, MSCONS, ORDERS, PRICAT, INVOIC und ergänzende Prüfkataloge.
+- Need prompt scaffolding for frequently used checklists? Add lightweight helper tools that wrap the chat endpoint with prefilled context instead of reinventing workflows.
 
 Resources:
 - willi-mako://openapi – Returns the OpenAPI schema exposed by the platform
@@ -163,7 +160,8 @@ server.registerTool(
   'willi-mako.chat',
   {
     title: 'Send a conversational message',
-    description: 'Routes a message to the Willi-Mako assistant for the given session.',
+    description:
+      'Consult the energy-market assistant for grounded insights on GPKE, WiM, GeLi Gas, EnWG/StromNZV/EEG Vorgaben and EDIFACT/edi@energy (BDEW MaKo) Formatfragen innerhalb der aktiven Session.',
     inputSchema: {
       sessionId: z.string().describe('Session identifier (UUID).'),
       message: z.string().describe('Message content to send to the assistant.'),
@@ -224,7 +222,8 @@ server.registerTool(
   'willi-mako.reasoning-generate',
   {
     title: 'Advanced reasoning',
-    description: 'Runs the multi-step reasoning pipeline for complex tasks.',
+    description:
+      'Launches the multi-stage reasoning pipeline to synthesise evidence and action plans across MaKo documents when simple chat is insufficient.',
     inputSchema: {
       sessionId: z.string().describe('Session identifier (UUID).'),
       query: z.string().describe('Primary question or instruction.'),
@@ -335,216 +334,6 @@ server.registerTool(
     };
     const response = await client.analyzeClarification(payload);
     return respond(response);
-  }
-);
-
-server.registerTool(
-  'willi-mako.generate-tool',
-  {
-    title: 'Generate a Node.js tool script',
-    description:
-      'Creates a reusable Node.js automation script for a market communication workflow.',
-    inputSchema: {
-      sessionId: z.string().optional().describe('Optional existing session identifier (UUID).'),
-      task: z
-        .string()
-        .min(10)
-        .describe('Description of the desired automation task (German or English).'),
-      inputMode: z
-        .enum(['file', 'stdin', 'environment'])
-        .optional()
-        .describe('Preferred input mode for the generated script.'),
-      outputFormat: z
-        .enum(['csv', 'json', 'text'])
-        .optional()
-        .describe('Desired output format for the generated tool.'),
-      persistArtifact: z
-        .boolean()
-        .optional()
-        .describe('Persist the generated script as Willi-Mako artefact.'),
-      artifactName: z.string().optional().describe('Optional explicit artefact name.'),
-      artifactType: z
-        .string()
-        .optional()
-        .describe('Artefact type override (defaults to tool-script).'),
-      additionalContext: z
-        .string()
-        .optional()
-        .describe('Additional constraints or hints for the generator.')
-    }
-  },
-  async ({
-    sessionId,
-    task,
-    inputMode,
-    outputFormat,
-    persistArtifact,
-    artifactName,
-    artifactType,
-    additionalContext
-  }) => {
-    let activeSessionId = sessionId ?? null;
-    let createdSessionId: string | null = null;
-
-    if (!activeSessionId) {
-      const created = await client.createSession({});
-      activeSessionId = created.data.sessionId;
-      createdSessionId = activeSessionId;
-    }
-
-    const progressLog: Array<{
-      status: GenerateToolScriptJob['status'];
-      stage: string | null;
-      message: string | null;
-      attempt: number | null;
-      warnings: string[];
-      timestamp: string;
-    }> = [];
-
-    const recordJobUpdate = (job: GenerateToolScriptJob) => {
-      const stage = job.progress?.stage ?? null;
-      const message = job.progress?.message ?? null;
-      const attempt =
-        typeof job.progress?.attempt === 'number'
-          ? job.progress?.attempt
-          : job.attempts > 0
-            ? job.attempts
-            : null;
-
-      const last = progressLog.at(-1);
-      if (
-        last &&
-        last.status === job.status &&
-        last.stage === stage &&
-        last.message === message &&
-        last.attempt === attempt
-      ) {
-        return;
-      }
-
-      progressLog.push({
-        status: job.status,
-        stage,
-        message,
-        attempt,
-        warnings: job.warnings,
-        timestamp: new Date().toISOString()
-      });
-
-      console.error(
-        `[MCP example] generate-tool job ${job.id} – status=${job.status}` +
-          (stage ? ` stage=${stage}` : '') +
-          (message ? ` message="${message}"` : '')
-      );
-    };
-
-    try {
-      const generation = await generateToolScript({
-        client,
-        sessionId: activeSessionId,
-        query: task,
-        preferredInputMode: inputMode,
-        outputFormat,
-        fileNameHint: artifactName,
-        additionalContext,
-        onJobUpdate: recordJobUpdate
-      });
-
-      recordJobUpdate(generation.job);
-
-      let artifactData: Record<string, unknown> | null = null;
-      if (persistArtifact) {
-        const persisted = await client.createArtifact({
-          sessionId: activeSessionId,
-          type: artifactType ?? 'tool-script',
-          name: artifactName ?? generation.suggestedFileName,
-          mimeType: 'text/javascript',
-          encoding: 'utf8',
-          content: generation.code,
-          description: `Automatisch generiertes Tool: ${generation.summary}`
-        });
-        artifactData = persisted.data as Record<string, unknown>;
-      }
-
-      return respond({
-        success: true,
-        sessionId: activeSessionId,
-        createdSessionId,
-        jobId: generation.job.id,
-        job: generation.job,
-        progressLog,
-        attempts: generation.job.attempts,
-        warnings: generation.job.warnings,
-        script: generation.code,
-        suggestedFileName: generation.suggestedFileName,
-        summary: generation.summary,
-        description: generation.description,
-        descriptor: generation.descriptor,
-        inputSchema: generation.inputSchema,
-        expectedOutputDescription: generation.expectedOutputDescription,
-        artifact: artifactData
-      });
-    } catch (error) {
-      if (error instanceof ToolGenerationJobTimeoutError) {
-        recordJobUpdate(error.job);
-        return respond({
-          success: false,
-          sessionId: activeSessionId,
-          createdSessionId,
-          jobId: error.job.id,
-          job: error.job,
-          progressLog,
-          error: {
-            status: null,
-            code: 'timeout',
-            message: error.message
-          }
-        });
-      }
-
-      if (error instanceof ToolGenerationJobFailedError) {
-        recordJobUpdate(error.job);
-        return respond({
-          success: false,
-          sessionId: activeSessionId,
-          createdSessionId,
-          jobId: error.job.id,
-          job: error.job,
-          progressLog,
-          error: {
-            status: null,
-            code: error.job.error?.code ?? null,
-            message: error.message
-          },
-          metadata: {
-            attempts: error.job.attempts,
-            warnings: error.job.warnings,
-            generator: error.job.error?.details ?? null
-          }
-        });
-      }
-
-      if (error instanceof WilliMakoError) {
-        const details = extractToolGenerationErrorDetails(error.body);
-        return respond({
-          success: false,
-          sessionId: activeSessionId,
-          createdSessionId,
-          progressLog,
-          error: {
-            status: error.status,
-            code: details?.code ?? null,
-            message: details?.message ?? error.message
-          },
-          metadata: {
-            attempts: details?.attempts ?? null,
-            generator: details?.metadata ?? null
-          }
-        });
-      }
-
-      throw error;
-    }
   }
 );
 

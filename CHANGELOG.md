@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+_Noch keine Änderungen._
+
+## [0.3.3] - 2025-10-19
+
+### Added
+- Attachment-Unterstützung für `/tools/generate-script`: CLI (`--attachment`), SDK (`ToolScriptAttachment` + Validierung) sowie Dokumentation akzeptieren jetzt bis zu vier Text-Referenzen (≤ ca. 1 MB Text je Datei, ≤ ca. 2 MB kombiniert) inklusive optionaler MIME-Typen, Beschreibungen und Gewichtung.
+- Automatische Reparaturen für fehlgeschlagene Generator-Jobs: `generateToolScript` stößt bei bekannten Fehlercodes bis zu drei Reparaturversuche via `/tools/generate-script/repair` an, liefert eine `repairHistory` zurück und wirft bei ausgeschöpftem Limit `ToolGenerationRepairLimitReachedError`.
+- CLI (`willi-mako tools generate-script`) bietet neue Optionen `--no-auto-repair`, `--repair-attempts`, `--repair-context` und `--repair-instructions`, zeigt `repairHistory` im JSON-Output an und protokolliert Reparaturversuche im Terminal.
+- Automatische Prompt-Optimierung mittels `gemini-2.5-pro`: Sobald `GEMINI_API_KEY` gesetzt ist, verfeinert der Client die Nutzeranforderung, ergänzt eine Validierungs-Checkliste und stellt die Metadaten über `promptEnhancement` bereit (inkl. CLI-Logging).
+
+### Changed
+- `generateToolScript` führt eingebaute Rate-Limit-Retries, Attachments-Normalisierung und Chunking ein und propagiert die erweiterten Payloads an die Willi-Mako API. Das OpenAPI-Bundle dokumentiert das neue `attachments`-Feld.
+- MCP-Server akzeptiert jetzt optional JWT-Tokens als erstes URL-Segment (`/{token}/mcp`), interpretiert sie als Bearer-Token und entfernt das Segment aus Logs sowie Weiterleitungen.
+- MCP-Server-Instruktionen und Dokumentation heben die Domänenabdeckung (GPKE, WiM, GeLi Gas, EnWG, StromNZV, EDIFACT/edi@energy usw.) hervor und empfehlen optionale Prompt-Helfer-Tools.
+
+### Removed
+- MCP-Server entfernt das Tool `willi-mako-generate-tool`, um den Fokus auf kuratierte Sandbox-Workflows zu legen und Missbrauch durch unkontrollierte Skriptgenerierung zu vermeiden.
+
 ## [0.3.2] - 2025-10-17
 
 ### Changed
@@ -19,14 +37,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Changed
 - `willi-mako tools generate-script` nutzt jetzt das deterministische `/tools/generate-script`-API, zeigt Validierungswarnungen an und erzeugt standardmäßig CommonJS-Skripte mit `.js`-Endung.
-- Das MCP-Tool `willi-mako.generate-tool` liefert Descriptor-, Eingabeschema- und Output-Metadaten der Skript-Generation an Agents zurück.
+- Das MCP-Tool `willi-mako-generate-tool` liefert Descriptor-, Eingabeschema- und Output-Metadaten der Skript-Generation an Agents zurück.
 - README und Tooling-Hilfen verweisen auf den deterministischen Generator und die neuen Standardausgaben.
 
 ## [0.3.0] - 2025-10-14
 
 ### Added
 - CLI-Befehl `willi-mako tools generate-script` erstellt lauffähige Node.js-Tools per Reasoning-API, inklusive Artefakt-Persistierung und Dateiausgabe.
-- MCP-Tool `willi-mako.generate-tool` ermöglicht Agenten, Skripte direkt aus der MaKo-Beschreibung heraus generieren und optional zu speichern.
+- MCP-Tool `willi-mako-generate-tool` ermöglicht Agenten, Skripte direkt aus der MaKo-Beschreibung heraus generieren und optional zu speichern.
 
 ## [0.2.3] - 2025-10-14
 
@@ -34,7 +52,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Ausführliche Schritt-für-Schritt-Anleitungen für MCP-Integrationen in VS Code & GitHub Copilot, Claude Desktop, ChatGPT, anythingLLM und n8n.
 
 ### Changed
-- Der MCP-Server akzeptiert nun wahlweise Bearer-Header, Basic-Credentials oder das Tool `willi-mako.login` und persistiert Tokens pro MCP-Session.
+- Der MCP-Server akzeptiert nun wahlweise Bearer-Header, Basic-Credentials oder das Tool `willi-mako-login` und persistiert Tokens pro MCP-Session.
 - Automatisches Anlegen und Wiederverwenden von Willi-Mako Sessions für Tools ohne `sessionId`, inklusive klarer Logging-Nachrichten.
 - README und Integrations-Doku verweisen direkt auf die neuen Authentifizierungswege und Client-Setups.
 
@@ -86,7 +104,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Vitest test suite covering core client behaviour.
 - Comprehensive documentation, onboarding guides, and community standards.
 
-[Unreleased]: https://github.com/energychain/willi-mako-client/compare/v0.3.2...HEAD
+[Unreleased]: https://github.com/energychain/willi-mako-client/compare/v0.3.3...HEAD
+[0.3.3]: https://github.com/energychain/willi-mako-client/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/energychain/willi-mako-client/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/energychain/willi-mako-client/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/energychain/willi-mako-client/compare/v0.2.3...v0.3.0

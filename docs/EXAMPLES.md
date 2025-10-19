@@ -217,9 +217,15 @@ cat data/mscons-clearing.json | willi-mako artifacts create \
   --type "clearing-report" \
   --name "mscons-clearing-2024-Q1.json" \
   --mime "application/json"
+
+# Generate deterministic tool with contextual attachments
+willi-mako tools generate-script \
+  --query "Baue ein Skript, das MSCONS-Profilwerte mit CSV-Daten abgleicht" \
+  --attachment "./docs/mscons-bilanzierung.md|text/markdown|Bilanzierungsleitfaden" \
+  --attachment '{"path":"./data/profilwerte.csv","mimeType":"text/csv","description":"Profilwerte Q1","weight":0.3}'
 ```
 
-> 💡 `willi-mako tools generate-script` startet seit v0.3 eine asynchrone Job-Pipeline. Die CLI zeigt Live-Updates zu `status`, `progress.stage` (z. B. `collecting-context`, `prompting`, `drafting`) sowie etwaige Warnungen an und beendet sich erst, wenn der Job `succeeded` oder `failed` erreicht. Mit `--json` erhältst du neben dem generierten Skript auch das vollständige Job-Objekt (`data.job`) inklusive `attempts`, `warnings` und `progressLog`.
+> 💡 `willi-mako tools generate-script` startet seit v0.3 eine asynchrone Job-Pipeline. Die CLI zeigt Live-Updates zu `status`, `progress.stage` (z. B. `collecting-context`, `prompting`, `drafting`) sowie etwaige Warnungen an und beendet sich erst, wenn der Job `succeeded` oder `failed` erreicht. Mit `--json` erhältst du neben dem generierten Skript auch das vollständige Job-Objekt (`data.job`) inklusive `attempts`, `warnings`, `repairHistory` und `progressLog`. Über `--attachment` reichst du bis zu vier zusätzliche Textquellen (je ≤ ca. 1 MB Text, kombiniert ≤ ca. 2 MB) an, um die Prompterstellung zu steuern – wahlweise als `pfad|mimeType|Beschreibung|Gewicht` oder JSON. Bei Fehlern unternimmt die CLI automatisch bis zu drei Reparaturversuche (`♻️`-Logs), sofern der Fehlercode dies unterstützt. Deaktiviere dies mit `--no-auto-repair` oder passe die Versuchsanzahl mit `--repair-attempts` an. Ist zusätzlich `GEMINI_API_KEY` gesetzt, optimiert die CLI die Prompt-Anforderung mit `gemini-2.5-pro` und protokolliert die vorgeschlagene Validierungs-Checkliste im Terminal.
 
 ---
 

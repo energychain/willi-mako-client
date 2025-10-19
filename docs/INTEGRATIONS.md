@@ -132,7 +132,8 @@ Dieser Leitfaden bündelt praxisnahe Szenarien für Entwickler:innen und Fachanw
     Der Transport lauscht auf `http://127.0.0.1:7337/mcp`. Für die Authentifizierung stehen mehrere Wege zur Verfügung:
     - **Bearer** – `Authorization: Bearer <token>` mitsenden oder wie gewohnt `--token` / `WILLI_MAKO_TOKEN` setzen.
     - **Basic** – `Authorization: Basic base64(email:password)` verwenden; der Server tauscht die Credentials automatisch gegen ein JWT und cached sie pro MCP-Session.
-    - **Tool-Login** – Ohne Header das Tool `willi-mako.login` aufrufen. Das Ergebnis wird je MCP-Session gespeichert und kann für Folge-Requests genutzt werden.
+    - **URL-Bearer** – Den JWT als erstes Pfadsegment übergeben (`/{token}/mcp`). Der Server interpretiert das Segment als Bearer-Token, entfernt es aus der weiteren Verarbeitung und protokolliert nur den bereinigten Pfad.
+    - **Tool-Login** – Ohne Header das Tool `willi-mako-login` aufrufen. Das Ergebnis wird je MCP-Session gespeichert und kann für Folge-Requests genutzt werden.
     Fehlt eine `sessionId`, erzeugt der Server automatisch eine Willi-Mako-Session und übermittelt die ID in der Antwort.
 2. **Client konfigurieren:** Fügen Sie in Ihrer IDE oder Ihrem Agenten eine MCP-Verbindung hinzu.
      - **VS Code / Cursor:**
@@ -150,7 +151,7 @@ Dieser Leitfaden bündelt praxisnahe Szenarien für Entwickler:innen und Fachanw
          }
          ```
      - **Claude Desktop:** Einstellungen → *Model Context Protocol* → neuen Server mit `http://127.0.0.1:8080` hinzufügen.
-3. **Werkzeuge & Ressourcen nutzen:** Der MCP-Server stellt u. a. die Tools `willi-mako.login`, `willi-mako.create-session`, `willi-mako.chat`, `willi-mako.semantic-search`, `willi-mako.reasoning-generate`, `willi-mako.resolve-context`, `willi-mako.clarification-analyze`, `willi-mako.generate-tool`, `willi-mako.create-node-script`, `willi-mako.get-tool-job`, `willi-mako.create-artifact` sowie die Resource `willi-mako://openapi` bereit. Agenten können damit komplette MaKo-Workflows automatisiert orchestrieren. Das Tool `willi-mako.generate-tool` pollt die neue Job-API automatisch, sendet Fortschrittsstufen an den Client und liefert im `structuredContent` das vollständige Job-Objekt (`job`, `progressLog`, `warnings`) zurück.
+3. **Werkzeuge & Ressourcen nutzen:** Der MCP-Server stellt u. a. die Tools `willi-mako-login`, `willi-mako-create-session`, `willi-mako-chat`, `willi-mako-semantic-search`, `willi-mako-reasoning-generate`, `willi-mako-resolve-context`, `willi-mako-clarification-analyze`, `willi-mako-create-node-script`, `willi-mako-get-tool-job`, `willi-mako-create-artifact` sowie die Resource `willi-mako://openapi` bereit. Nutzen Sie `willi-mako-chat` für schnelle, fundierte Rückfragen rund um MaKo-Prozesse und `willi-mako-reasoning-generate`, wenn ein mehrschrittiges Gutachten oder Aktionsplan über mehrere Datenquellen hinweg erforderlich ist. Beide Tools greifen auf geprüftes Domänenwissen zu (GPKE, WiM, GeLi Gas, Mehr-/Mindermengen, Lieferantenwechsel, EnWG, StromNZV, StromNEV, EEG, MessEG/MessEV sowie EDIFACT/edi@energy inkl. BDEW-MaKo-Richtlinien und Formate wie UTILMD, MSCONS, ORDERS, PRICAT, INVOIC). Die Sandbox-Tools (`create-node-script`, `get-tool-job`, `create-artifact`) bleiben für ETL- und Prüf-Workflows verfügbar. Für wiederkehrende Promptausschnitte können zusätzliche MCP-Tools erstellt werden, die das Chat-Tool mit vordefiniertem Kontext aufrufen.
 
 **Best Practices**
 - Nutzen Sie separate **Service Token** oder verwaltete Benutzer-Credentials für IDE-Automatisierungen und pflegen Sie diese in einer Secret-Manager-Lösung.
@@ -171,7 +172,7 @@ Dieser Leitfaden bündelt praxisnahe Szenarien für Entwickler:innen und Fachanw
       2. `MCP: Add Server` wählen.
       3. `HTTP` als Server-Typ auswählen.
       4. URL eintragen: `http://127.0.0.1:7337/mcp`.
-      5. Falls kein globales Token gesetzt ist, unter *Advanced* optional `Authorization: Bearer <token>` ergänzen oder später das Tool `willi-mako.login` nutzen.
+    5. Falls kein globales Token gesetzt ist, unter *Advanced* optional `Authorization: Bearer <token>` ergänzen oder später das Tool `willi-mako-login` nutzen.
       6. Als Speicherort *Workspace Settings* oder *User Settings* wählen.
     - *Methode B – manuelle Konfiguration*
       1. `.vscode/mcp.json` im Projekt anlegen.
@@ -190,7 +191,7 @@ Dieser Leitfaden bündelt praxisnahe Szenarien für Entwickler:innen und Fachanw
 2. **Agent-Modus verwenden**
     - Copilot Chat öffnen (`Ctrl+Alt+I` / `Cmd+Ctrl+I`).
     - *Agent Mode* wählen und über die Tool-Leiste die verfügbaren Willi-Mako Tools einsehen.
-    - Optional `willi-mako.login` aufrufen, um Credentials zu speichern. Ohne Session-ID erstellt der Server automatisch eine Session und meldet sie im Response (`sessionId`).
+    - Optional `willi-mako-login` aufrufen, um Credentials zu speichern. Ohne Session-ID erstellt der Server automatisch eine Session und meldet sie im Response (`sessionId`).
 
 #### Claude Desktop
 
@@ -199,7 +200,7 @@ Dieser Leitfaden bündelt praxisnahe Szenarien für Entwickler:innen und Fachanw
     - Type: `HTTP`
     - URL: `http://127.0.0.1:7337/mcp`
     - Optional: Header `Authorization: Bearer <token>` oder Basic Credentials (`email:password`).
-3. Speichern und in einer neuen Unterhaltung über `@willi-mako.<tool>` interagieren. Bei Bedarf zuerst `willi-mako.login` aufrufen.
+3. Speichern und in einer neuen Unterhaltung über `@willi-mako-<tool>` interagieren. Bei Bedarf zuerst `willi-mako-login` aufrufen.
 4. Die automatisch bereitgestellte Session-ID wird in Tool-Antworten mitgeliefert und kann für Folgefragen wiederverwendet werden.
 
 #### ChatGPT (OpenAI)
@@ -208,8 +209,8 @@ Dieser Leitfaden bündelt praxisnahe Szenarien für Entwickler:innen und Fachanw
 2. **Add HTTP Server** wählen und eintragen:
     - Name: `Willi-Mako`
     - Endpoint: `http://127.0.0.1:7337/mcp`
-    - Optional `Authorization`-Header setzen (Bearer oder Basic). Ohne Header später `willi-mako.login` verwenden.
-3. Server aktivieren und im Chat `@willi-mako.semantic-search` o. ä. nutzen.
+    - Optional `Authorization`-Header setzen (Bearer oder Basic). Ohne Header später `willi-mako-login` verwenden.
+3. Server aktivieren und im Chat `@willi-mako-semantic-search` o. ä. nutzen.
 4. Ergebnisse enthalten strukturierte Daten (`structuredContent`), inklusive Session-ID bei ad-hoc erstellten Sessions.
 
 #### anythingLLM (Self-hosted)
@@ -221,7 +222,7 @@ Dieser Leitfaden bündelt praxisnahe Szenarien für Entwickler:innen und Fachanw
     - Server URL: `http://host.docker.internal:7337/mcp` (Docker) oder `http://127.0.0.1:7337/mcp` lokal.
     - Optional Authentication Header (Bearer oder Basic) hinzufügen.
 3. Änderungen speichern und dem gewünschten Workspace den neuen MCP-Server zuweisen.
-4. In Chat-Flows können Tools direkt per `@willi-mako.<tool>` aufgerufen werden; Responses beinhalten `structuredContent` mit Session- oder Job-Informationen.
+4. In Chat-Flows können Tools direkt per `@willi-mako-<tool>` aufgerufen werden; Responses beinhalten `structuredContent` mit Session- oder Job-Informationen.
 
 #### n8n Automations
 
@@ -232,7 +233,7 @@ Dieser Leitfaden bündelt praxisnahe Szenarien für Entwickler:innen und Fachanw
     - Header `Content-Type: application/json`, `Accept: application/json, text/event-stream`, `MCP-Client-ID: n8n`
     - Body: JSON-RPC Request (z. B. `tools/list` oder `tools/call`).
 3. Für Streaming-Antworten kann ein zweiter Node mit `GET` und `Accept: text/event-stream` genutzt werden, um SSE-Events zu verarbeiten.
-4. Token-Handling: Entweder `Authorization`-Header setzen, Basic Credentials verwenden oder vorab das Tool `willi-mako.login` triggern und das zurückgelieferte Token in weiteren Nodes verwenden.
+4. Token-Handling: Entweder `Authorization`-Header setzen, Basic Credentials verwenden oder vorab das Tool `willi-mako-login` triggern und das zurückgelieferte Token in weiteren Nodes verwenden.
 5. Die n8n Workflows aus Abschnitt „5. n8n Automations“ lassen sich direkt mit MCP kombinieren, indem JSON-RPC Calls als HTTP Requests formuliert werden.
 
 ---

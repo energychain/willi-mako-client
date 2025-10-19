@@ -12,15 +12,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { ErrorCode, McpError } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
-import {
-  WilliMakoClient,
-  WilliMakoError,
-  extractToolGenerationErrorDetails,
-  generateToolScript,
-  ToolGenerationJobFailedError,
-  ToolGenerationJobTimeoutError,
-  type GenerateToolScriptJob
-} from '../index.js';
+import { WilliMakoClient, WilliMakoError } from '../index.js';
 import type {
   ChatRequest,
   ClarificationAnalyzeRequest,
@@ -259,25 +251,44 @@ export async function startMcpServer(options: McpServerOptions = {}): Promise<Mc
     {
       instructions: `Willi-Mako exposes audited Marktkommunikationsprozesse. Use the tools to manage sessions, converse with the platform and orchestrate sandbox jobs.
 
+Authentication:
+- Provide an "Authorization: Bearer <token>" header or set the WILLI_MAKO_TOKEN environment variable.
+- Use "Authorization: Basic base64(email:password)" to exchange credentials for a cached JWT on the server.
+- Prefix the MCP path with the JWT token ("/{token}/mcp") to implicitly authenticate without additional headers.
+
 Tools:
-- willi-mako.login – Exchange email/password credentials for a JWT token (optionally persistent)
-- willi-mako.create-session – Create a new workspace session with optional preferences/context
-- willi-mako.get-session – Retrieve metadata for an existing session
-- willi-mako.delete-session – Terminate a session and associated artefacts/jobs
-- willi-mako.chat – Send conversational messages to the Willi-Mako assistant
-- willi-mako.semantic-search – Execute a hybrid semantic search within the knowledge graph
-- willi-mako.reasoning-generate – Run the advanced reasoning pipeline for complex tasks
-- willi-mako.resolve-context – Resolve contextual decisions and resources for user intents
-- willi-mako.clarification-analyze – Analyse whether clarification questions are required
-- willi-mako.create-node-script – Execute ETL/validation logic in the managed Node sandbox
-- willi-mako.get-tool-job – Poll job status and receive stdout/stderr
-- willi-mako.create-artifact – Persist compliance results or EDI snapshots
+- willi-mako-login – Exchange email/password credentials for a JWT token (optionally persistent)
+- willi-mako-create-session – Create a new workspace session with optional preferences/context
+- willi-mako-get-session – Retrieve metadata for an existing session
+- willi-mako-delete-session – Terminate a session and associated artefacts/jobs
+- willi-mako-chat – Fast Q&A with the energy-market assistant (grounded MaKo expertise)
+- willi-mako-semantic-search – Execute a hybrid semantic search within the knowledge graph
+- willi-mako-reasoning-generate – Multi-step investigations across energy-market data sets
+- willi-mako-resolve-context – Resolve contextual decisions and resources for user intents
+- willi-mako-clarification-analyze – Analyse whether clarification questions are required
+- willi-mako-create-node-script – Execute ETL/validation logic in the managed Node sandbox
+- willi-mako-get-tool-job – Poll job status and receive stdout/stderr
+- willi-mako-create-artifact – Persist compliance results or EDI snapshots
+
+Capabilities:
+- Deep coverage of German energy-market processes and market roles (GPKE, WiM, GeLi Gas, Mehr-/Mindermengen, Lieferantenwechsel, …).
+- Regulatory context spanning EnWG, StromNZV, StromNEV, EEG, MessEG/MessEV and current BNetzA guidance.
+- Authoritative format knowledge for EDIFACT/edi@energy, BDEW MaKo-Richtlinien, UTILMD, MSCONS, ORDERS, PRICAT, INVOIC und ergänzende Prüfkataloge.
+- Need prompt scaffolding for frequently used checklists? Add lightweight helper tools that wrap the chat endpoint with prefilled context instead of reinventing workflows.
 
 Resources:
 - willi-mako://openapi – Returns the OpenAPI schema exposed by the platform
 `
     }
   );
+
+  const emitLog = (message: string): void => {
+    if (options.logger) {
+      options.logger(message);
+      return;
+    }
+    console.log(message);
+  };
 
   const transport = new StreamableHTTPServerTransport({
     sessionIdGenerator: () => randomUUID(),
@@ -286,16 +297,18 @@ Resources:
       if (!transportState.has(sessionId)) {
         transportState.set(sessionId, {});
       }
+      emitLog(`🔗 MCP transport session ${sessionId} initialised (active=${transportState.size}).`);
     },
     onsessionclosed: async (sessionId) => {
       transportState.delete(sessionId);
+      emitLog(`🔌 MCP transport session ${sessionId} closed (active=${transportState.size}).`);
     }
   });
 
   transport.onerror = (error) => {
     const message = error instanceof Error ? error.message : String(error);
     console.error('[MCP transport error]', error);
-    options.logger?.(`[MCP transport error] ${message}`);
+    emitLog(`❗ MCP transport error: ${message}`);
   };
 
   const formatJson = (value: unknown): string => JSON.stringify(value, null, 2);
@@ -309,8 +322,52 @@ Resources:
     structuredContent: data as JsonLike
   });
 
-  server.registerTool(
-    'willi-mako.login',
+  const registerTool = (
+    toolName: Parameters<typeof server.registerTool>[0],
+    metadata: Parameters<typeof server.registerTool>[1],
+    handler: Parameters<typeof server.registerTool>[2]
+  ): void => {
+    server.registerTool(toolName, metadata, async (input: unknown, extra: unknown) => {
+      const context = extra as RequestContext | undefined;
+      const invocationId = randomUUID();
+      const transportSessionId = context?.sessionId;
+      const state = transportSessionId ? transportState.get(transportSessionId) : undefined;
+      const williSessionId = state?.sessionId;
+      const userAgent =
+        typeof context?.requestInfo?.headers?.['user-agent'] === 'string'
+          ? context.requestInfo.headers['user-agent']
+          : undefined;
+
+      const contextParts: string[] = [];
+      if (transportSessionId) {
+        contextParts.push(`transport=${transportSessionId}`);
+      }
+      if (williSessionId) {
+        contextParts.push(`session=${williSessionId}`);
+      }
+      if (userAgent) {
+        contextParts.push(`ua=${userAgent}`);
+      }
+      const contextSuffix = contextParts.length ? ` (${contextParts.join(', ')})` : '';
+
+      emitLog(`🛠️  [${invocationId}] ${toolName} invoked${contextSuffix}`);
+      const startedAt = Date.now();
+      try {
+        const result = await handler(input as never, extra as never);
+        const duration = Date.now() - startedAt;
+        emitLog(`✅ [${invocationId}] ${toolName} completed in ${duration}ms`);
+        return result;
+      } catch (error) {
+        const duration = Date.now() - startedAt;
+        const message = error instanceof Error ? error.message : String(error);
+        emitLog(`❌ [${invocationId}] ${toolName} failed after ${duration}ms – ${message}`);
+        throw error;
+      }
+    });
+  };
+
+  registerTool(
+    'willi-mako-login',
     {
       title: 'Authenticate with Willi-Mako',
       description:
@@ -347,8 +404,8 @@ Resources:
     }
   );
 
-  server.registerTool(
-    'willi-mako.create-session',
+  registerTool(
+    'willi-mako-create-session',
     {
       title: 'Create a Willi-Mako session',
       description:
@@ -393,8 +450,8 @@ Resources:
       })
   );
 
-  server.registerTool(
-    'willi-mako.get-session',
+  registerTool(
+    'willi-mako-get-session',
     {
       title: 'Retrieve a session',
       description: 'Fetches metadata about an existing session.',
@@ -409,8 +466,8 @@ Resources:
       })
   );
 
-  server.registerTool(
-    'willi-mako.delete-session',
+  registerTool(
+    'willi-mako-delete-session',
     {
       title: 'Delete a session',
       description: 'Deletes a session including associated artefacts and sandbox jobs.',
@@ -423,7 +480,7 @@ Resources:
         await clientInstance.deleteSession(sessionId);
         if (transportSessionId) {
           const state = transportState.get(transportSessionId);
-          if (state?.sessionId === sessionId) {
+          if (state && state.sessionId === sessionId) {
             state.sessionId = undefined;
             transportState.set(transportSessionId, state);
           }
@@ -433,11 +490,12 @@ Resources:
       })
   );
 
-  server.registerTool(
-    'willi-mako.chat',
+  registerTool(
+    'willi-mako-chat',
     {
       title: 'Send a conversational message',
-      description: 'Routes a message to the Willi-Mako assistant for the given session.',
+      description:
+        'Consult the energy-market assistant for grounded insights on GPKE, WiM, GeLi Gas, EnWG/StromNZV/EEG Vorgaben and EDIFACT/edi@energy (BDEW MaKo) format questions within the active session.',
       inputSchema: {
         sessionId: z.string().describe('Session identifier (UUID).').optional(),
         message: z.string().describe('Message content to send to the assistant.'),
@@ -470,8 +528,8 @@ Resources:
       })
   );
 
-  server.registerTool(
-    'willi-mako.semantic-search',
+  registerTool(
+    'willi-mako-semantic-search',
     {
       title: 'Semantic search',
       description: 'Executes a hybrid semantic search within the Willi-Mako knowledge base.',
@@ -506,11 +564,12 @@ Resources:
       })
   );
 
-  server.registerTool(
-    'willi-mako.reasoning-generate',
+  registerTool(
+    'willi-mako-reasoning-generate',
     {
       title: 'Advanced reasoning',
-      description: 'Runs the multi-step reasoning pipeline for complex tasks.',
+      description:
+        'Launches the multi-stage reasoning pipeline to synthesise evidence and action plans across MaKo documents when simple chat is insufficient.',
       inputSchema: {
         sessionId: z.string().describe('Session identifier (UUID).').optional(),
         query: z.string().describe('Primary question or instruction.'),
@@ -573,8 +632,8 @@ Resources:
       })
   );
 
-  server.registerTool(
-    'willi-mako.resolve-context',
+  registerTool(
+    'willi-mako-resolve-context',
     {
       title: 'Resolve context',
       description: 'Resolves contextual decisions and resources for a given user query.',
@@ -614,8 +673,8 @@ Resources:
       })
   );
 
-  server.registerTool(
-    'willi-mako.clarification-analyze',
+  registerTool(
+    'willi-mako-clarification-analyze',
     {
       title: 'Clarification analysis',
       description: 'Analyses whether clarification questions are required before continuing.',
@@ -645,214 +704,8 @@ Resources:
       })
   );
 
-  server.registerTool(
-    'willi-mako.generate-tool',
-    {
-      title: 'Generate a Node.js tool script',
-      description:
-        'Creates a reusable Node.js automation script for a market communication workflow.',
-      inputSchema: {
-        sessionId: z.string().describe('Optional session identifier.').optional(),
-        task: z
-          .string()
-          .min(10)
-          .describe('Description of the desired automation (German or English).'),
-        inputMode: z
-          .enum(['file', 'stdin', 'environment'])
-          .optional()
-          .describe('Preferred input mode for the generated script.'),
-        outputFormat: z
-          .enum(['csv', 'json', 'text'])
-          .optional()
-          .describe('Primary output format of the tool.'),
-        persistArtifact: z
-          .boolean()
-          .optional()
-          .describe('Persist the generated script as Willi-Mako artefact.'),
-        artifactName: z.string().optional().describe('Optional explicit artefact name.'),
-        artifactType: z
-          .string()
-          .optional()
-          .describe('Artefact type override (defaults to tool-script).'),
-        additionalContext: z
-          .string()
-          .optional()
-          .describe('Additional constraints or hints for the generator.')
-      }
-    },
-    async (
-      {
-        sessionId,
-        task,
-        inputMode,
-        outputFormat,
-        persistArtifact,
-        artifactName,
-        artifactType,
-        additionalContext
-      },
-      extra?: RequestContext
-    ) =>
-      withClient(extra, async (clientInstance, transportSessionId) => {
-        const activeSessionId = await ensureSessionId(
-          clientInstance,
-          transportSessionId,
-          sessionId
-        );
-        const progressLog: Array<{
-          status: GenerateToolScriptJob['status'];
-          stage: string | null;
-          message: string | null;
-          attempt: number | null;
-          warnings: string[];
-          timestamp: string;
-        }> = [];
-
-        const recordJobUpdate = (job: GenerateToolScriptJob) => {
-          const stage = job.progress?.stage ?? null;
-          const message = job.progress?.message ?? null;
-          const attempt =
-            typeof job.progress?.attempt === 'number'
-              ? job.progress?.attempt
-              : job.attempts > 0
-                ? job.attempts
-                : null;
-
-          const last = progressLog.at(-1);
-          if (
-            last &&
-            last.status === job.status &&
-            last.stage === stage &&
-            last.message === message &&
-            last.attempt === attempt
-          ) {
-            return;
-          }
-
-          progressLog.push({
-            status: job.status,
-            stage,
-            message,
-            attempt,
-            warnings: job.warnings,
-            timestamp: new Date().toISOString()
-          });
-
-          options.logger?.(
-            `MCP generate-tool job ${job.id} – status=${job.status}` +
-              (stage ? ` stage=${stage}` : '') +
-              (message ? ` message=${message}` : '')
-          );
-        };
-
-        try {
-          const generation = await generateToolScript({
-            client: clientInstance,
-            sessionId: activeSessionId,
-            query: task,
-            preferredInputMode: inputMode,
-            outputFormat,
-            fileNameHint: artifactName,
-            additionalContext,
-            onJobUpdate: recordJobUpdate
-          });
-
-          recordJobUpdate(generation.job);
-
-          let artifactData: JsonLike | null = null;
-          if (persistArtifact) {
-            const persisted = await clientInstance.createArtifact({
-              sessionId: activeSessionId,
-              type: artifactType ?? 'tool-script',
-              name: artifactName ?? generation.suggestedFileName,
-              mimeType: 'text/javascript',
-              encoding: 'utf8',
-              content: generation.code,
-              description: `Automatisch generiertes Tool: ${generation.summary}`
-            });
-            artifactData = persisted.data as JsonLike;
-          }
-
-          return respond({
-            success: true,
-            sessionId: activeSessionId,
-            jobId: generation.job.id,
-            job: generation.job,
-            progressLog,
-            attempts: generation.job.attempts,
-            warnings: generation.job.warnings,
-            script: generation.code,
-            suggestedFileName: generation.suggestedFileName,
-            summary: generation.summary,
-            description: generation.description,
-            descriptor: generation.descriptor,
-            inputSchema: generation.inputSchema,
-            expectedOutputDescription: generation.expectedOutputDescription,
-            artifact: artifactData
-          });
-        } catch (error) {
-          if (error instanceof ToolGenerationJobTimeoutError) {
-            recordJobUpdate(error.job);
-            return respond({
-              success: false,
-              sessionId: activeSessionId,
-              jobId: error.job.id,
-              job: error.job,
-              progressLog,
-              error: {
-                status: null,
-                code: 'timeout',
-                message: error.message
-              }
-            });
-          }
-
-          if (error instanceof ToolGenerationJobFailedError) {
-            recordJobUpdate(error.job);
-            return respond({
-              success: false,
-              sessionId: activeSessionId,
-              jobId: error.job.id,
-              job: error.job,
-              progressLog,
-              error: {
-                status: null,
-                code: error.job.error?.code ?? null,
-                message: error.message
-              },
-              metadata: {
-                attempts: error.job.attempts,
-                warnings: error.job.warnings,
-                generator: error.job.error?.details ?? null
-              }
-            });
-          }
-
-          if (error instanceof WilliMakoError) {
-            const details = extractToolGenerationErrorDetails(error.body);
-            return respond({
-              success: false,
-              sessionId: activeSessionId,
-              progressLog,
-              error: {
-                status: error.status,
-                code: details?.code ?? null,
-                message: details?.message ?? error.message
-              },
-              metadata: {
-                attempts: details?.attempts ?? null,
-                generator: details?.metadata ?? null
-              }
-            });
-          }
-
-          throw error;
-        }
-      })
-  );
-
-  server.registerTool(
-    'willi-mako.create-node-script',
+  registerTool(
+    'willi-mako-create-node-script',
     {
       title: 'Run a Willi-Mako Node sandbox job',
       description: 'Executes JavaScript in the secure tooling sandbox, returning the created job.',
@@ -910,8 +763,8 @@ Resources:
       })
   );
 
-  server.registerTool(
-    'willi-mako.get-tool-job',
+  registerTool(
+    'willi-mako-get-tool-job',
     {
       title: 'Lookup a sandbox job',
       description: 'Returns the current status, stdout and stderr of a tooling job.',
@@ -941,8 +794,8 @@ Resources:
       })
   );
 
-  server.registerTool(
-    'willi-mako.create-artifact',
+  registerTool(
+    'willi-mako-create-artifact',
     {
       title: 'Persist an artefact',
       description: 'Stores a compliance report, EDI snapshot or ETL output as an artefact.',
@@ -1039,6 +892,33 @@ Resources:
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
     res.setHeader('Access-Control-Expose-Headers', 'mcp-session-id, mcp-protocol-version');
 
+    const originalUrl = req.url ?? '/mcp';
+    let normalizedUrl = originalUrl;
+    let pathToken: string | undefined;
+
+    try {
+      const parsedUrl = new URL(originalUrl, 'http://localhost');
+      const segments = parsedUrl.pathname.split('/').filter(Boolean);
+
+      if (segments.length >= 2 && segments[0] !== 'mcp' && segments[1] === 'mcp') {
+        pathToken = decodeURIComponent(segments[0]);
+        const remaining = segments.slice(1);
+        parsedUrl.pathname = `/${remaining.join('/')}`;
+        normalizedUrl = `${parsedUrl.pathname}${parsedUrl.search}`;
+        req.url = normalizedUrl;
+      } else {
+        normalizedUrl = `${parsedUrl.pathname}${parsedUrl.search}`;
+      }
+    } catch (error) {
+      normalizedUrl = '[invalid-url]';
+      const message = error instanceof Error ? error.message : String(error);
+      emitLog(`⚠️  Failed to parse MCP request URL (${message}).`);
+    }
+
+    if (pathToken && !req.headers.authorization) {
+      req.headers.authorization = `Bearer ${pathToken}`;
+    }
+
     if (req.method === 'OPTIONS') {
       res.statusCode = 204;
       res.end();
@@ -1050,6 +930,17 @@ Resources:
       res.end('Not Found');
       return;
     }
+
+    const remoteAddress = req.socket?.remoteAddress ?? 'unknown';
+    const transportSessionHeader = req.headers['mcp-session-id'];
+    const transportSessionId = Array.isArray(transportSessionHeader)
+      ? transportSessionHeader.at(-1)
+      : transportSessionHeader;
+    emitLog(
+      `🌐 ${req.method ?? 'UNKNOWN'} ${normalizedUrl} from ${remoteAddress}${
+        transportSessionId ? ` (transport=${transportSessionId})` : ''
+      }`
+    );
 
     try {
       if (req.method === 'POST') {
@@ -1106,10 +997,10 @@ Resources:
       : port;
 
   const url = `http://localhost:${resolvedPort}/mcp`;
-  options.logger?.(`⚡ Willi-Mako MCP server listening on ${url}`);
+  emitLog(`⚡ Willi-Mako MCP server listening on ${url}`);
   if (!fallbackToken) {
-    options.logger?.(
-      'ℹ️  No default WILLI_MAKO_TOKEN configured. Provide an Authorization header or invoke willi-mako.login to persist credentials per session.'
+    emitLog(
+      'ℹ️  No default WILLI_MAKO_TOKEN configured. Provide an Authorization header or invoke willi-mako-login to persist credentials per session.'
     );
   }
 
