@@ -77,7 +77,7 @@ console.log(auth.data.accessToken);
 - `credentials` – `LoginRequest` (`email`, `password`).
 - `options.persistToken` *(default `true`)* – store the returned token on the client instance for subsequent calls.
 
-> Call with `{ persistToken: false }` if you only need the token for immediate use and prefer manual storage.
+> Call with `{ persistToken: false }` if you only need the token for immediate use and prefer manual storage. When disabled, the client clears any previously stored token so follow-up requests remain unauthenticated until you reapply one explicitly.
 
 ### `createSession(payload)`
 

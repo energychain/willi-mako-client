@@ -270,8 +270,12 @@ export class WilliMakoClient {
       skipAuth: true
     });
 
-    if (response.success && response.data?.accessToken && options.persistToken !== false) {
-      this.setToken(response.data.accessToken);
+    if (response.success && response.data?.accessToken) {
+      if (options.persistToken === false) {
+        this.setToken(null);
+      } else {
+        this.setToken(response.data.accessToken);
+      }
     }
 
     return response;
