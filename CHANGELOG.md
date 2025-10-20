@@ -8,6 +8,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 _Noch keine Änderungen._
 
+## [0.4.0] - 2025-10-20
+
+### Changed
+- MCP-Server verwaltet jetzt eigenständige `StreamableHTTPServerTransport`-Instanzen pro Session und erlaubt damit mehrere gleichzeitige MCP-Clients ohne vorgelagerten Load-Balancer oder Proxy-Neustarts.
+
+### Tests
+- Integrationstest verifiziert parallele Initialisierung und Tool-Aufrufe zweier MCP-Sessions (`tests/mcp-server.test.ts`).
+
 ## [0.3.6] - 2025-10-20
 
 ### Fixed
@@ -129,7 +137,8 @@ _Noch keine Änderungen._
 - Vitest test suite covering core client behaviour.
 - Comprehensive documentation, onboarding guides, and community standards.
 
-[Unreleased]: https://github.com/energychain/willi-mako-client/compare/v0.3.6...HEAD
+[Unreleased]: https://github.com/energychain/willi-mako-client/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/energychain/willi-mako-client/compare/v0.3.6...v0.4.0
 [0.3.6]: https://github.com/energychain/willi-mako-client/compare/v0.3.5...v0.3.6
 [0.3.5]: https://github.com/energychain/willi-mako-client/compare/v0.3.4...v0.3.5
 [0.3.4]: https://github.com/energychain/willi-mako-client/compare/v0.3.3...v0.3.4

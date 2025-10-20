@@ -243,13 +243,7 @@ export async function startMcpServer(options: McpServerOptions = {}): Promise<Mc
     return newSessionId;
   };
 
-  const server = new McpServer(
-    {
-      name: 'willi-mako',
-      version: '1.0.0'
-    },
-    {
-      instructions: `Willi-Mako exposes audited Marktkommunikationsprozesse. Use the tools to manage sessions, converse with the platform and orchestrate sandbox jobs.
+  const MCP_SERVER_INSTRUCTIONS = `Willi-Mako exposes audited Marktkommunikationsprozesse. Use the tools to manage sessions, converse with the platform and orchestrate sandbox jobs.
 
 Authentication:
 - Provide an "Authorization: Bearer <token>" header or set the WILLI_MAKO_TOKEN environment variable.
@@ -278,9 +272,7 @@ Capabilities:
 
 Resources:
 - willi-mako://openapi – Returns the OpenAPI schema exposed by the platform
-`
-    }
-  );
+`;
 
   const emitLog = (message: string): void => {
     if (options.logger) {
@@ -288,27 +280,6 @@ Resources:
       return;
     }
     console.log(message);
-  };
-
-  const transport = new StreamableHTTPServerTransport({
-    sessionIdGenerator: () => randomUUID(),
-    enableJsonResponse: true,
-    onsessioninitialized: async (sessionId) => {
-      if (!transportState.has(sessionId)) {
-        transportState.set(sessionId, {});
-      }
-      emitLog(`🔗 MCP transport session ${sessionId} initialised (active=${transportState.size}).`);
-    },
-    onsessionclosed: async (sessionId) => {
-      transportState.delete(sessionId);
-      emitLog(`🔌 MCP transport session ${sessionId} closed (active=${transportState.size}).`);
-    }
-  });
-
-  transport.onerror = (error) => {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error('[MCP transport error]', error);
-    emitLog(`❗ MCP transport error: ${message}`);
   };
 
   const formatJson = (value: unknown): string => JSON.stringify(value, null, 2);
@@ -322,516 +293,508 @@ Resources:
     structuredContent: data as JsonLike
   });
 
-  const registerTool = (
-    toolName: Parameters<typeof server.registerTool>[0],
-    metadata: Parameters<typeof server.registerTool>[1],
-    handler: Parameters<typeof server.registerTool>[2]
-  ): void => {
-    server.registerTool(toolName, metadata, async (input: unknown, extra: unknown) => {
-      const context = extra as RequestContext | undefined;
-      const invocationId = randomUUID();
-      const transportSessionId = context?.sessionId;
-      const state = transportSessionId ? transportState.get(transportSessionId) : undefined;
-      const williSessionId = state?.sessionId;
-      const userAgent =
-        typeof context?.requestInfo?.headers?.['user-agent'] === 'string'
-          ? context.requestInfo.headers['user-agent']
-          : undefined;
+  const configureServer = (server: McpServer): void => {
+    const registerTool = (
+      toolName: Parameters<typeof server.registerTool>[0],
+      metadata: Parameters<typeof server.registerTool>[1],
+      handler: Parameters<typeof server.registerTool>[2]
+    ): void => {
+      server.registerTool(toolName, metadata, async (input: unknown, extra: unknown) => {
+        const context = extra as RequestContext | undefined;
+        const invocationId = randomUUID();
+        const transportSessionId = context?.sessionId;
+        const state = transportSessionId ? transportState.get(transportSessionId) : undefined;
+        const williSessionId = state?.sessionId;
+        const userAgent =
+          typeof context?.requestInfo?.headers?.['user-agent'] === 'string'
+            ? context.requestInfo.headers['user-agent']
+            : undefined;
 
-      const contextParts: string[] = [];
-      if (transportSessionId) {
-        contextParts.push(`transport=${transportSessionId}`);
-      }
-      if (williSessionId) {
-        contextParts.push(`session=${williSessionId}`);
-      }
-      if (userAgent) {
-        contextParts.push(`ua=${userAgent}`);
-      }
-      const contextSuffix = contextParts.length ? ` (${contextParts.join(', ')})` : '';
-
-      emitLog(`🛠️  [${invocationId}] ${toolName} invoked${contextSuffix}`);
-      const startedAt = Date.now();
-      try {
-        const result = await handler(input as never, extra as never);
-        const duration = Date.now() - startedAt;
-        emitLog(`✅ [${invocationId}] ${toolName} completed in ${duration}ms`);
-        return result;
-      } catch (error) {
-        const duration = Date.now() - startedAt;
-        const message = error instanceof Error ? error.message : String(error);
-        emitLog(`❌ [${invocationId}] ${toolName} failed after ${duration}ms – ${message}`);
-        throw error;
-      }
-    });
-  };
-
-  registerTool(
-    'willi-mako-login',
-    {
-      title: 'Authenticate with Willi-Mako',
-      description:
-        'Exchanges email/password credentials for a JWT token. Optionally persists the token on the MCP server instance.',
-      inputSchema: {
-        email: z.string().email().describe('Account email address used for authentication.'),
-        password: z.string().describe('Account password.'),
-        persistToken: z
-          .boolean()
-          .optional()
-          .describe('Persist the token on the MCP server (defaults to true).')
-      }
-    },
-    async ({ email, password, persistToken = true }, extra?: RequestContext) => {
-      const authClient = new WilliMakoClient({ baseUrl, token: null });
-      const response = await authClient.login({ email, password }, { persistToken });
-
-      if (response.success && persistToken !== false && response.data?.accessToken) {
-        const encodedCredentials = Buffer.from(`${email}:${password}`, 'utf8').toString('base64');
-        basicTokenCache.set(encodedCredentials, {
-          token: response.data.accessToken,
-          expiresAt: parseExpiresAt(response.data.expiresAt)
-        });
-
-        if (extra?.sessionId) {
-          const state = transportState.get(extra.sessionId) ?? {};
-          state.token = response.data.accessToken;
-          transportState.set(extra.sessionId, state);
-        }
-      }
-
-      const payload = { ...response, persisted: persistToken };
-      return respond(payload);
-    }
-  );
-
-  registerTool(
-    'willi-mako-create-session',
-    {
-      title: 'Create a Willi-Mako session',
-      description:
-        'Creates a new workspace session grouping artefacts, sandbox jobs and conversational context.',
-      inputSchema: {
-        ttlMinutes: z
-          .number()
-          .int()
-          .min(1)
-          .max(24 * 60)
-          .optional()
-          .describe('Optional time-to-live in minutes (defaults to platform standard).'),
-        preferences: z
-          .record(z.any())
-          .optional()
-          .describe('Session preferences like companiesOfInterest or preferredTopics.'),
-        contextSettings: z
-          .record(z.any())
-          .optional()
-          .describe('Initial context configuration used by the assistant.')
-      }
-    },
-    async ({ ttlMinutes, preferences, contextSettings }, extra?: RequestContext) =>
-      withClient(extra, async (clientInstance, transportSessionId) => {
-        const payload: CreateSessionRequest = {};
-        if (typeof ttlMinutes === 'number') {
-          payload.ttlMinutes = ttlMinutes;
-        }
-        if (preferences) {
-          payload.preferences = preferences as CreateSessionRequest['preferences'];
-        }
-        if (contextSettings) {
-          payload.contextSettings = contextSettings;
-        }
-        const response = await clientInstance.createSession(payload);
+        const contextParts: string[] = [];
         if (transportSessionId) {
-          const state = transportState.get(transportSessionId) ?? {};
-          state.sessionId = response.data.sessionId;
-          transportState.set(transportSessionId, state);
+          contextParts.push(`transport=${transportSessionId}`);
         }
-        return respond(response);
-      })
-  );
+        if (williSessionId) {
+          contextParts.push(`session=${williSessionId}`);
+        }
+        if (userAgent) {
+          contextParts.push(`ua=${userAgent}`);
+        }
+        const contextSuffix = contextParts.length ? ` (${contextParts.join(', ')})` : '';
 
-  registerTool(
-    'willi-mako-get-session',
-    {
-      title: 'Retrieve a session',
-      description: 'Fetches metadata about an existing session.',
-      inputSchema: {
-        sessionId: z.string().describe('Session identifier (UUID).')
-      }
-    },
-    async ({ sessionId }, extra?: RequestContext) =>
-      withClient(extra, async (clientInstance) => {
-        const response = await clientInstance.getSession(sessionId);
-        return respond(response);
-      })
-  );
+        emitLog(`🛠️  [${invocationId}] ${toolName} invoked${contextSuffix}`);
+        const startedAt = Date.now();
+        try {
+          const result = await handler(input as never, extra as never);
+          const duration = Date.now() - startedAt;
+          emitLog(`✅ [${invocationId}] ${toolName} completed in ${duration}ms`);
+          return result;
+        } catch (error) {
+          const duration = Date.now() - startedAt;
+          const message = error instanceof Error ? error.message : String(error);
+          emitLog(`❌ [${invocationId}] ${toolName} failed after ${duration}ms – ${message}`);
+          throw error;
+        }
+      });
+    };
+    registerTool(
+      'willi-mako-login',
+      {
+        title: 'Authenticate with Willi-Mako',
+        description:
+          'Exchanges email/password credentials for a JWT token. Optionally persists the token on the MCP server instance.',
+        inputSchema: {
+          email: z.string().email().describe('Account email address used for authentication.'),
+          password: z.string().describe('Account password.'),
+          persistToken: z
+            .boolean()
+            .optional()
+            .describe('Persist the token on the MCP server (defaults to true).')
+        }
+      },
+      async ({ email, password, persistToken = true }, extra?: RequestContext) => {
+        const authClient = new WilliMakoClient({ baseUrl, token: null });
+        const response = await authClient.login({ email, password }, { persistToken });
 
-  registerTool(
-    'willi-mako-delete-session',
-    {
-      title: 'Delete a session',
-      description: 'Deletes a session including associated artefacts and sandbox jobs.',
-      inputSchema: {
-        sessionId: z.string().describe('Session identifier (UUID).')
+        if (response.success && persistToken !== false && response.data?.accessToken) {
+          const encodedCredentials = Buffer.from(`${email}:${password}`, 'utf8').toString('base64');
+          basicTokenCache.set(encodedCredentials, {
+            token: response.data.accessToken,
+            expiresAt: parseExpiresAt(response.data.expiresAt)
+          });
+
+          if (extra?.sessionId) {
+            const state = transportState.get(extra.sessionId) ?? {};
+            state.token = response.data.accessToken;
+            transportState.set(extra.sessionId, state);
+          }
+        }
+
+        const payload = { ...response, persisted: persistToken };
+        return respond(payload);
       }
-    },
-    async ({ sessionId }, extra?: RequestContext) =>
-      withClient(extra, async (clientInstance, transportSessionId) => {
-        await clientInstance.deleteSession(sessionId);
-        if (transportSessionId) {
-          const state = transportState.get(transportSessionId);
-          if (state && state.sessionId === sessionId) {
-            state.sessionId = undefined;
+    );
+
+    registerTool(
+      'willi-mako-create-session',
+      {
+        title: 'Create a Willi-Mako session',
+        description:
+          'Creates a new workspace session grouping artefacts, sandbox jobs and conversational context.',
+        inputSchema: {
+          ttlMinutes: z
+            .number()
+            .int()
+            .min(1)
+            .max(24 * 60)
+            .optional()
+            .describe('Optional time-to-live in minutes (defaults to platform standard).'),
+          preferences: z
+            .record(z.any())
+            .optional()
+            .describe('Session preferences like companiesOfInterest or preferredTopics.'),
+          contextSettings: z
+            .record(z.any())
+            .optional()
+            .describe('Initial context configuration used by the assistant.')
+        }
+      },
+      async ({ ttlMinutes, preferences, contextSettings }, extra?: RequestContext) =>
+        withClient(extra, async (clientInstance, transportSessionId) => {
+          const payload: CreateSessionRequest = {};
+          if (typeof ttlMinutes === 'number') {
+            payload.ttlMinutes = ttlMinutes;
+          }
+          if (preferences) {
+            payload.preferences = preferences as CreateSessionRequest['preferences'];
+          }
+          if (contextSettings) {
+            payload.contextSettings = contextSettings;
+          }
+          const response = await clientInstance.createSession(payload);
+          if (transportSessionId) {
+            const state = transportState.get(transportSessionId) ?? {};
+            state.sessionId = response.data.sessionId;
             transportState.set(transportSessionId, state);
           }
-        }
-        const payload = { success: true, sessionId };
-        return respond(payload);
-      })
-  );
+          return respond(response);
+        })
+    );
 
-  registerTool(
-    'willi-mako-chat',
-    {
-      title: 'Send a conversational message',
-      description:
-        'Consult the energy-market assistant for grounded insights on GPKE, WiM, GeLi Gas, EnWG/StromNZV/EEG Vorgaben and EDIFACT/edi@energy (BDEW MaKo) format questions within the active session.',
-      inputSchema: {
-        sessionId: z.string().describe('Session identifier (UUID).').optional(),
-        message: z.string().describe('Message content to send to the assistant.'),
-        contextSettings: z
-          .record(z.any())
-          .optional()
-          .describe('Optional context override for this request.'),
-        timelineId: z
-          .string()
-          .uuid()
-          .optional()
-          .describe('Optional timeline identifier to link events.')
-      }
-    },
-    async ({ sessionId, message, contextSettings, timelineId }, extra?: RequestContext) =>
-      withClient(extra, async (clientInstance, transportSessionId) => {
-        const activeSessionId = await ensureSessionId(
-          clientInstance,
-          transportSessionId,
-          sessionId
-        );
-        const payload: ChatRequest = {
-          sessionId: activeSessionId,
-          message,
-          contextSettings: contextSettings ?? undefined,
-          timelineId: timelineId ?? undefined
-        };
-        const response = await clientInstance.chat(payload);
-        return respond({ ...response, sessionId: activeSessionId });
-      })
-  );
-
-  registerTool(
-    'willi-mako-semantic-search',
-    {
-      title: 'Semantic search',
-      description: 'Executes a hybrid semantic search within the Willi-Mako knowledge base.',
-      inputSchema: {
-        sessionId: z.string().describe('Session identifier (UUID).').optional(),
-        query: z.string().describe('Natural language search query.'),
-        options: z
-          .object({
-            limit: z.number().int().min(1).max(100).optional(),
-            alpha: z.number().optional(),
-            outlineScoping: z.boolean().optional(),
-            excludeVisual: z.boolean().optional()
-          })
-          .optional()
-          .describe('Optional retrieval options (limit, alpha, outlineScoping, excludeVisual).')
-      }
-    },
-    async ({ sessionId, query, options }, extra?: RequestContext) =>
-      withClient(extra, async (clientInstance, transportSessionId) => {
-        const activeSessionId = await ensureSessionId(
-          clientInstance,
-          transportSessionId,
-          sessionId
-        );
-        const payload: SemanticSearchRequest = {
-          sessionId: activeSessionId,
-          query,
-          options: options ?? undefined
-        };
-        const response = await clientInstance.semanticSearch(payload);
-        return respond({ ...response, sessionId: activeSessionId });
-      })
-  );
-
-  registerTool(
-    'willi-mako-reasoning-generate',
-    {
-      title: 'Advanced reasoning',
-      description:
-        'Launches the multi-stage reasoning pipeline to synthesise evidence and action plans across MaKo documents when simple chat is insufficient.',
-      inputSchema: {
-        sessionId: z.string().describe('Session identifier (UUID).').optional(),
-        query: z.string().describe('Primary question or instruction.'),
-        messages: z
-          .array(
-            z.object({
-              role: z.string(),
-              content: z.string()
-            })
-          )
-          .optional()
-          .describe('Optional conversation history for additional context.'),
-        contextSettingsOverride: z
-          .record(z.any())
-          .optional()
-          .describe('Optional context override for this request.'),
-        preferencesOverride: z
-          .record(z.any())
-          .optional()
-          .describe('Optional override of session preferences.'),
-        overridePipeline: z
-          .record(z.any())
-          .optional()
-          .describe('Optional pipeline override for advanced users.'),
-        useDetailedIntentAnalysis: z
-          .boolean()
-          .optional()
-          .describe('Enable detailed intent analysis for the request.')
-      }
-    },
-    async (
+    registerTool(
+      'willi-mako-get-session',
       {
-        sessionId,
-        query,
-        messages,
-        contextSettingsOverride,
-        preferencesOverride,
-        overridePipeline,
-        useDetailedIntentAnalysis
+        title: 'Retrieve a session',
+        description: 'Fetches metadata about an existing session.',
+        inputSchema: {
+          sessionId: z.string().describe('Session identifier (UUID).')
+        }
       },
-      extra?: RequestContext
-    ) =>
-      withClient(extra, async (clientInstance, transportSessionId) => {
-        const activeSessionId = await ensureSessionId(
-          clientInstance,
-          transportSessionId,
-          sessionId
-        );
-        const payload: ReasoningGenerateRequest = {
-          sessionId: activeSessionId,
-          query,
-          messages: messages ?? undefined,
-          contextSettingsOverride: contextSettingsOverride ?? undefined,
-          preferencesOverride: preferencesOverride ?? undefined,
-          overridePipeline: overridePipeline ?? undefined,
-          useDetailedIntentAnalysis: useDetailedIntentAnalysis ?? undefined
-        };
-        const response = await clientInstance.generateReasoning(payload);
-        return respond({ ...response, sessionId: activeSessionId });
-      })
-  );
+      async ({ sessionId }, extra?: RequestContext) =>
+        withClient(extra, async (clientInstance) => {
+          const response = await clientInstance.getSession(sessionId);
+          return respond(response);
+        })
+    );
 
-  registerTool(
-    'willi-mako-resolve-context',
-    {
-      title: 'Resolve context',
-      description: 'Resolves contextual decisions and resources for a given user query.',
-      inputSchema: {
-        sessionId: z.string().describe('Session identifier (UUID).').optional(),
-        query: z.string().describe('User query requiring context resolution.'),
-        messages: z
-          .array(
-            z.object({
-              role: z.string(),
-              content: z.string()
-            })
-          )
-          .optional()
-          .describe('Optional previous messages.'),
-        contextSettingsOverride: z
-          .record(z.any())
-          .optional()
-          .describe('Optional context override for this resolution.')
-      }
-    },
-    async ({ sessionId, query, messages, contextSettingsOverride }, extra?: RequestContext) =>
-      withClient(extra, async (clientInstance, transportSessionId) => {
-        const activeSessionId = await ensureSessionId(
-          clientInstance,
-          transportSessionId,
-          sessionId
-        );
-        const payload: ContextResolveRequest = {
-          sessionId: activeSessionId,
-          query,
-          messages: messages ?? undefined,
-          contextSettingsOverride: contextSettingsOverride ?? undefined
-        };
-        const response = await clientInstance.resolveContext(payload);
-        return respond({ ...response, sessionId: activeSessionId });
-      })
-  );
-
-  registerTool(
-    'willi-mako-clarification-analyze',
-    {
-      title: 'Clarification analysis',
-      description: 'Analyses whether clarification questions are required before continuing.',
-      inputSchema: {
-        sessionId: z.string().describe('Session identifier (UUID).').optional(),
-        query: z.string().describe('User query to analyse.'),
-        includeEnhancedQuery: z
-          .boolean()
-          .optional()
-          .describe('Request an enhanced query suggestion to disambiguate the request.')
-      }
-    },
-    async ({ sessionId, query, includeEnhancedQuery }, extra?: RequestContext) =>
-      withClient(extra, async (clientInstance, transportSessionId) => {
-        const activeSessionId = await ensureSessionId(
-          clientInstance,
-          transportSessionId,
-          sessionId
-        );
-        const payload: ClarificationAnalyzeRequest = {
-          sessionId: activeSessionId,
-          query,
-          includeEnhancedQuery: includeEnhancedQuery ?? undefined
-        };
-        const response = await clientInstance.analyzeClarification(payload);
-        return respond({ ...response, sessionId: activeSessionId });
-      })
-  );
-
-  registerTool(
-    'willi-mako-create-node-script',
-    {
-      title: 'Run a Willi-Mako Node sandbox job',
-      description: 'Executes JavaScript in the secure tooling sandbox, returning the created job.',
-      inputSchema: {
-        sessionId: z
-          .string()
-          .describe('Business session identifier (e.g. UUID that groups artifacts/jobs).')
-          .optional(),
-        source: z.string().describe('JavaScript source code that will be executed.'),
-        timeoutMs: z
-          .number()
-          .int()
-          .min(100)
-          .max(60_000)
-          .optional()
-          .describe('Optional execution timeout in milliseconds.'),
-        metadata: z
-          .record(z.string())
-          .optional()
-          .describe('Optional metadata stored with the job for audit purposes.'),
-        tags: z
-          .array(z.string())
-          .optional()
-          .describe('Optional tags for discovery. This will be merged into metadata.tags field.')
-      }
-    },
-    async ({ sessionId, source, timeoutMs, metadata, tags }, extra?: RequestContext) =>
-      withClient(extra, async (clientInstance, transportSessionId) => {
-        const activeSessionId = await ensureSessionId(
-          clientInstance,
-          transportSessionId,
-          sessionId
-        );
-        const payload = {
-          sessionId: activeSessionId,
-          source,
-          timeoutMs,
-          metadata: metadata ?? undefined,
-          tags
-        };
-
-        const response = await clientInstance.createNodeScriptJob(payload);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(response.data, null, 2)
+    registerTool(
+      'willi-mako-delete-session',
+      {
+        title: 'Delete a session',
+        description: 'Deletes a session including associated artefacts and sandbox jobs.',
+        inputSchema: {
+          sessionId: z.string().describe('Session identifier (UUID).')
+        }
+      },
+      async ({ sessionId }, extra?: RequestContext) =>
+        withClient(extra, async (clientInstance, transportSessionId) => {
+          await clientInstance.deleteSession(sessionId);
+          if (transportSessionId) {
+            const state = transportState.get(transportSessionId);
+            if (state && state.sessionId === sessionId) {
+              state.sessionId = undefined;
+              transportState.set(transportSessionId, state);
             }
-          ],
-          structuredContent: {
-            sessionId: activeSessionId,
-            data: response.data
           }
-        };
-      })
-  );
+          const payload = { success: true, sessionId };
+          return respond(payload);
+        })
+    );
 
-  registerTool(
-    'willi-mako-get-tool-job',
-    {
-      title: 'Lookup a sandbox job',
-      description: 'Returns the current status, stdout and stderr of a tooling job.',
-      inputSchema: {
-        jobId: z.string().describe('The job identifier returned by create-node-script.'),
-        includeLogs: z
-          .boolean()
-          .optional()
-          .describe('Whether to include stdout/stderr in the response (defaults to true).')
-      }
-    },
-    async ({ jobId, includeLogs = true }, extra?: RequestContext) =>
-      withClient(extra, async (clientInstance) => {
-        const response = await clientInstance.getToolJob(jobId);
-        const data = includeLogs
-          ? response.data
-          : { ...response.data, job: { ...response.data.job, result: undefined } };
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(data, null, 2)
+    registerTool(
+      'willi-mako-chat',
+      {
+        title: 'Send a conversational message',
+        description:
+          'Consult the energy-market assistant for grounded insights on GPKE, WiM, GeLi Gas, EnWG/StromNZV/EEG Vorgaben and EDIFACT/edi@energy (BDEW MaKo) format questions within the active session.',
+        inputSchema: {
+          sessionId: z.string().describe('Session identifier (UUID).').optional(),
+          message: z.string().describe('Message content to send to the assistant.'),
+          contextSettings: z
+            .record(z.any())
+            .optional()
+            .describe('Optional context override for this request.'),
+          timelineId: z
+            .string()
+            .uuid()
+            .optional()
+            .describe('Optional timeline identifier to link events.')
+        }
+      },
+      async ({ sessionId, message, contextSettings, timelineId }, extra?: RequestContext) =>
+        withClient(extra, async (clientInstance, transportSessionId) => {
+          const activeSessionId = await ensureSessionId(
+            clientInstance,
+            transportSessionId,
+            sessionId
+          );
+          const payload: ChatRequest = {
+            sessionId: activeSessionId,
+            message,
+            contextSettings: contextSettings ?? undefined,
+            timelineId: timelineId ?? undefined
+          };
+          const response = await clientInstance.chat(payload);
+          return respond({ ...response, sessionId: activeSessionId });
+        })
+    );
+
+    registerTool(
+      'willi-mako-semantic-search',
+      {
+        title: 'Semantic search',
+        description: 'Executes a hybrid semantic search within the Willi-Mako knowledge base.',
+        inputSchema: {
+          sessionId: z.string().describe('Session identifier (UUID).').optional(),
+          query: z.string().describe('Natural language search query.'),
+          options: z
+            .object({
+              limit: z.number().int().min(1).max(100).optional(),
+              alpha: z.number().optional(),
+              outlineScoping: z.boolean().optional(),
+              excludeVisual: z.boolean().optional()
+            })
+            .optional()
+            .describe('Optional retrieval options (limit, alpha, outlineScoping, excludeVisual).')
+        }
+      },
+      async ({ sessionId, query, options }, extra?: RequestContext) =>
+        withClient(extra, async (clientInstance, transportSessionId) => {
+          const activeSessionId = await ensureSessionId(
+            clientInstance,
+            transportSessionId,
+            sessionId
+          );
+          const payload: SemanticSearchRequest = {
+            sessionId: activeSessionId,
+            query,
+            options: options ?? undefined
+          };
+          const response = await clientInstance.semanticSearch(payload);
+          return respond({ ...response, sessionId: activeSessionId });
+        })
+    );
+
+    registerTool(
+      'willi-mako-reasoning-generate',
+      {
+        title: 'Advanced reasoning',
+        description:
+          'Launches the multi-stage reasoning pipeline to synthesise evidence and action plans across MaKo documents when simple chat is insufficient.',
+        inputSchema: {
+          sessionId: z.string().describe('Session identifier (UUID).').optional(),
+          query: z.string().describe('Primary question or instruction.'),
+          messages: z
+            .array(
+              z.object({
+                role: z.string(),
+                content: z.string()
+              })
+            )
+            .optional()
+            .describe('Optional conversation history for additional context.'),
+          contextSettingsOverride: z
+            .record(z.any())
+            .optional()
+            .describe('Optional context override for this request.'),
+          preferencesOverride: z
+            .record(z.any())
+            .optional()
+            .describe('Optional override of session preferences.'),
+          overridePipeline: z
+            .record(z.any())
+            .optional()
+            .describe('Optional pipeline override for advanced users.'),
+          useDetailedIntentAnalysis: z
+            .boolean()
+            .optional()
+            .describe('Enable detailed intent analysis for the request.')
+        }
+      },
+      async (
+        {
+          sessionId,
+          query,
+          messages,
+          contextSettingsOverride,
+          preferencesOverride,
+          overridePipeline,
+          useDetailedIntentAnalysis
+        },
+        extra?: RequestContext
+      ) =>
+        withClient(extra, async (clientInstance, transportSessionId) => {
+          const activeSessionId = await ensureSessionId(
+            clientInstance,
+            transportSessionId,
+            sessionId
+          );
+          const payload: ReasoningGenerateRequest = {
+            sessionId: activeSessionId,
+            query,
+            messages: messages ?? undefined,
+            contextSettingsOverride: contextSettingsOverride ?? undefined,
+            preferencesOverride: preferencesOverride ?? undefined,
+            overridePipeline: overridePipeline ?? undefined,
+            useDetailedIntentAnalysis: useDetailedIntentAnalysis ?? undefined
+          };
+          const response = await clientInstance.generateReasoning(payload);
+          return respond({ ...response, sessionId: activeSessionId });
+        })
+    );
+
+    registerTool(
+      'willi-mako-resolve-context',
+      {
+        title: 'Resolve context',
+        description: 'Resolves contextual decisions and resources for a given user query.',
+        inputSchema: {
+          sessionId: z.string().describe('Session identifier (UUID).').optional(),
+          query: z.string().describe('User query requiring context resolution.'),
+          messages: z
+            .array(
+              z.object({
+                role: z.string(),
+                content: z.string()
+              })
+            )
+            .optional()
+            .describe('Optional previous messages.'),
+          contextSettingsOverride: z
+            .record(z.any())
+            .optional()
+            .describe('Optional context override for this resolution.')
+        }
+      },
+      async ({ sessionId, query, messages, contextSettingsOverride }, extra?: RequestContext) =>
+        withClient(extra, async (clientInstance, transportSessionId) => {
+          const activeSessionId = await ensureSessionId(
+            clientInstance,
+            transportSessionId,
+            sessionId
+          );
+          const payload: ContextResolveRequest = {
+            sessionId: activeSessionId,
+            query,
+            messages: messages ?? undefined,
+            contextSettingsOverride: contextSettingsOverride ?? undefined
+          };
+          const response = await clientInstance.resolveContext(payload);
+          return respond({ ...response, sessionId: activeSessionId });
+        })
+    );
+
+    registerTool(
+      'willi-mako-clarification-analyze',
+      {
+        title: 'Clarification analysis',
+        description: 'Analyses whether clarification questions are required before continuing.',
+        inputSchema: {
+          sessionId: z.string().describe('Session identifier (UUID).').optional(),
+          query: z.string().describe('User query to analyse.'),
+          includeEnhancedQuery: z
+            .boolean()
+            .optional()
+            .describe('Request an enhanced query suggestion to disambiguate the request.')
+        }
+      },
+      async ({ sessionId, query, includeEnhancedQuery }, extra?: RequestContext) =>
+        withClient(extra, async (clientInstance, transportSessionId) => {
+          const activeSessionId = await ensureSessionId(
+            clientInstance,
+            transportSessionId,
+            sessionId
+          );
+          const payload: ClarificationAnalyzeRequest = {
+            sessionId: activeSessionId,
+            query,
+            includeEnhancedQuery: includeEnhancedQuery ?? undefined
+          };
+          const response = await clientInstance.analyzeClarification(payload);
+          return respond({ ...response, sessionId: activeSessionId });
+        })
+    );
+
+    registerTool(
+      'willi-mako-create-node-script',
+      {
+        title: 'Run a Willi-Mako Node sandbox job',
+        description:
+          'Executes JavaScript in the secure tooling sandbox, returning the created job.',
+        inputSchema: {
+          sessionId: z
+            .string()
+            .describe('Business session identifier (e.g. UUID that groups artifacts/jobs).')
+            .optional(),
+          source: z.string().describe('JavaScript source code that will be executed.'),
+          timeoutMs: z
+            .number()
+            .int()
+            .min(100)
+            .max(60_000)
+            .optional()
+            .describe('Optional execution timeout in milliseconds.'),
+          metadata: z
+            .record(z.string())
+            .optional()
+            .describe('Optional metadata stored with the job for audit purposes.'),
+          tags: z
+            .array(z.string())
+            .optional()
+            .describe('Optional tags for discovery. This will be merged into metadata.tags field.')
+        }
+      },
+      async ({ sessionId, source, timeoutMs, metadata, tags }, extra?: RequestContext) =>
+        withClient(extra, async (clientInstance, transportSessionId) => {
+          const activeSessionId = await ensureSessionId(
+            clientInstance,
+            transportSessionId,
+            sessionId
+          );
+          const payload = {
+            sessionId: activeSessionId,
+            source,
+            timeoutMs,
+            metadata: metadata ?? undefined,
+            tags
+          };
+
+          const response = await clientInstance.createNodeScriptJob(payload);
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(response.data, null, 2)
+              }
+            ],
+            structuredContent: {
+              sessionId: activeSessionId,
+              data: response.data
             }
-          ],
-          structuredContent: data
-        };
-      })
-  );
+          };
+        })
+    );
 
-  registerTool(
-    'willi-mako-create-artifact',
-    {
-      title: 'Persist an artefact',
-      description: 'Stores a compliance report, EDI snapshot or ETL output as an artefact.',
-      inputSchema: {
-        sessionId: z
-          .string()
-          .describe('Business session identifier that groups related artefacts/jobs.')
-          .optional(),
-        type: z
-          .string()
-          .describe('Artefact type, e.g. compliance-report, edifact-message, audit-log.'),
-        name: z.string().describe('Human readable name.'),
-        mimeType: z.string().describe('MIME type of the stored content.'),
-        encoding: z
-          .enum(['utf8', 'base64'])
-          .default('utf8')
-          .describe('Encoding of the content payload.'),
-        content: z.string().describe('Artefact payload (UTF-8 or Base64 depending on encoding).'),
-        description: z.string().optional().describe('Optional additional description.'),
-        tags: z.array(z.string()).optional().describe('Optional tags for search/discovery.'),
-        metadata: z.record(z.any()).optional().describe('Optional custom metadata JSON object.'),
-        version: z.string().optional().describe('Semantic version identifier if applicable.')
-      }
-    },
-    async (
-      { sessionId, type, name, mimeType, encoding, content, description, tags, metadata, version },
-      extra?: RequestContext
-    ) =>
-      withClient(extra, async (clientInstance, transportSessionId) => {
-        const activeSessionId = await ensureSessionId(
-          clientInstance,
-          transportSessionId,
-          sessionId
-        );
-        const response = await clientInstance.createArtifact({
-          sessionId: activeSessionId,
+    registerTool(
+      'willi-mako-get-tool-job',
+      {
+        title: 'Lookup a sandbox job',
+        description: 'Returns the current status, stdout and stderr of a tooling job.',
+        inputSchema: {
+          jobId: z.string().describe('The job identifier returned by create-node-script.'),
+          includeLogs: z
+            .boolean()
+            .optional()
+            .describe('Whether to include stdout/stderr in the response (defaults to true).')
+        }
+      },
+      async ({ jobId, includeLogs = true }, extra?: RequestContext) =>
+        withClient(extra, async (clientInstance) => {
+          const response = await clientInstance.getToolJob(jobId);
+          const data = includeLogs
+            ? response.data
+            : { ...response.data, job: { ...response.data.job, result: undefined } };
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(data, null, 2)
+              }
+            ],
+            structuredContent: data
+          };
+        })
+    );
+
+    registerTool(
+      'willi-mako-create-artifact',
+      {
+        title: 'Persist an artefact',
+        description: 'Stores a compliance report, EDI snapshot or ETL output as an artefact.',
+        inputSchema: {
+          sessionId: z
+            .string()
+            .describe('Business session identifier that groups related artefacts/jobs.')
+            .optional(),
+          type: z
+            .string()
+            .describe('Artefact type, e.g. compliance-report, edifact-message, audit-log.'),
+          name: z.string().describe('Human readable name.'),
+          mimeType: z.string().describe('MIME type of the stored content.'),
+          encoding: z
+            .enum(['utf8', 'base64'])
+            .default('utf8')
+            .describe('Encoding of the content payload.'),
+          content: z.string().describe('Artefact payload (UTF-8 or Base64 depending on encoding).'),
+          description: z.string().optional().describe('Optional additional description.'),
+          tags: z.array(z.string()).optional().describe('Optional tags for search/discovery.'),
+          metadata: z.record(z.any()).optional().describe('Optional custom metadata JSON object.'),
+          version: z.string().optional().describe('Semantic version identifier if applicable.')
+        }
+      },
+      async (
+        {
+          sessionId,
           type,
           name,
           mimeType,
@@ -841,44 +804,188 @@ Resources:
           tags,
           metadata,
           version
-        });
-
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(response.data, null, 2)
-            }
-          ],
-          structuredContent: {
+        },
+        extra?: RequestContext
+      ) =>
+        withClient(extra, async (clientInstance, transportSessionId) => {
+          const activeSessionId = await ensureSessionId(
+            clientInstance,
+            transportSessionId,
+            sessionId
+          );
+          const response = await clientInstance.createArtifact({
             sessionId: activeSessionId,
-            data: response.data
-          }
-        };
-      })
-  );
+            type,
+            name,
+            mimeType,
+            encoding,
+            content,
+            description,
+            tags,
+            metadata,
+            version
+          });
 
-  server.registerResource(
-    'willi-mako-openapi',
-    'willi-mako://openapi',
-    {
-      title: 'Willi-Mako OpenAPI schema',
-      description: 'Bundled OpenAPI schema provided by the platform.'
-    },
-    async (_uri, extra?: RequestContext) =>
-      withClient(extra, async (clientInstance) => {
-        const schema = await clientInstance.getRemoteOpenApiDocument();
-        return {
-          contents: [
-            {
-              uri: 'willi-mako://openapi',
-              mimeType: 'application/json',
-              text: JSON.stringify(schema, null, 2)
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(response.data, null, 2)
+              }
+            ],
+            structuredContent: {
+              sessionId: activeSessionId,
+              data: response.data
             }
-          ]
-        };
+          };
+        })
+    );
+
+    server.registerResource(
+      'willi-mako-openapi',
+      'willi-mako://openapi',
+      {
+        title: 'Willi-Mako OpenAPI schema',
+        description: 'Bundled OpenAPI schema provided by the platform.'
+      },
+      async (_uri, extra?: RequestContext) =>
+        withClient(extra, async (clientInstance) => {
+          const schema = await clientInstance.getRemoteOpenApiDocument();
+          return {
+            contents: [
+              {
+                uri: 'willi-mako://openapi',
+                mimeType: 'application/json',
+                text: JSON.stringify(schema, null, 2)
+              }
+            ]
+          };
+        })
+    );
+  };
+
+  interface SessionContext {
+    server: McpServer;
+    transport: StreamableHTTPServerTransport;
+    sessionId?: string;
+    createdAt: number;
+    lastSeen: number;
+    finalized: boolean;
+  }
+
+  const activeSessionContexts = new Set<SessionContext>();
+  const sessionContextsById = new Map<string, SessionContext>();
+
+  const finalizeSessionContext = (context: SessionContext, sessionId?: string): void => {
+    if (context.finalized) {
+      return;
+    }
+    const effectiveSessionId = sessionId ?? context.sessionId;
+    if (effectiveSessionId) {
+      sessionContextsById.delete(effectiveSessionId);
+      transportState.delete(effectiveSessionId);
+    }
+    activeSessionContexts.delete(context);
+    context.finalized = true;
+  };
+
+  const createSessionContext = async (): Promise<SessionContext> => {
+    const server = new McpServer(
+      {
+        name: 'willi-mako',
+        version: '1.0.0'
+      },
+      {
+        instructions: MCP_SERVER_INSTRUCTIONS
+      }
+    );
+
+    configureServer(server);
+
+    const context: SessionContext = {
+      server,
+      transport: undefined as unknown as StreamableHTTPServerTransport,
+      createdAt: Date.now(),
+      lastSeen: Date.now(),
+      finalized: false
+    };
+
+    const transport = new StreamableHTTPServerTransport({
+      sessionIdGenerator: () => randomUUID(),
+      enableJsonResponse: true,
+      onsessioninitialized: async (sessionId) => {
+        context.sessionId = sessionId;
+        context.lastSeen = Date.now();
+        sessionContextsById.set(sessionId, context);
+        if (!transportState.has(sessionId)) {
+          transportState.set(sessionId, {});
+        }
+        emitLog(
+          `🔗 MCP transport session ${sessionId} initialised (active=${sessionContextsById.size}).`
+        );
+      },
+      onsessionclosed: async (sessionId) => {
+        finalizeSessionContext(context, sessionId);
+        emitLog(
+          `🔌 MCP transport session ${sessionId} closed (active=${sessionContextsById.size}).`
+        );
+      }
+    });
+
+    transport.onerror = (error) => {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error('[MCP transport error]', error);
+      emitLog(`❗ MCP transport error: ${message}`);
+    };
+
+    context.transport = transport;
+    activeSessionContexts.add(context);
+    await server.connect(transport);
+    return context;
+  };
+
+  const closeSessionContext = async (context: SessionContext, reason: string): Promise<void> => {
+    if (context.finalized && context.sessionId) {
+      return;
+    }
+
+    try {
+      await context.transport.close();
+    } catch (error) {
+      console.error('[MCP transport close error]', error);
+    }
+
+    if (!context.finalized) {
+      const sessionId = context.sessionId;
+      finalizeSessionContext(context);
+      if (sessionId) {
+        emitLog(
+          `🔌 MCP transport session ${sessionId} closed (${reason}; active=${sessionContextsById.size}).`
+        );
+      } else {
+        emitLog(`🔌 MCP transport session (pending) closed (${reason}).`);
+      }
+    }
+  };
+
+  const sendJsonError = (
+    res: ServerResponse<IncomingMessage>,
+    status: number,
+    code: number,
+    message: string
+  ): void => {
+    res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(
+      JSON.stringify({
+        jsonrpc: '2.0',
+        error: {
+          code,
+          message
+        },
+        id: null
       })
-  );
+    );
+  };
 
   async function handleRequest(
     req: IncomingMessage,
@@ -991,42 +1098,76 @@ Resources:
           chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
         }
         const body = chunks.length ? JSON.parse(Buffer.concat(chunks).toString('utf8')) : undefined;
-
-        const transportInternals = transport as unknown as {
-          sessionId?: string;
-          _initialized?: boolean;
-        };
-
         const isInitializationRequest = Array.isArray(body)
           ? body.some((message) => message?.method === 'initialize')
           : body?.method === 'initialize';
 
-        if (
-          isInitializationRequest &&
-          transportInternals._initialized &&
-          transportInternals.sessionId
-        ) {
-          const activeSessionId = transportInternals.sessionId;
-          emitLog(
-            `♻️  Re-initialization requested. Resetting MCP transport session ${activeSessionId} before processing.`
-          );
-          await transport.close();
-          transportState.delete(activeSessionId);
-          transportInternals.sessionId = undefined;
-          transportInternals._initialized = false;
+        if (isInitializationRequest) {
+          if (transportSessionId) {
+            const existingContext = sessionContextsById.get(transportSessionId);
+            if (existingContext) {
+              emitLog(
+                `♻️  Re-initialization requested. Resetting MCP transport session ${transportSessionId} before processing.`
+              );
+              await closeSessionContext(existingContext, 'reinitialize');
+            }
+          }
+
+          const context = await createSessionContext();
+          let initializationError: unknown;
+
+          try {
+            await context.transport.handleRequest(req, res, body);
+          } catch (error) {
+            initializationError = error;
+            throw error;
+          } finally {
+            if (!context.sessionId) {
+              await closeSessionContext(context, 'failed-initialize');
+            } else if (initializationError) {
+              await closeSessionContext(context, 'initialize-error');
+            } else {
+              context.lastSeen = Date.now();
+            }
+          }
+
+          return;
         }
 
-        await transport.handleRequest(req, res, body);
+        if (!transportSessionId) {
+          sendJsonError(res, 400, -32000, 'Bad Request: Mcp-Session-Id header is required');
+          return;
+        }
+
+        const context = sessionContextsById.get(transportSessionId);
+        if (!context || context.finalized) {
+          sendJsonError(res, 404, -32001, 'Session not found');
+          return;
+        }
+
+        context.lastSeen = Date.now();
+        await context.transport.handleRequest(req, res, body);
         return;
       }
 
-      if (req.method === 'GET') {
-        await transport.handleRequest(req, res);
-        return;
-      }
+      if (req.method === 'GET' || req.method === 'DELETE') {
+        if (!transportSessionId) {
+          sendJsonError(res, 400, -32000, 'Bad Request: Mcp-Session-Id header is required');
+          return;
+        }
 
-      if (req.method === 'DELETE') {
-        await transport.handleRequest(req, res);
+        const context = sessionContextsById.get(transportSessionId);
+        if (!context || context.finalized) {
+          sendJsonError(res, 404, -32001, 'Session not found');
+          return;
+        }
+
+        context.lastSeen = Date.now();
+        await context.transport.handleRequest(req, res);
+
+        if (req.method === 'DELETE') {
+          await closeSessionContext(context, 'client-delete');
+        }
         return;
       }
 
@@ -1046,8 +1187,6 @@ Resources:
       res.end(JSON.stringify({ error: (error as Error).message ?? 'Unknown error' }));
     }
   }
-
-  await server.connect(transport);
 
   const httpServer = createServer((req, res) => {
     void handleRequest(req, res);
@@ -1085,7 +1224,8 @@ Resources:
           resolve();
         });
       });
-      await transport.close();
+      const contexts = Array.from(activeSessionContexts);
+      await Promise.all(contexts.map((context) => closeSessionContext(context, 'shutdown')));
       transportState.clear();
     }
   };

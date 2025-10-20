@@ -67,4 +67,80 @@ describe('startMcpServer', () => {
 
     await instance.stop();
   });
+
+  it('supports multiple concurrent MCP sessions', async () => {
+    const instance = await startMcpServer({
+      client: createMockClient(),
+      port: 0,
+      token: 'test-token'
+    });
+
+    const initPayload = {
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'initialize',
+      params: {
+        protocolVersion: '2025-06-18',
+        capabilities: {},
+        clientInfo: {
+          name: 'vitest',
+          version: '1.0.0'
+        }
+      }
+    };
+
+    const headers = {
+      Accept: 'application/json, text/event-stream',
+      'Content-Type': 'application/json'
+    } satisfies Record<string, string>;
+
+    const initialize = async (): Promise<string> => {
+      const response = await fetch(instance.url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(initPayload)
+      });
+
+      expect(response.status).toBe(200);
+      const sessionId = response.headers.get('mcp-session-id');
+      expect(sessionId).toBeTruthy();
+      await response.json();
+      return sessionId as string;
+    };
+
+    const sessionIdA = await initialize();
+    const sessionIdB = await initialize();
+    expect(sessionIdA).not.toEqual(sessionIdB);
+
+    const listTools = async (sessionId: string): Promise<number> => {
+      const response = await fetch(instance.url, {
+        method: 'POST',
+        headers: {
+          ...headers,
+          'mcp-session-id': sessionId,
+          'mcp-protocol-version': '2025-06-18'
+        },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 2,
+          method: 'tools/list'
+        })
+      });
+
+      expect(response.status).toBe(200);
+      const result = await response.json();
+      expect(result?.result?.tools).toBeInstanceOf(Array);
+      return result.result.tools.length as number;
+    };
+
+    const [toolCountA, toolCountB] = await Promise.all([
+      listTools(sessionIdA),
+      listTools(sessionIdB)
+    ]);
+
+    expect(toolCountA).toBeGreaterThan(0);
+    expect(toolCountB).toBeGreaterThan(0);
+
+    await instance.stop();
+  });
 });

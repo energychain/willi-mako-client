@@ -66,6 +66,7 @@ The MCP server ships alongside the SDK. It reuses the typed `WilliMakoClient` in
 Key architectural features:
 
 - **Streamable HTTP transport** provided by `@modelcontextprotocol/sdk`, allowing bidirectional streaming compatible with IDEs and copilots.
+- **Session-scoped transports**: the server erzeugt für jede MCP-Session eine eigene Transportinstanz, sodass mehrere Clients parallel arbeiten können, ohne sich gegenseitig zu blockieren oder neu zu initialisieren.
 - **Per-connection state tracking** (`transportState`) to remember bearer tokens and Willi-Mako session IDs between tool invocations.
 - **Credential flexibility** through Bearer tokens, Basic credentials (email:password), environment variables, or URL-embedded tokens.
 - **Tool wrappers** that translate MCP invocations into typed SDK calls with detailed logging and response shaping.
@@ -181,7 +182,7 @@ Adapt the image/tag to your CI build if you maintain a private container.
 | **Docker / Kubernetes** | Immutable deployment, horizontal scaling. | Expose port 7337, mount secrets via environment variables or secrets managers. |
 | **Serverless container** | On-demand scaling. | Ensure cold start times are acceptable; persistent sessions live in memory, so stateless restarts reset cached tokens. |
 
-For high availability, deploy multiple MCP instances behind an HTTP load balancer. Because per-transport state is in-memory, clients should maintain sticky sessions or reconnect gracefully if routed to another node.
+For high availability, deploy multiple MCP instances behind an HTTP load balancer. Durch die session-spezifischen Transporte können Clients ohne Sticky Sessions parallel arbeiten; bei Load-Balancer-Wechseln müssen sie lediglich ihre Session-ID erneut mitsenden (SSE-Streams werden dabei wie gewohnt neu aufgebaut).
 
 ---
 
@@ -211,7 +212,7 @@ Popular MCP consumers include IDE extensions (VS Code, Cursor, Zed), AI desktop 
 4. **Establish a session:** Run `willi-mako-create-session` once per workflow, then chain chat/reasoning/search calls.
 5. **Persist important outputs:** Use the artifact tools to archive JSON/EDI results back into the Willi-Mako platform.
 
-> **Compatibility tip:** Einige MCP-Clients (z. B. Browser-basierte EventSource-Implementierungen) können keine benutzerdefinierten HTTP-Header senden. In diesem Fall akzeptiert der Dienst die Session-ID auch über `X-Session-Id` oder als Query-Parameter (`?mcp-session-id=` bzw. `?sessionId=`). Der Server setzt daraus automatisch den erforderlichen `Mcp-Session-Id`-Header, übernimmt CORS-Preflight-Wünsche (`Access-Control-Request-Headers`) und setzt laufende Verbindungen bei erneuten `initialize`-Aufrufen sauber zurück. So können Browser-gestützte Integrationen (Claude Web, Custom Dashboards) Tokens rotieren oder Sessions neu aushandeln, ohne in den Fehler „Server already initialized“ zu laufen.
+> **Compatibility tip:** Einige MCP-Clients (z. B. Browser-basierte EventSource-Implementierungen) können keine benutzerdefinierten HTTP-Header senden. In diesem Fall akzeptiert der Dienst die Session-ID auch über `X-Session-Id` oder als Query-Parameter (`?mcp-session-id=` bzw. `?sessionId=`). Der Server setzt daraus automatisch den erforderlichen `Mcp-Session-Id`-Header, übernimmt CORS-Preflight-Wünsche (`Access-Control-Request-Headers`) und erzeugt bei erneuten `initialize`-Aufrufen eine eigene Transportinstanz, statt bestehende Sessions zu blockieren. Dadurch können Browser-gestützte Integrationen (Claude Web, Custom Dashboards) Tokens rotieren, mehrere Tabs parallel verbinden oder Sessions neu aushandeln, ohne in den Fehler „Server already initialized“ zu laufen.
 
 ### Example: VS Code MCP Client
 
