@@ -211,7 +211,7 @@ Popular MCP consumers include IDE extensions (VS Code, Cursor, Zed), AI desktop 
 4. **Establish a session:** Run `willi-mako-create-session` once per workflow, then chain chat/reasoning/search calls.
 5. **Persist important outputs:** Use the artifact tools to archive JSON/EDI results back into the Willi-Mako platform.
 
-> **Compatibility tip:** Einige MCP-Clients (z. B. Browser-basierte EventSource-Implementierungen) können keine benutzerdefinierten HTTP-Header senden. In diesem Fall akzeptiert der Dienst die Session-ID auch über `X-Session-Id` oder als Query-Parameter (`?mcp-session-id=` bzw. `?sessionId=`). Der Server setzt daraus automatisch den erforderlichen `Mcp-Session-Id`-Header.
+> **Compatibility tip:** Einige MCP-Clients (z. B. Browser-basierte EventSource-Implementierungen) können keine benutzerdefinierten HTTP-Header senden. In diesem Fall akzeptiert der Dienst die Session-ID auch über `X-Session-Id` oder als Query-Parameter (`?mcp-session-id=` bzw. `?sessionId=`). Der Server setzt daraus automatisch den erforderlichen `Mcp-Session-Id`-Header, übernimmt CORS-Preflight-Wünsche (`Access-Control-Request-Headers`) und setzt laufende Verbindungen bei erneuten `initialize`-Aufrufen sauber zurück. So können Browser-gestützte Integrationen (Claude Web, Custom Dashboards) Tokens rotieren oder Sessions neu aushandeln, ohne in den Fehler „Server already initialized“ zu laufen.
 
 ### Example: VS Code MCP Client
 

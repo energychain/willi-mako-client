@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 _Noch keine Änderungen._
 
+## [0.3.6] - 2025-10-20
+
+### Fixed
+- MCP-Server spiegelt angeforderte CORS-Header (`Access-Control-Request-Headers`), sodass Browser-basierte Clients wie Claude Web zusätzliche Authentifizierungs- oder Diagnose-Header senden können.
+- Wiederholte `initialize`-Aufrufe setzen bestehende MCP-Transportsessions sauber zurück, damit Proxies/Browser, die denselben Endpunkt mehrfach initialisieren, keinen Fehler „Server already initialized“ mehr erhalten.
+
+### Documentation
+- Ergänzt den MCP-Service-Guide um Hinweise zur Browser-Kompatibilität (Session-ID-Fallback, CORS) für gehostete Integrationen.
+
 ## [0.3.5] - 2025-10-19
 
 ### Fixed
@@ -120,7 +129,8 @@ _Noch keine Änderungen._
 - Vitest test suite covering core client behaviour.
 - Comprehensive documentation, onboarding guides, and community standards.
 
-[Unreleased]: https://github.com/energychain/willi-mako-client/compare/v0.3.5...HEAD
+[Unreleased]: https://github.com/energychain/willi-mako-client/compare/v0.3.6...HEAD
+[0.3.6]: https://github.com/energychain/willi-mako-client/compare/v0.3.5...v0.3.6
 [0.3.5]: https://github.com/energychain/willi-mako-client/compare/v0.3.4...v0.3.5
 [0.3.4]: https://github.com/energychain/willi-mako-client/compare/v0.3.3...v0.3.4
 [0.3.3]: https://github.com/energychain/willi-mako-client/compare/v0.3.2...v0.3.3

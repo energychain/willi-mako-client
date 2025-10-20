@@ -885,10 +885,32 @@ Resources:
     res: ServerResponse<IncomingMessage>
   ): Promise<void> {
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader(
-      'Access-Control-Allow-Headers',
-      'content-type, authorization, x-session-id, mcp-session-id, mcp-protocol-version, mcp-client-id'
+
+    const requestedHeadersRaw = req.headers['access-control-request-headers'];
+    const requestedHeaders = Array.isArray(requestedHeadersRaw)
+      ? requestedHeadersRaw.join(',')
+      : (requestedHeadersRaw ?? '');
+
+    const allowHeaderSet = new Set(
+      [
+        'content-type',
+        'authorization',
+        'accept',
+        'x-session-id',
+        'mcp-session-id',
+        'mcp-protocol-version',
+        'mcp-client-id'
+      ].map((header) => header.toLowerCase())
     );
+
+    for (const entry of requestedHeaders.split(',')) {
+      const normalized = entry.trim().toLowerCase();
+      if (normalized) {
+        allowHeaderSet.add(normalized);
+      }
+    }
+
+    res.setHeader('Access-Control-Allow-Headers', Array.from(allowHeaderSet).join(', '));
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
     res.setHeader('Access-Control-Expose-Headers', 'mcp-session-id, mcp-protocol-version');
 
@@ -969,6 +991,31 @@ Resources:
           chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
         }
         const body = chunks.length ? JSON.parse(Buffer.concat(chunks).toString('utf8')) : undefined;
+
+        const transportInternals = transport as unknown as {
+          sessionId?: string;
+          _initialized?: boolean;
+        };
+
+        const isInitializationRequest = Array.isArray(body)
+          ? body.some((message) => message?.method === 'initialize')
+          : body?.method === 'initialize';
+
+        if (
+          isInitializationRequest &&
+          transportInternals._initialized &&
+          transportInternals.sessionId
+        ) {
+          const activeSessionId = transportInternals.sessionId;
+          emitLog(
+            `♻️  Re-initialization requested. Resetting MCP transport session ${activeSessionId} before processing.`
+          );
+          await transport.close();
+          transportState.delete(activeSessionId);
+          transportInternals.sessionId = undefined;
+          transportInternals._initialized = false;
+        }
+
         await transport.handleRequest(req, res, body);
         return;
       }
