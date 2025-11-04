@@ -6,13 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+## [0.5.1] - 2025-11-04
+
 ### Added
 - **MCP Document Upload**: Zwei neue MCP-Tools für das Hochladen von Dokumenten via Model Context Protocol
-  - `willi-mako-upload-document`: Upload einzelner Dokumente von URL oder als Base64-encodedcontent
+  - `willi-mako-upload-document`: Upload einzelner Dokumente von URL oder als Base64-encoded content
   - `willi-mako-upload-multiple-documents`: Batch-Upload von bis zu 10 Dokumenten
   - Unterstützt zwei Quellen: URL-Download (öffentlich zugängliche URLs) und Base64-Encoding (für AI-Agents)
   - Automatische Dateigröße-Validierung (max. 50MB pro Datei)
   - MIME-Type-Detection und Error-Handling für fehlgeschlagene Downloads
+  - Kein lokales Filesystem-Zugriff aus Sicherheitsgründen (nur URL und Base64)
+
+### Changed
+- MCP-Server-Instruktionen in README.md erweitert um Document-Upload-Beispiele
 
 ## [0.5.0] - 2025-11-04
 
