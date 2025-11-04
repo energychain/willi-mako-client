@@ -2,18 +2,24 @@
 
 Zentrale Übersicht über alle Distribution-Aktivitäten für willi-mako-client.
 
-**Version**: 0.4.0
-**Release Date**: 2025-10-20
-**Last Updated**: 2025-10-20
+**Version**: 0.5.0
+**Release Date**: 2025-11-04
+**Last Updated**: 2025-11-04
 
 ---
 
-## 🆕 Release Highlights (v0.4.0)
+## 🆕 Release Highlights (v0.5.0)
 
-- Mehrmandantenfähiger MCP-Server mit separaten `StreamableHTTPServerTransport`-Instanzen pro Session – wichtiges Verkaufsargument für Agenten- und SaaS-Partner.
-- Browser-Kompatibilität verbessert (CORS-Header, Session-Reset), sodass Web-Clients wie Claude, VS Code MCP oder eigene Dashboards ohne Workarounds andocken.
-- CLI & SDK bringen Attachment-Support, automatische Reparaturversuche und Prompt-Optimierung – ideale Story für Tutorials, Demos und Product-Hunt-Posts.
-- JSR-Package ist live (0.4.0) und die npm-Veröffentlichung wurde am 20.10.2025 aktualisiert – alle Landingpages sollten auf die neue Version verlinken.
+- **Document Management**: Vollständige Dokumentenverwaltung mit 9 neuen SDK-Methoden für Upload, Liste, Abruf, Update, Löschung, Download, Reprocessing und AI-Kontext-Steuerung – perfekt für Compliance-Teams und Knowledge-Base-Integration.
+- **CLI-Erweiterung**: Neue `willi-mako documents` Kommandos ermöglichen einfaches Hochladen, Verwalten und Durchsuchen von Dokumenten direkt aus dem Terminal.
+- **MCP-Tools**: 6 neue Model Context Protocol Tools für AI-Agents zur nahtlosen Integration von Dokumenten-Management in Konversationen und Workflows.
+- **Multi-Format-Support**: PDF, DOCX, TXT und Markdown mit automatischer Textextraktion und Vektorisierung für semantische Suche.
+- **17 neue Tests**: Umfassende Testabdeckung für alle Document-Operationen mit Mock-API-Responses.
+
+### Previous Release (v0.4.0 - 2025-10-20)
+- Mehrmandantenfähiger MCP-Server mit separaten `StreamableHTTPServerTransport`-Instanzen pro Session.
+- Browser-Kompatibilität verbessert (CORS-Header, Session-Reset).
+- CLI & SDK mit Attachment-Support und automatischen Reparaturversuchen.
 
 ---
 
@@ -34,10 +40,10 @@ Zentrale Übersicht über alle Distribution-Aktivitäten für willi-mako-client.
 
 | Registry | Status | URL | Datum |
 |----------|--------|-----|-------|
-| npm | ✅ Live | [willi-mako-client](https://www.npmjs.com/package/willi-mako-client) | 2025-10-20 |
-| JSR | ✅ Live | [jsr.io/@energychain/willi-mako-client](https://jsr.io/@energychain/willi-mako-client) | 2025-10-20 |
+| npm | ✅ Live | [willi-mako-client](https://www.npmjs.com/package/willi-mako-client) | 2025-11-04 (v0.5.0) |
+| JSR | ✅ Live | [jsr.io/@energychain/willi-mako-client](https://jsr.io/@energychain/willi-mako-client) | 2025-10-20 (v0.4.0) |
 | GitHub Packages | ⏳ Pending | [GPR](https://github.com/energychain/willi-mako-client/packages) | - |
-| UNPKG CDN | ✅ Auto | [unpkg.com/willi-mako-client](https://unpkg.com/willi-mako-client@0.4.0/) | 2025-10-20 |
+| UNPKG CDN | ✅ Auto | [unpkg.com/willi-mako-client](https://unpkg.com/willi-mako-client@0.5.0/) | 2025-11-04 |
 | jsDelivr CDN | ✅ Auto | [jsdelivr.net/npm/willi-mako-client](https://cdn.jsdelivr.net/npm/willi-mako-client@0.4.0/) | 2025-10-20 |
 
 ---
