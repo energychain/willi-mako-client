@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Willi-Mako API v2",
-    "version": "0.4.0",
+    "version": "0.5.0",
     "description": "Spezifikation für die API v2 (Phasen 1 bis 3 – Tooling & Artefakte)."
   },
   "servers": [
@@ -662,47 +662,37 @@
         }
       }
     },
-      "/tools/generate-script": {
-        "post": {
-          "summary": "Deterministisches Tool generieren",
-          "security": [
-            {
-              "bearerAuth": []
+    "/tools/generate-script": {
+      "post": {
+        "summary": "Job zur deterministischen Skriptgenerierung einreichen",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateToolScriptRequest"
+              }
             }
-          ],
-          "requestBody": {
-            "required": true,
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Job angenommen – Ergebnisse können später abgefragt werden.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GenerateToolScriptRequest"
-                }
-              }
-            }
-          },
-          "responses": {
-            "202": {
-              "description": "Generierungsjob wurde registriert.",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object",
-                    "properties": {
-                      "success": {
-                        "type": "boolean"
-                      },
-                      "data": {
-                        "type": "object",
-                        "properties": {
-                          "sessionId": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
-                          "job": {
-                            "$ref": "#/components/schemas/ToolJob"
-                          }
-                        }
-                      }
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/GenerateToolScriptJobResponse"
                     }
                   }
                 }
@@ -710,7 +700,48 @@
             }
           }
         }
-      },
+      }
+    },
+    "/tools/generate-script/repair": {
+      "post": {
+        "summary": "Fehlgeschlagenen Skript-Job erneut anstoßen",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateToolScriptRepairRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Reparatur-Job aufgenommen – neues Ergebnis wird asynchron bereitgestellt.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/GenerateToolScriptRepairResponse"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/tools/run-node-script": {
       "post": {
         "summary": "Node.js Skript als Sandbox-Job registrieren",
@@ -772,6 +803,55 @@
                         },
                         "job": {
                           "$ref": "#/components/schemas/ToolJob"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tools/jobs": {
+      "get": {
+        "summary": "Tool-Jobs einer Session auflisten",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Alle bekannten Jobs der Session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "jobs": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/ToolJob"
+                          }
                         }
                       }
                     }
@@ -912,6 +992,508 @@
                     },
                     "data": {
                       "$ref": "#/components/schemas/CreateArtifactResponse"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/documents/upload": {
+      "post": {
+        "summary": "Dokument hochladen",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Datei (PDF, DOCX, TXT, MD) - max. 50MB"
+                  },
+                  "title": {
+                    "type": "string",
+                    "description": "Titel des Dokuments (Standard: Dateiname)"
+                  },
+                  "description": {
+                    "type": "string",
+                    "description": "Optionale Beschreibung"
+                  },
+                  "tags": {
+                    "type": "string",
+                    "description": "JSON-Array oder Komma-separierte Tags"
+                  },
+                  "is_ai_context_enabled": {
+                    "type": "boolean",
+                    "description": "Aktiviert KI-Kontext für dieses Dokument"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Dokument erfolgreich hochgeladen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "document": {
+                          "$ref": "#/components/schemas/Document"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/documents/upload-multiple": {
+      "post": {
+        "summary": "Mehrere Dokumente hochladen (max. 10)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "files"
+                ],
+                "properties": {
+                  "files": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    },
+                    "maxItems": 10,
+                    "description": "Array von Dateien (max. 10)"
+                  },
+                  "is_ai_context_enabled": {
+                    "type": "boolean",
+                    "description": "Aktiviert KI-Kontext für alle Dokumente"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Dokumente erfolgreich hochgeladen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "documents": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Document"
+                          }
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/documents": {
+      "get": {
+        "summary": "Liste aller Dokumente",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 12
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Suchbegriff für Titel/Beschreibung"
+          },
+          {
+            "name": "processed",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "Filter nach Verarbeitungsstatus"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste der Dokumente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "documents": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Document"
+                          }
+                        },
+                        "pagination": {
+                          "type": "object",
+                          "properties": {
+                            "page": {
+                              "type": "integer"
+                            },
+                            "limit": {
+                              "type": "integer"
+                            },
+                            "total": {
+                              "type": "integer"
+                            },
+                            "totalPages": {
+                              "type": "integer"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/documents/{id}": {
+      "get": {
+        "summary": "Einzelnes Dokument abrufen",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dokument-Details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Document"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Dokument-Metadaten aktualisieren",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "tags": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "is_ai_context_enabled": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Dokument aktualisiert",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Document"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Dokument löschen",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Dokument erfolgreich gelöscht"
+          }
+        }
+      }
+    },
+    "/documents/{id}/download": {
+      "get": {
+        "summary": "Dokument herunterladen",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Datei-Download",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/documents/{id}/reprocess": {
+      "post": {
+        "summary": "Dokument neu verarbeiten",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Verarbeitung gestartet",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "message": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/documents/{id}/ai-context": {
+      "post": {
+        "summary": "KI-Kontext aktivieren/deaktivieren",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "enabled"
+                ],
+                "properties": {
+                  "enabled": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "KI-Kontext-Status aktualisiert",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Document"
                     }
                   }
                 }
@@ -1126,38 +1708,6 @@
           }
         }
       },
-      "ToolScriptAttachment": {
-        "type": "object",
-        "required": [
-          "filename",
-          "content"
-        ],
-        "properties": {
-          "filename": {
-            "type": "string",
-            "maxLength": 180
-          },
-          "content": {
-            "type": "string",
-            "description": "UTF-8 encoded attachment content used to bias the generator.",
-            "maxLength": 60000
-          },
-          "mimeType": {
-            "type": "string",
-            "description": "Optional MIME type hint (defaults to text/plain)."
-          },
-          "description": {
-            "type": "string",
-            "description": "Optional description surfaced to the generator UI."
-          },
-          "weight": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 1,
-            "description": "Weighting factor influencing prompt emphasis (0-1)."
-          }
-        }
-      },
       "ToolJobSourceInfo": {
         "type": "object",
         "properties": {
@@ -1221,48 +1771,17 @@
           }
         }
       },
-      "GenerateToolScriptRequest": {
-        "type": "object",
-        "required": [
-          "sessionId",
-          "instructions"
-        ],
-        "properties": {
-          "sessionId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "instructions": {
-            "type": "string",
-            "description": "Natural language instructions for the generator."
-          },
-          "inputSchema": {
-            "type": "object",
-            "description": "Optional JSON schema describing expected tool input."
-          },
-          "expectedOutputDescription": {
-            "type": "string",
-            "description": "Optional description of the expected tool output."
-          },
-          "additionalContext": {
-            "type": "string",
-            "description": "Additional constraints or business context."
-          },
-          "attachments": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ToolScriptAttachment"
-            },
-            "maxItems": 4,
-            "description": "Reference documents to bias the generator (max 4 attachments)."
-          },
-          "constraints": {
-            "type": "object",
-            "description": "Execution constraints (deterministic flag, filesystem allowance, etc.)."
-          }
-        }
-      },
       "ToolJob": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/RunNodeScriptJob"
+          },
+          {
+            "$ref": "#/components/schemas/GenerateScriptJob"
+          }
+        ]
+      },
+      "RunNodeScriptJob": {
         "type": "object",
         "properties": {
           "id": {
@@ -1272,8 +1791,7 @@
           "type": {
             "type": "string",
             "enum": [
-              "run-node-script",
-              "generate-script"
+              "run-node-script"
             ]
           },
           "sessionId": {
@@ -1306,44 +1824,12 @@
             "nullable": true
           },
           "source": {
-            "oneOf": [
-              {
-                "$ref": "#/components/schemas/ToolJobSourceInfo"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "progress": {
-            "type": "object",
-            "nullable": true,
-            "properties": {
-              "stage": {
-                "type": "string"
-              },
-              "message": {
-                "type": "string"
-              },
-              "attempt": {
-                "type": "integer"
-              }
-            }
-          },
-          "attempts": {
-            "type": "integer",
-            "nullable": true,
-            "description": "Number of generator attempts that were performed."
+            "$ref": "#/components/schemas/ToolJobSourceInfo"
           },
           "result": {
             "oneOf": [
               {
                 "$ref": "#/components/schemas/ToolJobResult"
-              },
-              {
-                "type": "object",
-                "description": "Result payload for generate-script jobs (descriptor, validation, etc.).",
-                "additionalProperties": true
               },
               {
                 "type": "null"
@@ -1357,9 +1843,108 @@
             }
           },
           "diagnostics": {
+            "$ref": "#/components/schemas/ToolJobDiagnostics"
+          }
+        }
+      },
+      "GenerateScriptJobProgress": {
+        "type": "object",
+        "properties": {
+          "stage": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "collecting-context",
+              "prompting",
+              "repairing",
+              "validating",
+              "testing",
+              "completed"
+            ]
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "attempt": {
+            "type": "integer",
+            "nullable": true
+          }
+        },
+        "required": [
+          "stage"
+        ]
+      },
+      "GenerateScriptJobError": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string",
+            "nullable": true
+          },
+          "details": {
+            "type": "object",
+            "nullable": true
+          }
+        },
+        "required": [
+          "message"
+        ]
+      },
+      "GenerateScriptJob": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "generate-script"
+            ]
+          },
+          "sessionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "succeeded",
+              "failed",
+              "cancelled"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "progress": {
+            "$ref": "#/components/schemas/GenerateScriptJobProgress"
+          },
+          "attempts": {
+            "type": "integer"
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "result": {
             "oneOf": [
               {
-                "$ref": "#/components/schemas/ToolJobDiagnostics"
+                "$ref": "#/components/schemas/GenerateToolScriptResponse"
               },
               {
                 "type": "null"
@@ -1367,9 +1952,417 @@
             ]
           },
           "error": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/GenerateScriptJobError"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "continuedFromJobId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          }
+        }
+      },
+      "ToolScriptValidationReport": {
+        "type": "object",
+        "properties": {
+          "syntaxValid": {
+            "type": "boolean"
+          },
+          "deterministic": {
+            "type": "boolean"
+          },
+          "forbiddenApis": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "ToolScriptDescriptor": {
+        "type": "object",
+        "required": [
+          "code",
+          "language",
+          "entrypoint",
+          "description",
+          "runtime",
+          "deterministic",
+          "dependencies",
+          "source",
+          "validation",
+          "notes"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string",
+            "enum": [
+              "javascript"
+            ]
+          },
+          "entrypoint": {
+            "type": "string",
+            "enum": [
+              "run"
+            ]
+          },
+          "description": {
+            "type": "string"
+          },
+          "runtime": {
+            "type": "string",
+            "enum": [
+              "node18"
+            ]
+          },
+          "deterministic": {
+            "type": "boolean"
+          },
+          "dependencies": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "source": {
+            "$ref": "#/components/schemas/ToolJobSourceInfo"
+          },
+          "validation": {
+            "$ref": "#/components/schemas/ToolScriptValidationReport"
+          },
+          "notes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "ToolScriptInputSchemaProperty": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "example": {}
+        }
+      },
+      "ToolScriptInputSchema": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "object"
+            ]
+          },
+          "description": {
+            "type": "string"
+          },
+          "properties": {
             "type": "object",
-            "nullable": true,
-            "additionalProperties": true
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ToolScriptInputSchemaProperty"
+            }
+          },
+          "required": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "ToolScriptReference": {
+        "type": "object",
+        "required": [
+          "snippet"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "snippet": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "weight": {
+            "type": "number"
+          },
+          "useForPrompt": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ToolScriptAttachment": {
+        "type": "object",
+        "required": [
+          "filename",
+          "content"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "filename": {
+            "type": "string",
+            "maxLength": 160
+          },
+          "content": {
+            "type": "string",
+            "description": "UTF-8 Textinhalt des Attachments, z. B. EDIFACT-Datei oder CSV-Ausschnitt.",
+            "maxLength": 1048576
+          },
+          "mimeType": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 240
+          },
+          "weight": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 10
+          }
+        }
+      },
+      "ToolScriptTestAssertion": {
+        "type": "object",
+        "required": [
+          "type",
+          "value"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "contains",
+              "equals",
+              "regex"
+            ]
+          },
+          "value": {
+            "type": "string"
+          }
+        }
+      },
+      "ToolScriptTestCase": {
+        "type": "object",
+        "required": [
+          "input"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 240
+          },
+          "input": {
+            "oneOf": [
+              {
+                "type": "object",
+                "additionalProperties": true
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "assertions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ToolScriptTestAssertion"
+            }
+          }
+        }
+      },
+      "ToolScriptConstraints": {
+        "type": "object",
+        "properties": {
+          "deterministic": {
+            "type": "boolean"
+          },
+          "allowNetwork": {
+            "type": "boolean"
+          },
+          "allowFilesystem": {
+            "type": "boolean"
+          },
+          "maxRuntimeMs": {
+            "type": "integer",
+            "minimum": 500,
+            "maximum": 60000
+          }
+        }
+      },
+      "GenerateToolScriptRequest": {
+        "type": "object",
+        "required": [
+          "sessionId",
+          "instructions"
+        ],
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "instructions": {
+            "type": "string",
+            "maxLength": 1600
+          },
+          "inputSchema": {
+            "$ref": "#/components/schemas/ToolScriptInputSchema"
+          },
+          "expectedOutputDescription": {
+            "type": "string",
+            "maxLength": 1200
+          },
+          "additionalContext": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "constraints": {
+            "$ref": "#/components/schemas/ToolScriptConstraints"
+          },
+          "referenceDocuments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ToolScriptReference"
+            }
+          },
+          "testCases": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ToolScriptTestCase"
+            }
+          },
+          "attachments": {
+            "type": "array",
+            "description": "Textbasierte Dateien (max. 1 MB pro Attachment, 4 MB gesamt), die automatisch in Prompt-Snippets aufgeteilt werden sollen.",
+            "items": {
+              "$ref": "#/components/schemas/ToolScriptAttachment"
+            }
+          }
+        }
+      },
+      "GenerateToolScriptRepairRequest": {
+        "type": "object",
+        "required": [
+          "sessionId",
+          "jobId"
+        ],
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "jobId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "repairInstructions": {
+            "type": "string",
+            "maxLength": 600
+          },
+          "additionalContext": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "referenceDocuments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ToolScriptReference"
+            }
+          },
+          "attachments": {
+            "type": "array",
+            "description": "Textbasierte Dateien (max. 1 MB pro Attachment, 4 MB gesamt), die beim Reparaturversuch erneut für den Prompt genutzt werden sollen.",
+            "items": {
+              "$ref": "#/components/schemas/ToolScriptAttachment"
+            }
+          },
+          "testCases": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ToolScriptTestCase"
+            }
+          }
+        }
+      },
+      "GenerateToolScriptResponse": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "script": {
+            "$ref": "#/components/schemas/ToolScriptDescriptor"
+          },
+          "inputSchema": {
+            "$ref": "#/components/schemas/ToolScriptInputSchema"
+          },
+          "expectedOutputDescription": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "GenerateToolScriptJobResponse": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "job": {
+            "$ref": "#/components/schemas/GenerateScriptJob"
+          }
+        }
+      },
+      "GenerateToolScriptRepairResponse": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "job": {
+            "$ref": "#/components/schemas/GenerateScriptJob"
           }
         }
       },
@@ -1465,6 +2458,76 @@
           },
           "artifact": {
             "$ref": "#/components/schemas/Artifact"
+          }
+        }
+      },
+      "Document": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "original_name": {
+            "type": "string"
+          },
+          "file_path": {
+            "type": "string"
+          },
+          "file_size": {
+            "type": "integer",
+            "description": "Dateigröße in Bytes"
+          },
+          "mime_type": {
+            "type": "string"
+          },
+          "is_processed": {
+            "type": "boolean"
+          },
+          "is_ai_context_enabled": {
+            "type": "boolean"
+          },
+          "extracted_text": {
+            "type": "string",
+            "nullable": true
+          },
+          "extracted_text_length": {
+            "type": "integer",
+            "nullable": true
+          },
+          "processing_error": {
+            "type": "string",
+            "nullable": true
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "vector_point_id": {
+            "type": "string",
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       }

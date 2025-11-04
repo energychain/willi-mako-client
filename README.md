@@ -64,7 +64,8 @@ Mit dem SDK erhalten Sie:
 - 🧠 **Conversational Stack** – Chat, semantische Suche, Reasoning, Kontextauflösung und Klarstellungsanalyse aus einer Hand.
 - 🛠️ **Tooling Sandbox** – sichere Node.js-Ausführung für ETL, Validierung, KI-Skripte.
 - 🗂️ **Artifact Storage** – persistente Protokolle, Audit-Trails und EDIFACT-Snapshots.
-- 📦 **OpenAPI Bundle** – `schemas/openapi.json` für offline Analysen.
+- � **Document Management** – Hochladen, Verwalten und Durchsuchen von PDFs, DOCX, TXT und MD-Dateien in der Knowledge Base mit automatischer Textextraktion und AI-Kontext-Steuerung.
+- �📦 **OpenAPI Bundle** – `schemas/openapi.json` für offline Analysen.
 - 🖥️ **CLI & MCP** – vollständige Befehlsgruppen (`auth`, `sessions`, `chat`, `retrieval`, …) plus MCP-Server für KI-Agenten.
 - 🧪 **Vitest Testsuite** – Vertrauen in Stabilität und Regressionen.
 - 🛡️ **Compliance Fokus** – automatisierbare Prüfungen für UTILMD, MSCONS, ORDERS, PRICAT, INVOIC.
@@ -264,6 +265,14 @@ Weitere Anpassungen (Authentifizierung, Mehrbenutzer, Branding) sind in [`docs/I
 | `createNodeScriptJob()` | Sandbox-Job starten | UTILMD, MSCONS, ORDERS, PRICAT, INVOIC | Rückgabe: Job-ID & Status |
 | `getToolJob(jobId)` | Job-Status + Ergebnisse | – | Polling bis `succeeded` oder `failed` |
 | `createArtifact()` | Artefakt speichern | Reports, EDIFACT, Compliance | Unterstützt Metadaten & Tags |
+| `uploadDocument()` | Dokument in Knowledge Base hochladen | PDF, DOCX, TXT, MD | Max. 50MB, automatische Textextraktion |
+| `listDocuments()` | Dokumente mit Pagination auflisten | – | Unterstützt Suche & Filter |
+| `getDocument()` | Dokument-Details abrufen | – | Inkl. Verarbeitungsstatus & extrahiertem Text |
+| `updateDocument()` | Dokument-Metadaten aktualisieren | – | Title, Description, Tags, AI-Kontext |
+| `deleteDocument()` | Dokument löschen | – | Permanent, inkl. Vektoren |
+| `downloadDocument()` | Original-Datei herunterladen | PDF, DOCX, TXT, MD | Als ArrayBuffer |
+| `reprocessDocument()` | Dokument neu verarbeiten | – | Textextraktion & Embedding wiederholen |
+| `toggleAiContext()` | AI-Kontext aktivieren/deaktivieren | – | Steuert Verfügbarkeit für Chat/Reasoning |
 | `getRemoteOpenApiDocument()` | Aktuelle OpenAPI laden | – | Für Schema-Diffs & Code-Gen |
 
 Fehler führen zu `WilliMakoError` mit `status` und `body`. Vollständige Typen siehe [`src/types.ts`](./src/types.ts) und [`docs/API.md`](./docs/API.md).
@@ -306,6 +315,15 @@ willi-mako clarification analyze --session <session-id> --query "Bitte bereite d
 willi-mako tools run-node-script --session <session-id> --source 'console.log("ok")'
 willi-mako tools job <job-id>
 cat compliance.json | willi-mako artifacts create --session <session-id> --type compliance-report --mime application/json
+
+# Document Management
+willi-mako documents upload ./compliance-guide.pdf --title "Compliance Guide" --ai-context
+willi-mako documents list --search "compliance" --processed
+willi-mako documents get <document-id>
+willi-mako documents update <document-id> --title "Updated Title" --ai-context true
+willi-mako documents download <document-id> ./downloaded.pdf
+willi-mako documents reprocess <document-id>
+willi-mako documents delete <document-id> --confirm
 ```
 
 ### Beispiel: Komplettes CLI-Skript

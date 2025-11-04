@@ -263,6 +263,12 @@ Tools:
 - willi-mako-create-node-script – Execute ETL/validation logic in the managed Node sandbox
 - willi-mako-get-tool-job – Poll job status and receive stdout/stderr
 - willi-mako-create-artifact – Persist compliance results or EDI snapshots
+- willi-mako-list-documents – List all documents with pagination and filtering
+- willi-mako-get-document – Retrieve detailed information about a specific document
+- willi-mako-update-document – Update document metadata (title, description, tags, AI context)
+- willi-mako-delete-document – Permanently delete a document
+- willi-mako-reprocess-document – Trigger reprocessing of a document
+- willi-mako-toggle-ai-context – Enable/disable AI context for a document
 
 Capabilities:
 - Deep coverage of German energy-market processes and market roles (GPKE, WiM, GeLi Gas, Mehr-/Mindermengen, Lieferantenwechsel, …).
@@ -837,6 +843,181 @@ Resources:
               sessionId: activeSessionId,
               data: response.data
             }
+          };
+        })
+    );
+
+    registerTool(
+      'willi-mako-list-documents',
+      {
+        title: 'List documents',
+        description:
+          'Lists all documents in the knowledge base with pagination, search, and filtering options.',
+        inputSchema: {
+          page: z.number().int().min(1).default(1).describe('Page number (1-based)').optional(),
+          limit: z.number().int().min(1).max(100).default(12).describe('Items per page').optional(),
+          search: z.string().describe('Search term for title/description').optional(),
+          processed: z.boolean().describe('Filter by processing status').optional()
+        }
+      },
+      async ({ page, limit, search, processed }, extra?: RequestContext) =>
+        withClient(extra, async (clientInstance) => {
+          const response = await clientInstance.listDocuments({
+            page,
+            limit,
+            search,
+            processed
+          });
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(response.data, null, 2)
+              }
+            ],
+            structuredContent: response.data
+          };
+        })
+    );
+
+    registerTool(
+      'willi-mako-get-document',
+      {
+        title: 'Get document details',
+        description: 'Retrieves detailed information about a specific document by its ID.',
+        inputSchema: {
+          documentId: z.string().describe('Unique document identifier')
+        }
+      },
+      async ({ documentId }, extra?: RequestContext) =>
+        withClient(extra, async (clientInstance) => {
+          const response = await clientInstance.getDocument(documentId);
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(response.data, null, 2)
+              }
+            ],
+            structuredContent: response.data as unknown as Record<string, unknown>
+          };
+        })
+    );
+
+    registerTool(
+      'willi-mako-update-document',
+      {
+        title: 'Update document metadata',
+        description:
+          'Updates metadata of a document including title, description, tags, and AI context setting.',
+        inputSchema: {
+          documentId: z.string().describe('Unique document identifier'),
+          title: z.string().optional().describe('Updated title'),
+          description: z.string().optional().describe('Updated description'),
+          tags: z.array(z.string()).optional().describe('Updated tags array'),
+          is_ai_context_enabled: z
+            .boolean()
+            .optional()
+            .describe('Whether to enable/disable AI context')
+        }
+      },
+      async (
+        { documentId, title, description, tags, is_ai_context_enabled },
+        extra?: RequestContext
+      ) =>
+        withClient(extra, async (clientInstance) => {
+          const response = await clientInstance.updateDocument(documentId, {
+            title,
+            description,
+            tags,
+            is_ai_context_enabled
+          });
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(response.data, null, 2)
+              }
+            ],
+            structuredContent: response.data as unknown as Record<string, unknown>
+          };
+        })
+    );
+
+    registerTool(
+      'willi-mako-delete-document',
+      {
+        title: 'Delete document',
+        description: 'Permanently deletes a document from the knowledge base.',
+        inputSchema: {
+          documentId: z.string().describe('Unique document identifier')
+        }
+      },
+      async ({ documentId }, extra?: RequestContext) =>
+        withClient(extra, async (clientInstance) => {
+          await clientInstance.deleteDocument(documentId);
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify({ success: true, message: 'Document deleted' }, null, 2)
+              }
+            ],
+            structuredContent: {
+              success: true,
+              message: 'Document deleted'
+            }
+          };
+        })
+    );
+
+    registerTool(
+      'willi-mako-reprocess-document',
+      {
+        title: 'Reprocess document',
+        description:
+          'Triggers reprocessing of a document (re-extraction of text and re-embedding). Useful when a document failed to process initially.',
+        inputSchema: {
+          documentId: z.string().describe('Unique document identifier')
+        }
+      },
+      async ({ documentId }, extra?: RequestContext) =>
+        withClient(extra, async (clientInstance) => {
+          const response = await clientInstance.reprocessDocument(documentId);
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(response.data, null, 2)
+              }
+            ],
+            structuredContent: response.data
+          };
+        })
+    );
+
+    registerTool(
+      'willi-mako-toggle-ai-context',
+      {
+        title: 'Toggle AI context for document',
+        description:
+          'Enables or disables AI context for a document. When enabled, the document can be referenced in chat and reasoning.',
+        inputSchema: {
+          documentId: z.string().describe('Unique document identifier'),
+          enabled: z.boolean().describe('Whether to enable or disable AI context')
+        }
+      },
+      async ({ documentId, enabled }, extra?: RequestContext) =>
+        withClient(extra, async (clientInstance) => {
+          const response = await clientInstance.toggleAiContext(documentId, enabled);
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(response.data, null, 2)
+              }
+            ],
+            structuredContent: response.data as unknown as Record<string, unknown>
           };
         })
     );

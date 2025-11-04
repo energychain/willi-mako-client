@@ -27,7 +27,19 @@ import type {
   ClarificationAnalyzeResponse,
   GenerateToolScriptRequest,
   GenerateToolScriptJobOperationResponse,
-  RepairGenerateToolScriptRequest
+  RepairGenerateToolScriptRequest,
+  UploadDocumentRequest,
+  UploadDocumentResponse,
+  UploadMultipleDocumentsRequest,
+  UploadMultipleDocumentsResponse,
+  ListDocumentsQuery,
+  ListDocumentsResponse,
+  GetDocumentResponse,
+  UpdateDocumentRequest,
+  UpdateDocumentResponse,
+  ToggleAiContextRequest,
+  ToggleAiContextResponse,
+  ReprocessDocumentResponse
 } from './types.js';
 
 const require: NodeJS.Require = createRequire(import.meta.url);
@@ -589,6 +601,339 @@ export class WilliMakoClient {
         'Content-Type': 'application/json'
       }
     });
+  }
+
+  /**
+   * Uploads a single document to the knowledge base.
+   *
+   * Documents can be PDF, DOCX, TXT, or MD files (max 50MB). They are automatically
+   * processed for text extraction and can be included in semantic search and AI chat
+   * when `is_ai_context_enabled` is true.
+   *
+   * @param payload - Document upload request with file and metadata
+   * @returns Promise resolving to the uploaded document details
+   *
+   * @example
+   * ```typescript
+   * import { readFileSync } from 'fs';
+   *
+   * const fileBuffer = readFileSync('./compliance-guide.pdf');
+   * const response = await client.uploadDocument({
+   *   file: fileBuffer,
+   *   title: 'GPKE Compliance Guide 2024',
+   *   description: 'Internal compliance documentation for GPKE processes',
+   *   tags: ['gpke', 'compliance', '2024'],
+   *   is_ai_context_enabled: true
+   * });
+   *
+   * console.log('Document ID:', response.data.document.id);
+   * ```
+   */
+  public async uploadDocument(payload: UploadDocumentRequest): Promise<UploadDocumentResponse> {
+    const formData = new FormData();
+
+    // Handle file - works in both Node.js and browser
+    if (payload.file instanceof Buffer) {
+      // Node.js Buffer - convert to ArrayBuffer then to Blob
+      const arrayBuffer = payload.file.buffer.slice(
+        payload.file.byteOffset,
+        payload.file.byteOffset + payload.file.byteLength
+      ) as ArrayBuffer;
+      const blob = new Blob([arrayBuffer]);
+      formData.append('file', blob, 'document');
+    } else {
+      // Browser File or Blob
+      formData.append('file', payload.file as Blob);
+    }
+
+    if (payload.title) {
+      formData.append('title', payload.title);
+    }
+
+    if (payload.description) {
+      formData.append('description', payload.description);
+    }
+
+    if (payload.tags) {
+      const tagsString = Array.isArray(payload.tags) ? JSON.stringify(payload.tags) : payload.tags;
+      formData.append('tags', tagsString);
+    }
+
+    if (payload.is_ai_context_enabled !== undefined) {
+      formData.append('is_ai_context_enabled', String(payload.is_ai_context_enabled));
+    }
+
+    return this.request<UploadDocumentResponse>('/documents/upload', {
+      method: 'POST',
+      body: formData as unknown as BodyInit,
+      // Don't set Content-Type - let fetch set it with boundary for multipart/form-data
+      skipAuth: false
+    });
+  }
+
+  /**
+   * Uploads multiple documents at once (max 10 files).
+   *
+   * @param payload - Multiple document upload request
+   * @returns Promise resolving to array of uploaded documents
+   *
+   * @example
+   * ```typescript
+   * import { readFileSync } from 'fs';
+   *
+   * const files = [
+   *   readFileSync('./doc1.pdf'),
+   *   readFileSync('./doc2.pdf')
+   * ];
+   *
+   * const response = await client.uploadMultipleDocuments({
+   *   files: files,
+   *   is_ai_context_enabled: true
+   * });
+   *
+   * console.log(`Uploaded ${response.data.documents.length} documents`);
+   * ```
+   */
+  public async uploadMultipleDocuments(
+    payload: UploadMultipleDocumentsRequest
+  ): Promise<UploadMultipleDocumentsResponse> {
+    if (payload.files.length > 10) {
+      throw new Error('Maximum 10 files allowed per upload');
+    }
+
+    const formData = new FormData();
+
+    for (const file of payload.files) {
+      if (file instanceof Buffer) {
+        const arrayBuffer = file.buffer.slice(
+          file.byteOffset,
+          file.byteOffset + file.byteLength
+        ) as ArrayBuffer;
+        const blob = new Blob([arrayBuffer]);
+        formData.append('files', blob, 'document');
+      } else {
+        formData.append('files', file as Blob);
+      }
+    }
+
+    if (payload.is_ai_context_enabled !== undefined) {
+      formData.append('is_ai_context_enabled', String(payload.is_ai_context_enabled));
+    }
+
+    return this.request<UploadMultipleDocumentsResponse>('/documents/upload-multiple', {
+      method: 'POST',
+      body: formData as unknown as BodyInit,
+      skipAuth: false
+    });
+  } /**
+   * Lists all documents with optional pagination, search, and filtering.
+   *
+   * @param query - Query parameters for filtering and pagination
+   * @returns Promise resolving to paginated list of documents
+   *
+   * @example
+   * ```typescript
+   * // Get first page with default settings
+   * const response = await client.listDocuments();
+   *
+   * // Search for specific documents
+   * const searchResults = await client.listDocuments({
+   *   search: 'GPKE',
+   *   processed: true,
+   *   page: 1,
+   *   limit: 20
+   * });
+   *
+   * console.log(`Found ${searchResults.data.pagination.total} documents`);
+   * searchResults.data.documents.forEach(doc => {
+   *   console.log(`- ${doc.title} (${doc.file_size} bytes)`);
+   * });
+   * ```
+   */
+  public async listDocuments(query: ListDocumentsQuery = {}): Promise<ListDocumentsResponse> {
+    const params = new URLSearchParams();
+
+    if (query.page) {
+      params.append('page', String(query.page));
+    }
+
+    if (query.limit) {
+      params.append('limit', String(query.limit));
+    }
+
+    if (query.search) {
+      params.append('search', query.search);
+    }
+
+    if (query.processed !== undefined) {
+      params.append('processed', String(query.processed));
+    }
+
+    const queryString = params.toString();
+    const path = queryString ? `/documents?${queryString}` : '/documents';
+
+    return this.request<ListDocumentsResponse>(path);
+  }
+
+  /**
+   * Retrieves a single document by its ID.
+   *
+   * @param documentId - The unique document identifier
+   * @returns Promise resolving to the document details
+   *
+   * @example
+   * ```typescript
+   * const document = await client.getDocument('doc-uuid');
+   * console.log('Title:', document.data.title);
+   * console.log('Processed:', document.data.is_processed);
+   * console.log('Extracted text length:', document.data.extracted_text_length);
+   * ```
+   */
+  public async getDocument(documentId: string): Promise<GetDocumentResponse> {
+    return this.request<GetDocumentResponse>(`/documents/${encodeURIComponent(documentId)}`);
+  }
+
+  /**
+   * Updates document metadata (title, description, tags, AI context setting).
+   *
+   * @param documentId - The unique document identifier
+   * @param payload - Fields to update
+   * @returns Promise resolving to the updated document
+   *
+   * @example
+   * ```typescript
+   * const updated = await client.updateDocument('doc-uuid', {
+   *   title: 'Updated GPKE Guide 2024',
+   *   description: 'Revised compliance documentation',
+   *   tags: ['gpke', 'compliance', '2024', 'revised'],
+   *   is_ai_context_enabled: true
+   * });
+   * ```
+   */
+  public async updateDocument(
+    documentId: string,
+    payload: UpdateDocumentRequest
+  ): Promise<UpdateDocumentResponse> {
+    return this.request<UpdateDocumentResponse>(`/documents/${encodeURIComponent(documentId)}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+  }
+
+  /**
+   * Deletes a document permanently.
+   *
+   * @param documentId - The unique document identifier
+   * @returns Promise that resolves when the document is deleted
+   *
+   * @example
+   * ```typescript
+   * await client.deleteDocument('doc-uuid');
+   * console.log('Document deleted successfully');
+   * ```
+   */
+  public async deleteDocument(documentId: string): Promise<void> {
+    await this.request<void>(`/documents/${encodeURIComponent(documentId)}`, {
+      method: 'DELETE'
+    });
+  }
+
+  /**
+   * Downloads the original document file.
+   *
+   * @param documentId - The unique document identifier
+   * @returns Promise resolving to the file content as ArrayBuffer
+   *
+   * @example
+   * ```typescript
+   * import { writeFileSync } from 'fs';
+   *
+   * const fileData = await client.downloadDocument('doc-uuid');
+   * writeFileSync('./downloaded.pdf', Buffer.from(fileData));
+   * ```
+   */
+  public async downloadDocument(documentId: string): Promise<ArrayBuffer> {
+    const response = await this.fetchImpl(
+      this.resolveUrl(`/documents/${encodeURIComponent(documentId)}/download`),
+      {
+        method: 'GET',
+        headers: {
+          Authorization: this.token ? `Bearer ${this.token}` : ''
+        }
+      }
+    );
+
+    if (!response.ok) {
+      const text = await response.text();
+      const body = text.length ? parseJsonSafe(text) : undefined;
+      const message = (body as { error?: string })?.error ?? response.statusText;
+      throw new WilliMakoError(message || 'Download failed', response.status, body);
+    }
+
+    return response.arrayBuffer();
+  }
+
+  /**
+   * Triggers reprocessing of a document (re-extraction of text and re-embedding).
+   *
+   * Useful when a document failed to process initially or when you want to
+   * refresh the extracted content with updated processing logic.
+   *
+   * @param documentId - The unique document identifier
+   * @returns Promise resolving to the reprocessing status message
+   *
+   * @example
+   * ```typescript
+   * const response = await client.reprocessDocument('doc-uuid');
+   * console.log(response.data.message); // "Reprocessing started"
+   * ```
+   */
+  public async reprocessDocument(documentId: string): Promise<ReprocessDocumentResponse> {
+    return this.request<ReprocessDocumentResponse>(
+      `/documents/${encodeURIComponent(documentId)}/reprocess`,
+      {
+        method: 'POST'
+      }
+    );
+  }
+
+  /**
+   * Toggles whether a document should be included in AI context for chat and reasoning.
+   *
+   * When enabled, the document's content will be available to semantic search and
+   * can be referenced in chat responses and reasoning pipelines.
+   *
+   * @param documentId - The unique document identifier
+   * @param enabled - Whether to enable or disable AI context
+   * @returns Promise resolving to the updated document
+   *
+   * @example
+   * ```typescript
+   * // Enable AI context for a document
+   * await client.toggleAiContext('doc-uuid', true);
+   *
+   * // Disable AI context
+   * await client.toggleAiContext('doc-uuid', false);
+   * ```
+   */
+  public async toggleAiContext(
+    documentId: string,
+    enabled: boolean
+  ): Promise<ToggleAiContextResponse> {
+    const payload: ToggleAiContextRequest = { enabled };
+    return this.request<ToggleAiContextResponse>(
+      `/documents/${encodeURIComponent(documentId)}/ai-context`,
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
+    );
   }
 
   private resolveUrl(path: string): string {

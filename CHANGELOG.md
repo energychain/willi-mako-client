@@ -6,7 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
-_Noch keine Änderungen._
+## [0.5.0] - 2025-11-04
+
+### Added
+- **Document Management**: Vollständige Unterstützung für das Hochladen, Verwalten und Durchsuchen von Dokumenten in der Willi-Mako Knowledge Base.
+  - SDK-Methoden: `uploadDocument`, `uploadMultipleDocuments`, `listDocuments`, `getDocument`, `updateDocument`, `deleteDocument`, `downloadDocument`, `reprocessDocument`, `toggleAiContext`
+  - CLI-Befehle unter `willi-mako documents`: `upload`, `upload-multiple`, `list`, `get`, `update`, `delete`, `download`, `reprocess`, `ai-context`
+  - MCP-Tools: `willi-mako-list-documents`, `willi-mako-get-document`, `willi-mako-update-document`, `willi-mako-delete-document`, `willi-mako-reprocess-document`, `willi-mako-toggle-ai-context`
+  - Unterstützung für PDF, DOCX, TXT und MD-Dateien (max. 50MB)
+  - Automatische Textextraktion und Vektorisierung für semantische Suche
+  - AI-Kontext-Steuerung: Dokumente können für Chat und Reasoning aktiviert/deaktiviert werden
+  - Umfassende Tests mit 17 Test-Cases für alle Document-Operationen
+
+### Changed
+- OpenAPI-Spezifikation auf Version 0.5.0 aktualisiert mit allen Document-Management-Endpunkten
+- MCP-Server-Instruktionen erweitert um Document-Management-Tools
 
 ## [0.4.0] - 2025-10-20
 

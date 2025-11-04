@@ -811,3 +811,189 @@ export interface ApiProblem {
   /** HTTP status code of the error response */
   status?: number;
 }
+
+/**
+ * Document object representing an uploaded file in the knowledge base.
+ * Documents can be PDFs, Word documents, text files, or markdown files that
+ * are processed and made available for semantic search and AI chat.
+ */
+export interface Document {
+  /** Unique document identifier */
+  id: string;
+  /** User ID that owns this document */
+  user_id: string;
+  /** Display title of the document */
+  title: string;
+  /** Optional description providing context about the document */
+  description?: string | null;
+  /** Original filename when uploaded */
+  original_name: string;
+  /** Internal file path where the document is stored */
+  file_path: string;
+  /** File size in bytes */
+  file_size: number;
+  /** MIME type of the uploaded file */
+  mime_type: string;
+  /** Whether the document has been successfully processed for search */
+  is_processed: boolean;
+  /** Whether this document should be included in AI context for chat and reasoning */
+  is_ai_context_enabled: boolean;
+  /** Extracted text content from the document (null if not yet processed) */
+  extracted_text?: string | null;
+  /** Length of the extracted text in characters */
+  extracted_text_length?: number | null;
+  /** Error message if processing failed */
+  processing_error?: string | null;
+  /** Array of tags for categorization and filtering */
+  tags?: string[] | null;
+  /** Vector database point ID if document has been embedded */
+  vector_point_id?: string | null;
+  /** ISO 8601 timestamp when the document was created */
+  created_at: string;
+  /** ISO 8601 timestamp when the document was last updated */
+  updated_at: string;
+}
+
+/**
+ * Request payload for uploading a single document.
+ * Note: This is used for FormData construction, actual HTTP uses multipart/form-data.
+ */
+export interface UploadDocumentRequest {
+  /** The file to upload (File or Blob in browser, Buffer or stream in Node.js) */
+  file: File | Blob | Buffer;
+  /** Optional title (defaults to filename) */
+  title?: string;
+  /** Optional description providing context */
+  description?: string;
+  /** Optional tags as JSON array or comma-separated string */
+  tags?: string[] | string;
+  /** Whether to enable AI context for this document */
+  is_ai_context_enabled?: boolean;
+}
+
+/**
+ * Response after successfully uploading a document.
+ */
+export interface UploadDocumentResponse {
+  success: boolean;
+  data: {
+    document: Document;
+    message: string;
+  };
+}
+
+/**
+ * Request payload for uploading multiple documents.
+ */
+export interface UploadMultipleDocumentsRequest {
+  /** Array of files to upload (max 10) */
+  files: Array<File | Blob | Buffer>;
+  /** Whether to enable AI context for all documents */
+  is_ai_context_enabled?: boolean;
+}
+
+/**
+ * Response after successfully uploading multiple documents.
+ */
+export interface UploadMultipleDocumentsResponse {
+  success: boolean;
+  data: {
+    documents: Document[];
+    message: string;
+  };
+}
+
+/**
+ * Pagination information for document lists.
+ */
+export interface DocumentPagination {
+  /** Current page number (1-based) */
+  page: number;
+  /** Number of items per page */
+  limit: number;
+  /** Total number of documents matching the query */
+  total: number;
+  /** Total number of pages available */
+  totalPages: number;
+}
+
+/**
+ * Query parameters for listing documents.
+ */
+export interface ListDocumentsQuery {
+  /** Page number (1-based, default: 1) */
+  page?: number;
+  /** Number of items per page (default: 12) */
+  limit?: number;
+  /** Search term for title/description */
+  search?: string;
+  /** Filter by processing status */
+  processed?: boolean;
+}
+
+/**
+ * Response when listing documents.
+ */
+export interface ListDocumentsResponse {
+  success: boolean;
+  data: {
+    documents: Document[];
+    pagination: DocumentPagination;
+  };
+}
+
+/**
+ * Response when getting a single document.
+ */
+export interface GetDocumentResponse {
+  success: boolean;
+  data: Document;
+}
+
+/**
+ * Request payload for updating document metadata.
+ */
+export interface UpdateDocumentRequest {
+  /** Updated title */
+  title?: string;
+  /** Updated description */
+  description?: string;
+  /** Updated tags array */
+  tags?: string[];
+  /** Whether to enable/disable AI context */
+  is_ai_context_enabled?: boolean;
+}
+
+/**
+ * Response after updating a document.
+ */
+export interface UpdateDocumentResponse {
+  success: boolean;
+  data: Document;
+}
+
+/**
+ * Request payload for toggling AI context on a document.
+ */
+export interface ToggleAiContextRequest {
+  /** Whether AI context should be enabled */
+  enabled: boolean;
+}
+
+/**
+ * Response after toggling AI context.
+ */
+export interface ToggleAiContextResponse {
+  success: boolean;
+  data: Document;
+}
+
+/**
+ * Response after reprocessing a document.
+ */
+export interface ReprocessDocumentResponse {
+  success: boolean;
+  data: {
+    message: string;
+  };
+}

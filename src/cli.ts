@@ -842,6 +842,258 @@ artifacts
     outputJson(response);
   });
 
+const documents = program.command('documents').description('Document management helpers');
+
+documents
+  .command('upload <filePath>')
+  .description('Upload a single document to the knowledge base')
+  .option('--title <title>', 'Document title (defaults to filename)')
+  .option('--description <description>', 'Optional description')
+  .option('--tags <list>', 'Comma-separated tags', parseCommaList)
+  .option('--ai-context', 'Enable AI context for this document', false)
+  .option('--json', 'Print JSON response', true)
+  .action(async (filePath: string, options) => {
+    const client = createClient({ requireToken: true });
+    const absPath = resolve(filePath);
+    const fileBuffer = await fs.readFile(absPath);
+    const filename = basename(absPath);
+
+    const response = await client.uploadDocument({
+      file: fileBuffer,
+      title: options.title ?? filename,
+      description: options.description,
+      tags: options.tags,
+      is_ai_context_enabled: options.aiContext
+    });
+
+    if (options.json !== false) {
+      outputJson(response);
+    } else {
+      console.log(`✅ Document uploaded: ${response.data.document.id}`);
+      console.log(`   Title: ${response.data.document.title}`);
+      console.log(`   Size: ${response.data.document.file_size} bytes`);
+    }
+  });
+
+documents
+  .command('upload-multiple <filePaths...>')
+  .description('Upload multiple documents at once (max 10)')
+  .option('--ai-context', 'Enable AI context for all documents', false)
+  .option('--json', 'Print JSON response', true)
+  .action(async (filePaths: string[], options) => {
+    const client = createClient({ requireToken: true });
+
+    if (filePaths.length > 10) {
+      throw new Error('Maximum 10 files allowed per upload');
+    }
+
+    const fileBuffers: Buffer[] = [];
+    for (const filePath of filePaths) {
+      const absPath = resolve(filePath);
+      const buffer = await fs.readFile(absPath);
+      fileBuffers.push(buffer);
+    }
+
+    const response = await client.uploadMultipleDocuments({
+      files: fileBuffers,
+      is_ai_context_enabled: options.aiContext
+    });
+
+    if (options.json !== false) {
+      outputJson(response);
+    } else {
+      console.log(`✅ Uploaded ${response.data.documents.length} documents`);
+      response.data.documents.forEach((doc) => {
+        console.log(`   - ${doc.title} (${doc.id})`);
+      });
+    }
+  });
+
+documents
+  .command('list')
+  .description('List all documents with pagination and filtering')
+  .option('--page <page>', 'Page number (1-based)', parseIntBase10, 1)
+  .option('--limit <limit>', 'Items per page', parseIntBase10, 12)
+  .option('--search <term>', 'Search term for title/description')
+  .option('--processed', 'Filter by processed documents only')
+  .option('--unprocessed', 'Filter by unprocessed documents only')
+  .option('--json', 'Print JSON response', true)
+  .action(async (options) => {
+    const client = createClient({ requireToken: true });
+
+    const query: Parameters<typeof client.listDocuments>[0] = {
+      page: options.page,
+      limit: options.limit,
+      search: options.search
+    };
+
+    if (options.processed) {
+      query.processed = true;
+    } else if (options.unprocessed) {
+      query.processed = false;
+    }
+
+    const response = await client.listDocuments(query);
+
+    if (options.json !== false) {
+      outputJson(response);
+    } else {
+      const { documents, pagination } = response.data;
+      console.log(`📄 Documents (page ${pagination.page}/${pagination.totalPages})`);
+      console.log(`   Total: ${pagination.total}\n`);
+
+      documents.forEach((doc) => {
+        const processed = doc.is_processed ? '✓' : '⏳';
+        const aiContext = doc.is_ai_context_enabled ? '🤖' : '  ';
+        console.log(`${processed} ${aiContext} ${doc.title}`);
+        console.log(`     ID: ${doc.id}`);
+        console.log(`     Size: ${doc.file_size} bytes | Type: ${doc.mime_type}`);
+        if (doc.description) {
+          console.log(`     ${doc.description}`);
+        }
+        if (doc.tags && doc.tags.length > 0) {
+          console.log(`     Tags: ${doc.tags.join(', ')}`);
+        }
+        console.log('');
+      });
+    }
+  });
+
+documents
+  .command('get <documentId>')
+  .description('Retrieve a single document by ID')
+  .option('--json', 'Print JSON response', true)
+  .action(async (documentId: string, options) => {
+    const client = createClient({ requireToken: true });
+    const response = await client.getDocument(documentId);
+
+    if (options.json !== false) {
+      outputJson(response);
+    } else {
+      const doc = response.data;
+      console.log(`📄 ${doc.title}`);
+      console.log(`   ID: ${doc.id}`);
+      console.log(`   Original name: ${doc.original_name}`);
+      console.log(`   Size: ${doc.file_size} bytes`);
+      console.log(`   MIME type: ${doc.mime_type}`);
+      console.log(`   Processed: ${doc.is_processed ? 'Yes' : 'No'}`);
+      console.log(`   AI Context: ${doc.is_ai_context_enabled ? 'Enabled' : 'Disabled'}`);
+      if (doc.description) {
+        console.log(`   Description: ${doc.description}`);
+      }
+      if (doc.tags && doc.tags.length > 0) {
+        console.log(`   Tags: ${doc.tags.join(', ')}`);
+      }
+      if (doc.extracted_text_length) {
+        console.log(`   Extracted text: ${doc.extracted_text_length} characters`);
+      }
+      if (doc.processing_error) {
+        console.log(`   ⚠️  Processing error: ${doc.processing_error}`);
+      }
+      console.log(`   Created: ${doc.created_at}`);
+      console.log(`   Updated: ${doc.updated_at}`);
+    }
+  });
+
+documents
+  .command('update <documentId>')
+  .description('Update document metadata')
+  .option('--title <title>', 'New title')
+  .option('--description <description>', 'New description')
+  .option('--tags <list>', 'Comma-separated tags', parseCommaList)
+  .option(
+    '--ai-context <enabled>',
+    'Enable (true) or disable (false) AI context',
+    (val) => val === 'true'
+  )
+  .option('--json', 'Print JSON response', true)
+  .action(async (documentId: string, options) => {
+    const client = createClient({ requireToken: true });
+
+    const updatePayload: Parameters<typeof client.updateDocument>[1] = {};
+    if (options.title) {
+      updatePayload.title = options.title;
+    }
+    if (options.description) {
+      updatePayload.description = options.description;
+    }
+    if (options.tags) {
+      updatePayload.tags = options.tags;
+    }
+    if (options.aiContext !== undefined) {
+      updatePayload.is_ai_context_enabled = options.aiContext;
+    }
+
+    const response = await client.updateDocument(documentId, updatePayload);
+
+    if (options.json !== false) {
+      outputJson(response);
+    } else {
+      console.log(`✅ Document updated: ${response.data.title}`);
+    }
+  });
+
+documents
+  .command('delete <documentId>')
+  .description('Delete a document permanently')
+  .option('--confirm', 'Confirm deletion', false)
+  .action(async (documentId: string, options) => {
+    const client = createClient({ requireToken: true });
+
+    if (!options.confirm) {
+      console.error('⚠️  Use --confirm to confirm deletion');
+      process.exit(1);
+    }
+
+    await client.deleteDocument(documentId);
+    console.log('✅ Document deleted');
+  });
+
+documents
+  .command('download <documentId> <outputPath>')
+  .description('Download the original document file')
+  .action(async (documentId: string, outputPath: string) => {
+    const client = createClient({ requireToken: true });
+    const fileData = await client.downloadDocument(documentId);
+    const absPath = resolve(outputPath);
+
+    await fs.writeFile(absPath, Buffer.from(fileData));
+    console.log(`✅ Document downloaded to: ${absPath}`);
+  });
+
+documents
+  .command('reprocess <documentId>')
+  .description('Trigger reprocessing of a document (re-extract text and re-embed)')
+  .option('--json', 'Print JSON response', true)
+  .action(async (documentId: string, options) => {
+    const client = createClient({ requireToken: true });
+    const response = await client.reprocessDocument(documentId);
+
+    if (options.json !== false) {
+      outputJson(response);
+    } else {
+      console.log('✅ Reprocessing started');
+    }
+  });
+
+documents
+  .command('ai-context <documentId> <enabled>')
+  .description('Toggle AI context for a document (enable: true, disable: false)')
+  .option('--json', 'Print JSON response', true)
+  .action(async (documentId: string, enabled: string, options) => {
+    const client = createClient({ requireToken: true });
+    const enabledBool = enabled === 'true';
+
+    const response = await client.toggleAiContext(documentId, enabledBool);
+
+    if (options.json !== false) {
+      outputJson(response);
+    } else {
+      const status = enabledBool ? 'enabled' : 'disabled';
+      console.log(`✅ AI context ${status} for document: ${response.data.title}`);
+    }
+  });
+
 program
   .command('serv')
   .description('Start the interactive Willi-Mako web dashboard demo')
