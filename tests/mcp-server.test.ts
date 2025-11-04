@@ -47,6 +47,49 @@ const createMockClient = (): WilliMakoClient => {
     createNodeScriptJob: noop,
     getToolJob: vi.fn(async () => ({ data: { job: { status: 'queued' } } })),
     createArtifact: noop,
+    uploadDocument: vi.fn(async () => ({
+      success: true,
+      data: {
+        document: {
+          id: 'doc-123',
+          title: 'Test Document',
+          filename: 'test.pdf',
+          mime_type: 'application/pdf',
+          size_bytes: 1024,
+          processed: false,
+          is_ai_context_enabled: true,
+          created_at: '2025-11-04T00:00:00Z',
+          updated_at: '2025-11-04T00:00:00Z'
+        },
+        message: 'Document uploaded successfully'
+      }
+    })),
+    uploadMultipleDocuments: vi.fn(async () => ({
+      success: true,
+      data: {
+        documents: [
+          {
+            id: 'doc-124',
+            title: 'Document 1',
+            filename: 'doc1.pdf',
+            mime_type: 'application/pdf',
+            size_bytes: 1024,
+            processed: false,
+            is_ai_context_enabled: true,
+            created_at: '2025-11-04T00:00:00Z',
+            updated_at: '2025-11-04T00:00:00Z'
+          }
+        ],
+        message: '1 documents uploaded successfully'
+      }
+    })),
+    listDocuments: noop,
+    getDocument: noop,
+    updateDocument: noop,
+    deleteDocument: vi.fn(async () => undefined),
+    downloadDocument: noop,
+    reprocessDocument: noop,
+    toggleAiContext: noop,
     getRemoteOpenApiDocument: vi.fn(async () => ({ info: { title: 'mock' } }))
   } as unknown as WilliMakoClient;
 };

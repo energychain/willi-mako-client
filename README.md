@@ -186,7 +186,29 @@ Expose die Plattform als **Model Context Protocol (MCP)**-Server, damit interne 
    - `willi-mako-chat`, `willi-mako-semantic-search`, `willi-mako-reasoning-generate`
    - `willi-mako-resolve-context`, `willi-mako-clarification-analyze`
    - `willi-mako-create-node-script`, `willi-mako-get-tool-job`, `willi-mako-create-artifact`
+   - **Document Management**: `willi-mako-upload-document`, `willi-mako-upload-multiple-documents`, `willi-mako-list-documents`, `willi-mako-get-document`, `willi-mako-update-document`, `willi-mako-delete-document`, `willi-mako-reprocess-document`, `willi-mako-toggle-ai-context`
    - Ressource `willi-mako://openapi` – liefert die aktuelle OpenAPI-Spezifikation
+
+   💡 **Document Upload via MCP:** Die Upload-Tools unterstützen zwei Methoden:
+   - **URL-Download**: Dokumente von öffentlich zugänglichen URLs herunterladen und hochladen
+   - **Base64-Encoding**: Dokumente als Base64-kodierte Strings übergeben (ideal für AI-Agents)
+
+   Beispiel-Aufruf in AI-Chat:
+   ```
+   Lade das PDF von https://example.com/compliance.pdf hoch
+   mit dem Titel "GPKE Compliance Guide 2024"
+   ```
+
+   Der Agent verwendet dann:
+   ```json
+   {
+     "source": "url",
+     "url": "https://example.com/compliance.pdf",
+     "filename": "compliance.pdf",
+     "title": "GPKE Compliance Guide 2024",
+     "tags": ["gpke", "compliance"]
+   }
+   ```
 
    💡 **Domänenwissen an Bord:** Chat & Reasoning decken tiefgehende Prozesse der Energiewirtschaft ab (GPKE, WiM, GeLi Gas, Mehr-/Mindermengen, Lieferantenwechsel), berücksichtigen Regularien wie EnWG, StromNZV, StromNEV, EEG sowie MessEG/MessEV und kennen die Spezifika der EDIFACT/edi@energy-Formate (BDEW MaKo, UTILMD, MSCONS, ORDERS, PRICAT, INVOIC). Für wiederkehrende Prüf-Checklisten können Sie zusätzliche MCP-Tools definieren, die das Chat-Tool mit vordefinierten Prompts aufrufen, statt eigene Skripte zu pflegen.
 
