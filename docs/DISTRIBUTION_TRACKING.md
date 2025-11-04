@@ -2,21 +2,31 @@
 
 Zentrale Übersicht über alle Distribution-Aktivitäten für willi-mako-client.
 
-**Version**: 0.5.0
+**Version**: 0.5.1
 **Release Date**: 2025-11-04
 **Last Updated**: 2025-11-04
 
 ---
 
-## 🆕 Release Highlights (v0.5.0)
+## 🆕 Release Highlights (v0.5.1)
 
-- **Document Management**: Vollständige Dokumentenverwaltung mit 9 neuen SDK-Methoden für Upload, Liste, Abruf, Update, Löschung, Download, Reprocessing und AI-Kontext-Steuerung – perfekt für Compliance-Teams und Knowledge-Base-Integration.
+- **MCP Document Upload**: Zwei neue MCP-Tools für das Hochladen von Dokumenten via Model Context Protocol – AI-Agents können nun direkt Dokumente hochladen!
+  - `willi-mako-upload-document`: Einzeldatei-Upload von URL oder Base64-encoded content
+  - `willi-mako-upload-multiple-documents`: Batch-Upload von bis zu 10 Dokumenten
+  - URL-Download für öffentlich zugängliche Dokumente
+  - Base64-Encoding für AI-Agent-gesteuerte Uploads
+  - Automatische Dateigröße-Validierung (max 50MB pro Datei)
+  - Kein lokales Filesystem aus Sicherheitsgründen
+
+### Previous Releases
+
+**v0.5.0 (2025-11-04)**
+- **Document Management**: Vollständige Dokumentenverwaltung mit 9 neuen SDK-Methoden für Upload, Liste, Abruf, Update, Löschung, Download, Reprocessing und AI-Kontext-Steuerung.
 - **CLI-Erweiterung**: Neue `willi-mako documents` Kommandos ermöglichen einfaches Hochladen, Verwalten und Durchsuchen von Dokumenten direkt aus dem Terminal.
-- **MCP-Tools**: 6 neue Model Context Protocol Tools für AI-Agents zur nahtlosen Integration von Dokumenten-Management in Konversationen und Workflows.
-- **Multi-Format-Support**: PDF, DOCX, TXT und Markdown mit automatischer Textextraktion und Vektorisierung für semantische Suche.
-- **17 neue Tests**: Umfassende Testabdeckung für alle Document-Operationen mit Mock-API-Responses.
+- **MCP-Tools**: 6 neue Model Context Protocol Tools für AI-Agents zur nahtlosen Integration von Dokumenten-Management.
+- **Multi-Format-Support**: PDF, DOCX, TXT und Markdown mit automatischer Textextraktion und Vektorisierung.
 
-### Previous Release (v0.4.0 - 2025-10-20)
+**v0.4.0 (2025-10-20)**
 - Mehrmandantenfähiger MCP-Server mit separaten `StreamableHTTPServerTransport`-Instanzen pro Session.
 - Browser-Kompatibilität verbessert (CORS-Header, Session-Reset).
 - CLI & SDK mit Attachment-Support und automatischen Reparaturversuchen.
@@ -40,11 +50,11 @@ Zentrale Übersicht über alle Distribution-Aktivitäten für willi-mako-client.
 
 | Registry | Status | URL | Datum |
 |----------|--------|-----|-------|
-| npm | ✅ Live | [willi-mako-client](https://www.npmjs.com/package/willi-mako-client) | 2025-11-04 (v0.5.0) |
+| npm | ✅ Live | [willi-mako-client](https://www.npmjs.com/package/willi-mako-client) | 2025-11-04 (v0.5.1) |
 | JSR | ✅ Live | [jsr.io/@energychain/willi-mako-client](https://jsr.io/@energychain/willi-mako-client) | 2025-10-20 (v0.4.0) |
 | GitHub Packages | ⏳ Pending | [GPR](https://github.com/energychain/willi-mako-client/packages) | - |
-| UNPKG CDN | ✅ Auto | [unpkg.com/willi-mako-client](https://unpkg.com/willi-mako-client@0.5.0/) | 2025-11-04 |
-| jsDelivr CDN | ✅ Auto | [jsdelivr.net/npm/willi-mako-client](https://cdn.jsdelivr.net/npm/willi-mako-client@0.4.0/) | 2025-10-20 |
+| UNPKG CDN | ✅ Auto | [unpkg.com/willi-mako-client](https://unpkg.com/willi-mako-client@0.5.1/) | 2025-11-04 |
+| jsDelivr CDN | ✅ Auto | [jsdelivr.net/npm/willi-mako-client](https://cdn.jsdelivr.net/npm/willi-mako-client@0.5.1/) | 2025-11-04 |
 
 ---
 
