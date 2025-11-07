@@ -340,7 +340,7 @@ retrieval
     const payload = {
       sessionId: options.session,
       query: options.query,
-      options: options.options as any
+      options: options.options as SemanticSearchRequest['options']
     };
 
     const response = await client.williNetzSemanticSearch(payload);
@@ -362,7 +362,7 @@ retrieval
     const payload = {
       sessionId: options.session,
       query: options.query,
-      options: options.options as any
+      options: options.options as SemanticSearchRequest['options']
     };
 
     const response = await client.combinedSemanticSearch(payload);
