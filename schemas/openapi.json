@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Willi-Mako API v2",
-    "version": "0.5.0",
-    "description": "Spezifikation für die API v2 (Phasen 1 bis 3 – Tooling & Artefakte)."
+    "version": "0.6.0",
+    "description": "Spezifikation für die API v2 (Phasen 1 bis 3 – Tooling & Artefakte). Version 0.6.0 fügt Endpunkte für die willi-netz Collection und kombinierte Collection-Suchen hinzu."
   },
   "servers": [
     {
@@ -346,6 +346,390 @@
                           }
                         }
                       }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/willi-netz/semantic-search": {
+      "post": {
+        "summary": "Semantische Suche dediziert über die willi-netz Collection",
+        "description": "Durchsucht die willi-netz Collection, die spezialisiert ist auf kaufmännisches Netzmanagement und Asset Management bei Verteilnetzbetreibern. Enthält: Energierecht (EnWG, StromNEV, ARegV), BNetzA-Festlegungen & Monitoringberichte, TAB von Netzbetreibern (Westnetz, Netze BW, etc.), BDEW-Leitfäden, VDE-FNN Hinweise, Asset Management (ISO 55000). Typische Anfragen: Erlösobergrenzen, §14a EnWG, SAIDI/SAIFI, TAB-Anforderungen, Netzentgelte.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "sessionId",
+                  "query"
+                ],
+                "properties": {
+                  "sessionId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "query": {
+                    "type": "string"
+                  },
+                  "options": {
+                    "type": "object",
+                    "properties": {
+                      "limit": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 100
+                      },
+                      "alpha": {
+                        "type": "number"
+                      },
+                      "outlineScoping": {
+                        "type": "boolean"
+                      },
+                      "excludeVisual": {
+                        "type": "boolean"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Trefferliste der semantischen Suche aus willi-netz",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "sessionId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "collection": {
+                          "type": "string",
+                          "enum": [
+                            "willi-netz"
+                          ]
+                        },
+                        "query": {
+                          "type": "string"
+                        },
+                        "totalResults": {
+                          "type": "integer"
+                        },
+                        "durationMs": {
+                          "type": "number"
+                        },
+                        "options": {
+                          "type": "object",
+                          "properties": {
+                            "limit": {
+                              "type": "integer"
+                            },
+                            "alpha": {
+                              "type": "number",
+                              "nullable": true
+                            },
+                            "outlineScoping": {
+                              "type": "boolean"
+                            },
+                            "excludeVisual": {
+                              "type": "boolean"
+                            }
+                          }
+                        },
+                        "results": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/SemanticSearchResultItem"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/willi-netz/chat": {
+      "post": {
+        "summary": "Chat dediziert über die willi-netz Collection",
+        "description": "Chat-Interaktion basierend auf der willi-netz Collection (Netzmanagement, Regulierung, TAB, Asset Management). Ideal für Fragen zu: BNetzA-Regulierung, Anreizregulierung (ARegV), Technische Anschlussbedingungen, §14a EnWG, Smart Meter, E-Mobilität, Speicher, NEST-Projekt, Versorgungsqualität (SAIDI/SAIFI).",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "sessionId",
+                  "message"
+                ],
+                "properties": {
+                  "sessionId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "message": {
+                    "type": "string"
+                  },
+                  "contextSettings": {
+                    "type": "object"
+                  },
+                  "timelineId": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Antwort aus willi-netz Chat",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "collection": {
+                          "type": "string",
+                          "enum": [
+                            "willi-netz"
+                          ]
+                        }
+                      },
+                      "additionalProperties": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/combined/semantic-search": {
+      "post": {
+        "summary": "Semantische Suche übergreifend über willi_mako und willi-netz Collections",
+        "description": "Durchsucht parallel beide Collections und vereint die Ergebnisse. willi_mako: EDIFACT, Marktkommunikation (GPKE, WiM, GeLi Gas), UTILMD, MSCONS, ORDERS, Prüfkataloge. willi-netz: Netzmanagement, BNetzA-Regulierung, TAB, Asset Management, EnWG/ARegV. Ergebnisse enthalten sourceCollection-Information im Payload. Ideal für übergreifende Recherchen, die sowohl Marktprozesse als auch regulatorische/technische Netzthemen betreffen.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "sessionId",
+                  "query"
+                ],
+                "properties": {
+                  "sessionId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "query": {
+                    "type": "string"
+                  },
+                  "options": {
+                    "type": "object",
+                    "properties": {
+                      "limit": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 100
+                      },
+                      "alpha": {
+                        "type": "number"
+                      },
+                      "outlineScoping": {
+                        "type": "boolean"
+                      },
+                      "excludeVisual": {
+                        "type": "boolean"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Kombinierte Trefferliste aus beiden Collections",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "sessionId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "collections": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          },
+                          "example": [
+                            "willi_mako",
+                            "willi-netz"
+                          ]
+                        },
+                        "query": {
+                          "type": "string"
+                        },
+                        "totalResults": {
+                          "type": "integer"
+                        },
+                        "durationMs": {
+                          "type": "number"
+                        },
+                        "options": {
+                          "type": "object",
+                          "properties": {
+                            "limit": {
+                              "type": "integer"
+                            },
+                            "alpha": {
+                              "type": "number",
+                              "nullable": true
+                            },
+                            "outlineScoping": {
+                              "type": "boolean"
+                            },
+                            "excludeVisual": {
+                              "type": "boolean"
+                            }
+                          }
+                        },
+                        "results": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/SemanticSearchResultItem"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/combined/chat": {
+      "post": {
+        "summary": "Chat übergreifend über willi_mako und willi-netz Collections",
+        "description": "Chat-Interaktion mit Zugriff auf beide Collections. Nutzt automatisch die relevanteste Collection basierend auf der Anfrage. Ideal für komplexe Fragen, die sowohl Marktkommunikations-Aspekte (EDIFACT, Lieferantenwechsel) als auch regulatorische/technische Netzthemen (Netzentgelte, TAB, §14a EnWG) betreffen.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "sessionId",
+                  "message"
+                ],
+                "properties": {
+                  "sessionId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "message": {
+                    "type": "string"
+                  },
+                  "contextSettings": {
+                    "type": "object"
+                  },
+                  "timelineId": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Antwort aus kombiniertem Chat",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "collections": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          },
+                          "example": [
+                            "willi_mako",
+                            "willi-netz"
+                          ]
+                        }
+                      },
+                      "additionalProperties": true
                     }
                   }
                 }

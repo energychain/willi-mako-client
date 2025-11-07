@@ -173,6 +173,102 @@ export interface SemanticSearchResponse {
 }
 
 /**
+ * Request payload for willi-netz semantic search.
+ * Searches the willi-netz collection specialized on network management and asset management.
+ */
+export interface WilliNetzSemanticSearchRequest {
+  sessionId: string;
+  query: string;
+  options?: SemanticSearchOptions;
+}
+
+/**
+ * Response payload for willi-netz semantic search.
+ */
+export interface WilliNetzSemanticSearchResponse {
+  success: boolean;
+  data: {
+    sessionId: string;
+    collection: 'willi-netz';
+    query: string;
+    totalResults: number;
+    durationMs: number;
+    options: SemanticSearchOptions;
+    results: SemanticSearchResultItem[];
+    [key: string]: unknown;
+  };
+}
+
+/**
+ * Request payload for willi-netz chat.
+ * Chat interaction based on the willi-netz collection (network management, regulation, TAB, asset management).
+ */
+export interface WilliNetzChatRequest {
+  sessionId: string;
+  message: string;
+  contextSettings?: Record<string, unknown>;
+  timelineId?: string | null;
+}
+
+/**
+ * Response returned by the willi-netz chat endpoint.
+ */
+export interface WilliNetzChatResponse {
+  success: boolean;
+  data: {
+    collection: 'willi-netz';
+    [key: string]: unknown;
+  };
+}
+
+/**
+ * Request payload for combined semantic search across willi_mako and willi-netz collections.
+ */
+export interface CombinedSemanticSearchRequest {
+  sessionId: string;
+  query: string;
+  options?: SemanticSearchOptions;
+}
+
+/**
+ * Response payload for combined semantic search.
+ */
+export interface CombinedSemanticSearchResponse {
+  success: boolean;
+  data: {
+    sessionId: string;
+    collections: string[];
+    query: string;
+    totalResults: number;
+    durationMs: number;
+    options: SemanticSearchOptions;
+    results: SemanticSearchResultItem[];
+    [key: string]: unknown;
+  };
+}
+
+/**
+ * Request payload for combined chat across willi_mako and willi-netz collections.
+ */
+export interface CombinedChatRequest {
+  sessionId: string;
+  message: string;
+  contextSettings?: Record<string, unknown>;
+  timelineId?: string | null;
+}
+
+/**
+ * Response returned by the combined chat endpoint.
+ */
+export interface CombinedChatResponse {
+  success: boolean;
+  data: {
+    collections: string[];
+    [key: string]: unknown;
+  };
+}
+
+/**
  * Message supplied to the reasoning endpoint to provide conversational context.
  */
 export interface ReasoningMessage {

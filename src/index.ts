@@ -19,6 +19,14 @@ import type {
   ChatResponse,
   SemanticSearchRequest,
   SemanticSearchResponse,
+  WilliNetzSemanticSearchRequest,
+  WilliNetzSemanticSearchResponse,
+  WilliNetzChatRequest,
+  WilliNetzChatResponse,
+  CombinedSemanticSearchRequest,
+  CombinedSemanticSearchResponse,
+  CombinedChatRequest,
+  CombinedChatResponse,
   ReasoningGenerateRequest,
   ReasoningGenerateResponse,
   ContextResolveRequest,
@@ -350,6 +358,72 @@ export class WilliMakoClient {
    */
   public async semanticSearch(payload: SemanticSearchRequest): Promise<SemanticSearchResponse> {
     return this.request<SemanticSearchResponse>('/retrieval/semantic-search', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+  }
+
+  /**
+   * Executes a semantic search against the willi-netz collection.
+   * The willi-netz collection is specialized on network management, regulation, TAB, and asset management.
+   * Contains: Energy law (EnWG, StromNEV, ARegV), BNetzA regulations & monitoring reports,
+   * TAB from network operators, BDEW guidelines, VDE-FNN instructions, Asset Management (ISO 55000).
+   */
+  public async williNetzSemanticSearch(
+    payload: WilliNetzSemanticSearchRequest
+  ): Promise<WilliNetzSemanticSearchResponse> {
+    return this.request<WilliNetzSemanticSearchResponse>('/willi-netz/semantic-search', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+  }
+
+  /**
+   * Chat interaction based on the willi-netz collection.
+   * Ideal for questions about: BNetzA regulation, incentive regulation (ARegV),
+   * technical connection requirements, §14a EnWG, smart meters, e-mobility, storage, supply quality.
+   */
+  public async williNetzChat(payload: WilliNetzChatRequest): Promise<WilliNetzChatResponse> {
+    return this.request<WilliNetzChatResponse>('/willi-netz/chat', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+  }
+
+  /**
+   * Executes a combined semantic search across both willi_mako and willi-netz collections.
+   * Results include sourceCollection information in the payload.
+   * Ideal for cross-cutting research covering both market processes and regulatory/technical network topics.
+   */
+  public async combinedSemanticSearch(
+    payload: CombinedSemanticSearchRequest
+  ): Promise<CombinedSemanticSearchResponse> {
+    return this.request<CombinedSemanticSearchResponse>('/combined/semantic-search', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+  }
+
+  /**
+   * Chat interaction with access to both willi_mako and willi-netz collections.
+   * Automatically uses the most relevant collection based on the request.
+   * Ideal for complex questions covering both market communication aspects (EDIFACT, supplier switch)
+   * and regulatory/technical network topics (network fees, TAB, §14a EnWG).
+   */
+  public async combinedChat(payload: CombinedChatRequest): Promise<CombinedChatResponse> {
+    return this.request<CombinedChatResponse>('/combined/chat', {
       method: 'POST',
       body: JSON.stringify(payload),
       headers: {

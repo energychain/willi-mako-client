@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+## [0.6.0] - 2025-11-07
+
+### Added
+- **Willi-Netz Collection Support**: Neue Endpunkte für die willi-netz Collection mit spezialisiertem Wissen zu Netzmanagement und Asset Management bei Verteilnetzbetreibern
+  - SDK-Methoden: `williNetzSemanticSearch`, `williNetzChat` für dedizierte Abfragen auf willi-netz
+  - SDK-Methoden: `combinedSemanticSearch`, `combinedChat` für übergreifende Suche über beide Collections (willi_mako + willi-netz)
+  - CLI-Befehle: `willi-mako retrieval willi-netz-search`, `willi-mako chat willi-netz` für willi-netz-spezifische Abfragen
+  - CLI-Befehle: `willi-mako retrieval combined-search`, `willi-mako chat combined` für kombinierte Abfragen
+  - MCP-Tools: `willi-netz-semantic-search`, `willi-netz-chat`, `combined-semantic-search`, `combined-chat`
+  - Willi-netz Collection enthält: Energierecht (EnWG, StromNEV, ARegV), BNetzA-Festlegungen & Monitoringberichte, TAB von Netzbetreibern (Westnetz, Netze BW, etc.), BDEW-Leitfäden, VDE-FNN Hinweise, Asset Management (ISO 55000)
+  - Typische Anwendungsfälle: Erlösobergrenzen, §14a EnWG, SAIDI/SAIFI, TAB-Anforderungen, Netzentgelte, Smart Meter, E-Mobilität, Speicher
+
+### Changed
+- OpenAPI-Spezifikation auf Version 0.6.0 aktualisiert mit willi-netz und combined Endpunkten
+- MCP-Server-Instruktionen erweitert um neue willi-netz und combined Tools
+- API-Dokumentation beschreibt nun beide verfügbaren Collections und deren Einsatzzwecke
+
 ## [0.5.1] - 2025-11-04
 
 ### Added

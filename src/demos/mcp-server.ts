@@ -257,6 +257,10 @@ Tools:
 - willi-mako-delete-session – Terminate a session and associated artefacts/jobs
 - willi-mako-chat – Fast Q&A with the energy-market assistant (grounded MaKo expertise)
 - willi-mako-semantic-search – Execute a hybrid semantic search within the knowledge graph
+- willi-netz-semantic-search – Search the willi-netz collection (network management, regulation, TAB)
+- willi-netz-chat – Chat based on willi-netz collection (BNetzA, ARegV, §14a EnWG, smart meters)
+- combined-semantic-search – Search across both willi_mako and willi-netz collections
+- combined-chat – Chat with access to both collections (auto-selects relevant knowledge)
 - willi-mako-reasoning-generate – Multi-step investigations across energy-market data sets
 - willi-mako-resolve-context – Resolve contextual decisions and resources for user intents
 - willi-mako-clarification-analyze – Analyse whether clarification questions are required
@@ -274,6 +278,7 @@ Capabilities:
 - Deep coverage of German energy-market processes and market roles (GPKE, WiM, GeLi Gas, Mehr-/Mindermengen, Lieferantenwechsel, …).
 - Regulatory context spanning EnWG, StromNZV, StromNEV, EEG, MessEG/MessEV and current BNetzA guidance.
 - Authoritative format knowledge for EDIFACT/edi@energy, BDEW MaKo-Richtlinien, UTILMD, MSCONS, ORDERS, PRICAT, INVOIC und ergänzende Prüfkataloge.
+- Network management expertise via willi-netz: BNetzA regulations, incentive regulation (ARegV), technical connection requirements (TAB from Westnetz, Netze BW, etc.), asset management (ISO 55000), SAIDI/SAIFI quality indicators.
 - Need prompt scaffolding for frequently used checklists? Add lightweight helper tools that wrap the chat endpoint with prefilled context instead of reinventing workflows.
 
 Resources:
@@ -537,6 +542,156 @@ Resources:
             options: options ?? undefined
           };
           const response = await clientInstance.semanticSearch(payload);
+          return respond({ ...response, sessionId: activeSessionId });
+        })
+    );
+
+    registerTool(
+      'willi-netz-semantic-search',
+      {
+        title: 'Willi-Netz semantic search',
+        description:
+          'Executes semantic search within the willi-netz collection specialized on network management, regulation (EnWG, StromNEV, ARegV), BNetzA reports, TAB, VDE-FNN, and asset management (ISO 55000). Ideal for: §14a EnWG, network fees, SAIDI/SAIFI, supply quality, smart meters, e-mobility, storage.',
+        inputSchema: {
+          sessionId: z.string().describe('Session identifier (UUID).').optional(),
+          query: z.string().describe('Natural language search query.'),
+          options: z
+            .object({
+              limit: z.number().int().min(1).max(100).optional(),
+              alpha: z.number().optional(),
+              outlineScoping: z.boolean().optional(),
+              excludeVisual: z.boolean().optional()
+            })
+            .optional()
+            .describe('Optional retrieval options (limit, alpha, outlineScoping, excludeVisual).')
+        }
+      },
+      async ({ sessionId, query, options }, extra?: RequestContext) =>
+        withClient(extra, async (clientInstance, transportSessionId) => {
+          const activeSessionId = await ensureSessionId(
+            clientInstance,
+            transportSessionId,
+            sessionId
+          );
+          const payload = {
+            sessionId: activeSessionId,
+            query,
+            options: options ?? undefined
+          };
+          const response = await clientInstance.williNetzSemanticSearch(payload);
+          return respond({ ...response, sessionId: activeSessionId });
+        })
+    );
+
+    registerTool(
+      'willi-netz-chat',
+      {
+        title: 'Willi-Netz chat',
+        description:
+          'Chat interaction based on the willi-netz collection covering network management, BNetzA regulation, incentive regulation (ARegV), technical connection requirements (TAB), asset management. Ideal for: §14a EnWG, smart meters, e-mobility, storage, NEST project, supply quality (SAIDI/SAIFI).',
+        inputSchema: {
+          sessionId: z.string().describe('Session identifier (UUID).').optional(),
+          message: z.string().describe('Message content to send to the assistant.'),
+          contextSettings: z
+            .record(z.any())
+            .optional()
+            .describe('Optional context override for this request.'),
+          timelineId: z
+            .string()
+            .uuid()
+            .optional()
+            .describe('Optional timeline identifier to link events.')
+        }
+      },
+      async ({ sessionId, message, contextSettings, timelineId }, extra?: RequestContext) =>
+        withClient(extra, async (clientInstance, transportSessionId) => {
+          const activeSessionId = await ensureSessionId(
+            clientInstance,
+            transportSessionId,
+            sessionId
+          );
+          const payload = {
+            sessionId: activeSessionId,
+            message,
+            contextSettings: contextSettings ?? undefined,
+            timelineId: timelineId ?? undefined
+          };
+          const response = await clientInstance.williNetzChat(payload);
+          return respond({ ...response, sessionId: activeSessionId });
+        })
+    );
+
+    registerTool(
+      'combined-semantic-search',
+      {
+        title: 'Combined semantic search',
+        description:
+          'Executes semantic search across both willi_mako and willi-netz collections. Combines EDIFACT/market communication knowledge with network management/regulation. Results include sourceCollection information. Ideal for cross-cutting research covering both market processes and regulatory/technical network topics.',
+        inputSchema: {
+          sessionId: z.string().describe('Session identifier (UUID).').optional(),
+          query: z.string().describe('Natural language search query.'),
+          options: z
+            .object({
+              limit: z.number().int().min(1).max(100).optional(),
+              alpha: z.number().optional(),
+              outlineScoping: z.boolean().optional(),
+              excludeVisual: z.boolean().optional()
+            })
+            .optional()
+            .describe('Optional retrieval options (limit, alpha, outlineScoping, excludeVisual).')
+        }
+      },
+      async ({ sessionId, query, options }, extra?: RequestContext) =>
+        withClient(extra, async (clientInstance, transportSessionId) => {
+          const activeSessionId = await ensureSessionId(
+            clientInstance,
+            transportSessionId,
+            sessionId
+          );
+          const payload = {
+            sessionId: activeSessionId,
+            query,
+            options: options ?? undefined
+          };
+          const response = await clientInstance.combinedSemanticSearch(payload);
+          return respond({ ...response, sessionId: activeSessionId });
+        })
+    );
+
+    registerTool(
+      'combined-chat',
+      {
+        title: 'Combined chat',
+        description:
+          'Chat with access to both willi_mako and willi-netz collections. Automatically uses the most relevant collection. Ideal for complex questions covering both market communication (EDIFACT, supplier switch, UTILMD) and regulatory/technical network topics (network fees, TAB, §14a EnWG, smart meters).',
+        inputSchema: {
+          sessionId: z.string().describe('Session identifier (UUID).').optional(),
+          message: z.string().describe('Message content to send to the assistant.'),
+          contextSettings: z
+            .record(z.any())
+            .optional()
+            .describe('Optional context override for this request.'),
+          timelineId: z
+            .string()
+            .uuid()
+            .optional()
+            .describe('Optional timeline identifier to link events.')
+        }
+      },
+      async ({ sessionId, message, contextSettings, timelineId }, extra?: RequestContext) =>
+        withClient(extra, async (clientInstance, transportSessionId) => {
+          const activeSessionId = await ensureSessionId(
+            clientInstance,
+            transportSessionId,
+            sessionId
+          );
+          const payload = {
+            sessionId: activeSessionId,
+            message,
+            contextSettings: contextSettings ?? undefined,
+            timelineId: timelineId ?? undefined
+          };
+          const response = await clientInstance.combinedChat(payload);
           return respond({ ...response, sessionId: activeSessionId });
         })
     );

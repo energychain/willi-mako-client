@@ -245,6 +245,60 @@ chat
     }
   );
 
+chat
+  .command('willi-netz')
+  .description(
+    'Send a message to the willi-netz chat endpoint (network management, regulation, TAB)'
+  )
+  .requiredOption('-s, --session <sessionId>', 'Session identifier used for the conversation')
+  .requiredOption('-m, --message <message>', 'Message content to send to the assistant')
+  .option('--context <json>', 'Optional JSON object overriding context settings', parseJsonOptional)
+  .option(
+    '--timeline <uuid>',
+    'Optional Timeline identifier to link the message to an existing flow'
+  )
+  .action(
+    async (options: { session: string; message: string; context?: unknown; timeline?: string }) => {
+      const client = createClient({ requireToken: true });
+      const payload = {
+        sessionId: options.session,
+        message: options.message,
+        contextSettings: (options.context as Record<string, unknown>) ?? undefined,
+        timelineId: options.timeline ?? undefined
+      };
+
+      const response = await client.williNetzChat(payload);
+      outputJson(response);
+    }
+  );
+
+chat
+  .command('combined')
+  .description(
+    'Send a message to the combined chat endpoint (both willi_mako and willi-netz collections)'
+  )
+  .requiredOption('-s, --session <sessionId>', 'Session identifier used for the conversation')
+  .requiredOption('-m, --message <message>', 'Message content to send to the assistant')
+  .option('--context <json>', 'Optional JSON object overriding context settings', parseJsonOptional)
+  .option(
+    '--timeline <uuid>',
+    'Optional Timeline identifier to link the message to an existing flow'
+  )
+  .action(
+    async (options: { session: string; message: string; context?: unknown; timeline?: string }) => {
+      const client = createClient({ requireToken: true });
+      const payload = {
+        sessionId: options.session,
+        message: options.message,
+        contextSettings: (options.context as Record<string, unknown>) ?? undefined,
+        timelineId: options.timeline ?? undefined
+      };
+
+      const response = await client.combinedChat(payload);
+      outputJson(response);
+    }
+  );
+
 const retrieval = program.command('retrieval').description('Knowledge retrieval helpers');
 
 retrieval
@@ -266,6 +320,52 @@ retrieval
     };
 
     const response = await client.semanticSearch(payload);
+    outputJson(response);
+  });
+
+retrieval
+  .command('willi-netz-search')
+  .description(
+    'Run a semantic search query within the willi-netz collection (network management, regulation, TAB)'
+  )
+  .requiredOption('-s, --session <sessionId>', 'Session identifier owning the retrieval')
+  .requiredOption('-q, --query <query>', 'Search query expressed in natural language')
+  .option(
+    '--options <json>',
+    'Additional engine options (limit, alpha, outlineScoping, excludeVisual)',
+    parseJsonOptional
+  )
+  .action(async (options: { session: string; query: string; options?: unknown }) => {
+    const client = createClient({ requireToken: true });
+    const payload = {
+      sessionId: options.session,
+      query: options.query,
+      options: options.options as any
+    };
+
+    const response = await client.williNetzSemanticSearch(payload);
+    outputJson(response);
+  });
+
+retrieval
+  .command('combined-search')
+  .description('Run a semantic search across both willi_mako and willi-netz collections')
+  .requiredOption('-s, --session <sessionId>', 'Session identifier owning the retrieval')
+  .requiredOption('-q, --query <query>', 'Search query expressed in natural language')
+  .option(
+    '--options <json>',
+    'Additional engine options (limit, alpha, outlineScoping, excludeVisual)',
+    parseJsonOptional
+  )
+  .action(async (options: { session: string; query: string; options?: unknown }) => {
+    const client = createClient({ requireToken: true });
+    const payload = {
+      sessionId: options.session,
+      query: options.query,
+      options: options.options as any
+    };
+
+    const response = await client.combinedSemanticSearch(payload);
     outputJson(response);
   });
 
