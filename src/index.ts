@@ -47,7 +47,17 @@ import type {
   UpdateDocumentResponse,
   ToggleAiContextRequest,
   ToggleAiContextResponse,
-  ReprocessDocumentResponse
+  ReprocessDocumentResponse,
+  AnalyzeEdifactMessageRequest,
+  AnalyzeEdifactMessageResponse,
+  EdifactChatRequest,
+  EdifactChatResponse,
+  ExplainEdifactMessageRequest,
+  ExplainEdifactMessageResponse,
+  ValidateEdifactMessageRequest,
+  ValidateEdifactMessageResponse,
+  ModifyEdifactMessageRequest,
+  ModifyEdifactMessageResponse
 } from './types.js';
 
 const require: NodeJS.Require = createRequire(import.meta.url);
@@ -1008,6 +1018,208 @@ export class WilliMakoClient {
         }
       }
     );
+  }
+
+  // =====================================================================
+  // EDIFACT Message Analyzer Methods (Version 0.7.0)
+  // =====================================================================
+
+  /**
+   * Analyzes an EDIFACT message structurally.
+   *
+   * Performs a structural analysis of an EDIFACT message, extracts segments,
+   * and enriches them with code lookup information from BDEW/EIC databases.
+   *
+   * @param payload - Request containing the EDIFACT message to analyze
+   * @returns Promise resolving to the analysis result with structured data
+   *
+   * @example
+   * ```typescript
+   * const analysis = await client.analyzeEdifactMessage({
+   *   message: 'UNH+00000000001111+MSCONS:D:11A:UN:2.6e\\nBGM+E01+1234567890+9\\nUNT+3+00000000001111'
+   * });
+   *
+   * console.log('Format:', analysis.data.format);
+   * console.log('Summary:', analysis.data.summary);
+   * console.log('Segments:', analysis.data.structuredData.segments.length);
+   *
+   * analysis.data.structuredData.segments.forEach(segment => {
+   *   console.log(`${segment.tag}: ${segment.description}`);
+   *   if (segment.resolvedCodes) {
+   *     console.log('Resolved codes:', segment.resolvedCodes);
+   *   }
+   * });
+   * ```
+   */
+  public async analyzeEdifactMessage(
+    payload: AnalyzeEdifactMessageRequest
+  ): Promise<AnalyzeEdifactMessageResponse> {
+    return this.request<AnalyzeEdifactMessageResponse>('/message-analyzer/analyze', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+  }
+
+  /**
+   * Enables interactive chat about an EDIFACT message.
+   *
+   * Ask questions and have discussions about an EDIFACT message with a context-aware
+   * AI assistant that understands market communication standards and EDIFACT structure.
+   *
+   * @param payload - Request with message, chat history, and current EDIFACT context
+   * @returns Promise resolving to the AI assistant's response
+   *
+   * @example
+   * ```typescript
+   * const edifactMessage = 'UNH+1+MSCONS:D:11A:UN:2.6e\\n...';
+   *
+   * // First question
+   * const response1 = await client.chatAboutEdifactMessage({
+   *   message: 'Welche Zählernummer ist in dieser Nachricht enthalten?',
+   *   currentEdifactMessage: edifactMessage
+   * });
+   *
+   * console.log('Answer:', response1.data.response);
+   *
+   * // Follow-up question with history
+   * const response2 = await client.chatAboutEdifactMessage({
+   *   message: 'In welchem Zeitfenster ist der Verbrauch am höchsten?',
+   *   chatHistory: [
+   *     { role: 'user', content: 'Welche Zählernummer ist in dieser Nachricht enthalten?' },
+   *     { role: 'assistant', content: response1.data.response }
+   *   ],
+   *   currentEdifactMessage: edifactMessage
+   * });
+   * ```
+   */
+  public async chatAboutEdifactMessage(payload: EdifactChatRequest): Promise<EdifactChatResponse> {
+    return this.request<EdifactChatResponse>('/message-analyzer/chat', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+  }
+
+  /**
+   * Generates a human-readable explanation of an EDIFACT message.
+   *
+   * Uses LLM and expert knowledge to create a structured, understandable explanation
+   * of what the EDIFACT message contains and represents in business terms.
+   *
+   * @param payload - Request containing the EDIFACT message to explain
+   * @returns Promise resolving to the generated explanation
+   *
+   * @example
+   * ```typescript
+   * const explanation = await client.explainEdifactMessage({
+   *   message: 'UNH+1+UTILMD:D:04B:UN:2.3e\\nBGM+E01+123456+9\\n...'
+   * });
+   *
+   * console.log('Explanation:');
+   * console.log(explanation.data.explanation);
+   * ```
+   */
+  public async explainEdifactMessage(
+    payload: ExplainEdifactMessageRequest
+  ): Promise<ExplainEdifactMessageResponse> {
+    return this.request<ExplainEdifactMessageResponse>('/message-analyzer/explanation', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+  }
+
+  /**
+   * Validates an EDIFACT message structurally and semantically.
+   *
+   * Performs comprehensive validation with detailed error and warning lists.
+   * Checks both EDIFACT structure and business logic according to market communication rules.
+   *
+   * @param payload - Request containing the EDIFACT message to validate
+   * @returns Promise resolving to the validation result with errors and warnings
+   *
+   * @example
+   * ```typescript
+   * const validation = await client.validateEdifactMessage({
+   *   message: 'UNH+1+MSCONS:D:11A:UN:2.6e\\n...'
+   * });
+   *
+   * console.log('Valid:', validation.data.isValid);
+   * console.log('Message Type:', validation.data.messageType);
+   * console.log('Segments:', validation.data.segmentCount);
+   *
+   * if (validation.data.errors.length > 0) {
+   *   console.log('Errors:');
+   *   validation.data.errors.forEach(error => console.log(`  - ${error}`));
+   * }
+   *
+   * if (validation.data.warnings.length > 0) {
+   *   console.log('Warnings:');
+   *   validation.data.warnings.forEach(warning => console.log(`  - ${warning}`));
+   * }
+   * ```
+   */
+  public async validateEdifactMessage(
+    payload: ValidateEdifactMessageRequest
+  ): Promise<ValidateEdifactMessageResponse> {
+    return this.request<ValidateEdifactMessageResponse>('/message-analyzer/validate', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+  }
+
+  /**
+   * Modifies an EDIFACT message based on natural language instructions.
+   *
+   * Uses AI to understand and apply modifications while maintaining valid EDIFACT structure.
+   * Perfect for testing scenarios or creating message variants.
+   *
+   * @param payload - Request with modification instruction and current message
+   * @returns Promise resolving to the modified message and validation status
+   *
+   * @example
+   * ```typescript
+   * const modified = await client.modifyEdifactMessage({
+   *   instruction: 'Erhöhe den Verbrauch in jedem Zeitfenster um 10%',
+   *   currentMessage: 'UNH+1+MSCONS:D:11A:UN:2.6e\\n...'
+   * });
+   *
+   * console.log('Modified message:');
+   * console.log(modified.data.modifiedMessage);
+   * console.log('Valid:', modified.data.isValid);
+   *
+   * // Save modified message
+   * await client.createArtifact({
+   *   sessionId: 'session-uuid',
+   *   type: 'edifact-message',
+   *   name: 'modified-mscons.edi',
+   *   mimeType: 'text/plain',
+   *   encoding: 'utf8',
+   *   content: modified.data.modifiedMessage,
+   *   tags: ['mscons', 'modified']
+   * });
+   * ```
+   */
+  public async modifyEdifactMessage(
+    payload: ModifyEdifactMessageRequest
+  ): Promise<ModifyEdifactMessageResponse> {
+    return this.request<ModifyEdifactMessageResponse>('/message-analyzer/modify', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
   }
 
   private resolveUrl(path: string): string {

@@ -1093,3 +1093,179 @@ export interface ReprocessDocumentResponse {
     message: string;
   };
 }
+
+// =====================================================================
+// EDIFACT Message Analyzer Types (Version 0.7.0)
+// =====================================================================
+
+/**
+ * Supported message formats by the analyzer.
+ */
+export type EdifactMessageFormat = 'EDIFACT' | 'XML' | 'TEXT' | 'UNKNOWN';
+
+/**
+ * Individual segment in a parsed EDIFACT message.
+ */
+export interface EdifactSegment {
+  /** Segment tag (e.g., UNH, BGM, NAD) */
+  tag: string;
+  /** Array of data elements in this segment */
+  elements: string[];
+  /** Original segment string */
+  original: string;
+  /** Human-readable description of this segment */
+  description?: string;
+  /** Resolved BDEW/EIC codes for data elements */
+  resolvedCodes?: Record<string, string>;
+}
+
+/**
+ * Structured data extracted from an EDIFACT message.
+ */
+export interface EdifactStructuredData {
+  /** Array of parsed segments */
+  segments: EdifactSegment[];
+}
+
+/**
+ * Result of analyzing an EDIFACT message.
+ */
+export interface EdifactAnalysisResult {
+  /** Human-readable summary of the analysis */
+  summary: string;
+  /** List of plausibility checks performed */
+  plausibilityChecks: string[];
+  /** Parsed and structured message data */
+  structuredData: EdifactStructuredData;
+  /** Detected message format */
+  format: EdifactMessageFormat;
+}
+
+/**
+ * Request payload for analyzing an EDIFACT message.
+ */
+export interface AnalyzeEdifactMessageRequest {
+  /** The EDIFACT message to analyze */
+  message: string;
+}
+
+/**
+ * Response from the analyze endpoint.
+ */
+export interface AnalyzeEdifactMessageResponse {
+  success: boolean;
+  data: EdifactAnalysisResult;
+}
+
+/**
+ * Message in a chat conversation about an EDIFACT message.
+ */
+export interface EdifactChatMessage {
+  /** Role of the message sender */
+  role: 'user' | 'assistant';
+  /** Content of the message */
+  content: string;
+}
+
+/**
+ * Request payload for chatting about an EDIFACT message.
+ */
+export interface EdifactChatRequest {
+  /** The user's question or message */
+  message: string;
+  /** Previous chat history for context */
+  chatHistory?: EdifactChatMessage[];
+  /** The current EDIFACT message being discussed */
+  currentEdifactMessage: string;
+}
+
+/**
+ * Response from the chat endpoint.
+ */
+export interface EdifactChatResponse {
+  success: boolean;
+  data: {
+    /** AI assistant's response */
+    response: string;
+    /** Timestamp of the response */
+    timestamp: string;
+  };
+}
+
+/**
+ * Request payload for generating an explanation of an EDIFACT message.
+ */
+export interface ExplainEdifactMessageRequest {
+  /** The EDIFACT message to explain */
+  message: string;
+}
+
+/**
+ * Response from the explanation endpoint.
+ */
+export interface ExplainEdifactMessageResponse {
+  success: boolean;
+  data: {
+    /** Human-readable explanation of the message */
+    explanation: string;
+    /** Whether the explanation was successfully generated */
+    success: boolean;
+  };
+}
+
+/**
+ * Result of validating an EDIFACT message.
+ */
+export interface EdifactValidationResult {
+  /** Whether the message is structurally valid */
+  isValid: boolean;
+  /** List of validation errors */
+  errors: string[];
+  /** List of warnings */
+  warnings: string[];
+  /** Detected message type (e.g., MSCONS, UTILMD) */
+  messageType?: string;
+  /** Number of segments in the message */
+  segmentCount?: number;
+}
+
+/**
+ * Request payload for validating an EDIFACT message.
+ */
+export interface ValidateEdifactMessageRequest {
+  /** The EDIFACT message to validate */
+  message: string;
+}
+
+/**
+ * Response from the validate endpoint.
+ */
+export interface ValidateEdifactMessageResponse {
+  success: boolean;
+  data: EdifactValidationResult;
+}
+
+/**
+ * Request payload for modifying an EDIFACT message.
+ */
+export interface ModifyEdifactMessageRequest {
+  /** Natural language instruction for the modification */
+  instruction: string;
+  /** The current EDIFACT message to modify */
+  currentMessage: string;
+}
+
+/**
+ * Response from the modify endpoint.
+ */
+export interface ModifyEdifactMessageResponse {
+  success: boolean;
+  data: {
+    /** The modified EDIFACT message */
+    modifiedMessage: string;
+    /** Whether the modified message passed basic validation */
+    isValid: boolean;
+    /** Timestamp of the modification */
+    timestamp: string;
+  };
+}

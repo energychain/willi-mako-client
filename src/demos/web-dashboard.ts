@@ -454,6 +454,81 @@ export async function startWebDashboard(
       return;
     }
 
+    // EDIFACT Message Analyzer Routes (Version 0.7.0)
+    if (req.method === 'POST' && url.pathname === '/edifact/analyze') {
+      try {
+        const body = (await parseJsonBody(req)) as { message: string };
+        const response = await client.analyzeEdifactMessage({ message: body.message });
+        sendJson(res, 200, response);
+      } catch (error) {
+        sendJson(res, error instanceof WilliMakoError ? error.status : 500, {
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+      return;
+    }
+
+    if (req.method === 'POST' && url.pathname === '/edifact/validate') {
+      try {
+        const body = (await parseJsonBody(req)) as { message: string };
+        const response = await client.validateEdifactMessage({ message: body.message });
+        sendJson(res, 200, response);
+      } catch (error) {
+        sendJson(res, error instanceof WilliMakoError ? error.status : 500, {
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+      return;
+    }
+
+    if (req.method === 'POST' && url.pathname === '/edifact/explain') {
+      try {
+        const body = (await parseJsonBody(req)) as { message: string };
+        const response = await client.explainEdifactMessage({ message: body.message });
+        sendJson(res, 200, response);
+      } catch (error) {
+        sendJson(res, error instanceof WilliMakoError ? error.status : 500, {
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+      return;
+    }
+
+    if (req.method === 'POST' && url.pathname === '/edifact/modify') {
+      try {
+        const body = (await parseJsonBody(req)) as { instruction: string; currentMessage: string };
+        const response = await client.modifyEdifactMessage({
+          instruction: body.instruction,
+          currentMessage: body.currentMessage
+        });
+        sendJson(res, 200, response);
+      } catch (error) {
+        sendJson(res, error instanceof WilliMakoError ? error.status : 500, {
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+      return;
+    }
+
+    if (req.method === 'POST' && url.pathname === '/edifact/chat') {
+      try {
+        const body = (await parseJsonBody(req)) as {
+          message: string;
+          currentEdifactMessage: string;
+        };
+        const response = await client.chatAboutEdifactMessage({
+          message: body.message,
+          currentEdifactMessage: body.currentEdifactMessage
+        });
+        sendJson(res, 200, response);
+      } catch (error) {
+        sendJson(res, error instanceof WilliMakoError ? error.status : 500, {
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+      return;
+    }
+
     res.statusCode = 404;
     res.end('Not Found');
   });
@@ -1088,6 +1163,81 @@ function bodyContent(): string {
         <pre id="analysis-output">Noch keine Analyse durchgeführt.</pre>
         <h3>Artefakt-Vorschlag</h3>
         <pre id="artifact-output">Wird nach erfolgreicher Analyse vorgeschlagen.</pre>
+      </section>
+
+      <section class="card">
+        <h2>🔍 EDIFACT Message Analyzer (v0.7.0)</h2>
+        <p class="hint">
+          Neue Funktionen zur Analyse, Validierung und Modifikation von EDIFACT-Nachrichten.
+        </p>
+
+        <h3>Nachricht analysieren</h3>
+        <form id="edifact-analyze-form">
+          <label>
+            EDIFACT-Nachricht
+            <textarea name="message" placeholder="UNH+00000000001111+MSCONS:D:11A:UN:2.6e..." required></textarea>
+          </label>
+          <div class="inline-controls">
+            <button type="submit">📊 Analysieren</button>
+          </div>
+        </form>
+        <pre id="edifact-analyze-output">Noch keine Analyse durchgeführt.</pre>
+
+        <h3>Nachricht validieren</h3>
+        <form id="edifact-validate-form">
+          <label>
+            EDIFACT-Nachricht
+            <textarea name="message" placeholder="UNH+1+UTILMD:D:04B:UN:2.3e..." required></textarea>
+          </label>
+          <div class="inline-controls">
+            <button type="submit">✓ Validieren</button>
+          </div>
+        </form>
+        <pre id="edifact-validate-output">Noch keine Validierung durchgeführt.</pre>
+
+        <h3>Nachricht erklären</h3>
+        <form id="edifact-explain-form">
+          <label>
+            EDIFACT-Nachricht
+            <textarea name="message" placeholder="UNH+1+MSCONS:D:11A:UN:2.6e..." required></textarea>
+          </label>
+          <div class="inline-controls">
+            <button type="submit">📖 Erklären</button>
+          </div>
+        </form>
+        <pre id="edifact-explain-output">Noch keine Erklärung generiert.</pre>
+
+        <h3>Nachricht modifizieren</h3>
+        <form id="edifact-modify-form">
+          <label>
+            EDIFACT-Nachricht
+            <textarea name="message" placeholder="UNH+1+MSCONS:D:11A:UN:2.6e..." required></textarea>
+          </label>
+          <label>
+            Änderungsanweisung
+            <input type="text" name="instruction" placeholder="z.B. 'Erhöhe den Verbrauch in jedem Zeitfenster um 10%'" required />
+          </label>
+          <div class="inline-controls">
+            <button type="submit">✏️ Modifizieren</button>
+          </div>
+        </form>
+        <pre id="edifact-modify-output">Noch keine Modifikation durchgeführt.</pre>
+
+        <h3>Chat über Nachricht</h3>
+        <form id="edifact-chat-form">
+          <label>
+            EDIFACT-Nachricht (Kontext)
+            <textarea name="message" placeholder="UNH+1+MSCONS:D:11A:UN:2.6e..." required></textarea>
+          </label>
+          <label>
+            Ihre Frage
+            <input type="text" name="query" placeholder="z.B. 'Welche Zählernummer ist in dieser Nachricht enthalten?'" required />
+          </label>
+          <div class="inline-controls">
+            <button type="submit">💬 Frage stellen</button>
+          </div>
+        </form>
+        <pre id="edifact-chat-output">Noch keine Frage gestellt.</pre>
       </section>`;
 }
 
@@ -1718,6 +1868,78 @@ function clientScript(bootstrapState: string): string {
           throw error;
         }
       });
+
+      // EDIFACT Message Analyzer Handlers (Version 0.7.0)
+      attachFormHandler('edifact-analyze-form', async (formData) => {
+        const response = await fetch('/edifact/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: formData.get('message') })
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data?.error ?? 'Analyse fehlgeschlagen');
+        }
+        return { outputId: 'edifact-analyze-output', data };
+      }, 'edifact-analyze-output');
+
+      attachFormHandler('edifact-validate-form', async (formData) => {
+        const response = await fetch('/edifact/validate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: formData.get('message') })
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data?.error ?? 'Validierung fehlgeschlagen');
+        }
+        return { outputId: 'edifact-validate-output', data };
+      }, 'edifact-validate-output');
+
+      attachFormHandler('edifact-explain-form', async (formData) => {
+        const response = await fetch('/edifact/explain', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: formData.get('message') })
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data?.error ?? 'Erklärung fehlgeschlagen');
+        }
+        return { outputId: 'edifact-explain-output', data };
+      }, 'edifact-explain-output');
+
+      attachFormHandler('edifact-modify-form', async (formData) => {
+        const response = await fetch('/edifact/modify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            instruction: formData.get('instruction'),
+            currentMessage: formData.get('message')
+          })
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data?.error ?? 'Modifikation fehlgeschlagen');
+        }
+        return { outputId: 'edifact-modify-output', data };
+      }, 'edifact-modify-output');
+
+      attachFormHandler('edifact-chat-form', async (formData) => {
+        const response = await fetch('/edifact/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: formData.get('query'),
+            currentEdifactMessage: formData.get('message')
+          })
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data?.error ?? 'Chat fehlgeschlagen');
+        }
+        return { outputId: 'edifact-chat-output', data };
+      }, 'edifact-chat-output');
 
       updateStatus();`;
 

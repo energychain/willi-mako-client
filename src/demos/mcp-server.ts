@@ -1177,6 +1177,156 @@ Resources:
         })
     );
 
+    // =====================================================================
+    // EDIFACT Message Analyzer Tools (Version 0.7.0)
+    // =====================================================================
+
+    registerTool(
+      'willi-mako-analyze-edifact',
+      {
+        title: 'Analyze EDIFACT message',
+        description:
+          'Performs structural analysis of an EDIFACT message, extracts segments, and enriches them with code lookup information from BDEW/EIC databases.',
+        inputSchema: {
+          message: z.string().describe('The EDIFACT message to analyze')
+        }
+      },
+      async ({ message }, extra?: RequestContext) =>
+        withClient(extra, async (clientInstance) => {
+          const response = await clientInstance.analyzeEdifactMessage({ message });
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `Format: ${response.data.format}\nSummary: ${response.data.summary}\n\nSegments: ${response.data.structuredData.segments.length}\n\n${JSON.stringify(response.data, null, 2)}`
+              }
+            ],
+            structuredContent: response.data as unknown as Record<string, unknown>
+          };
+        })
+    );
+
+    registerTool(
+      'willi-mako-chat-edifact',
+      {
+        title: 'Chat about EDIFACT message',
+        description:
+          'Enables interactive questions and discussions about an EDIFACT message with a context-aware AI assistant that understands market communication standards.',
+        inputSchema: {
+          message: z.string().describe("The user's question or message"),
+          currentEdifactMessage: z.string().describe('The current EDIFACT message as context'),
+          chatHistory: z
+            .array(
+              z.object({
+                role: z.enum(['user', 'assistant']).describe('Role of the message sender'),
+                content: z.string().describe('Content of the message')
+              })
+            )
+            .optional()
+            .describe('Previous chat history for context')
+        }
+      },
+      async ({ message, currentEdifactMessage, chatHistory }, extra?: RequestContext) =>
+        withClient(extra, async (clientInstance) => {
+          const response = await clientInstance.chatAboutEdifactMessage({
+            message,
+            currentEdifactMessage,
+            chatHistory
+          });
+          return {
+            content: [
+              {
+                type: 'text',
+                text: response.data.response
+              }
+            ],
+            structuredContent: response.data as unknown as Record<string, unknown>
+          };
+        })
+    );
+
+    registerTool(
+      'willi-mako-explain-edifact',
+      {
+        title: 'Explain EDIFACT message',
+        description:
+          'Generates a human-readable, structured explanation of an EDIFACT message using LLM and expert knowledge about market communication standards.',
+        inputSchema: {
+          message: z.string().describe('The EDIFACT message to explain')
+        }
+      },
+      async ({ message }, extra?: RequestContext) =>
+        withClient(extra, async (clientInstance) => {
+          const response = await clientInstance.explainEdifactMessage({ message });
+          return {
+            content: [
+              {
+                type: 'text',
+                text: response.data.explanation
+              }
+            ],
+            structuredContent: response.data as unknown as Record<string, unknown>
+          };
+        })
+    );
+
+    registerTool(
+      'willi-mako-validate-edifact',
+      {
+        title: 'Validate EDIFACT message',
+        description:
+          'Validates an EDIFACT message structurally and semantically with detailed error and warning lists according to market communication rules.',
+        inputSchema: {
+          message: z.string().describe('The EDIFACT message to validate')
+        }
+      },
+      async ({ message }, extra?: RequestContext) =>
+        withClient(extra, async (clientInstance) => {
+          const response = await clientInstance.validateEdifactMessage({ message });
+          const summary = `Valid: ${response.data.isValid ? 'Yes' : 'No'}\nMessage Type: ${response.data.messageType || 'Unknown'}\nSegments: ${response.data.segmentCount || 0}\nErrors: ${response.data.errors.length}\nWarnings: ${response.data.warnings.length}`;
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `${summary}\n\n${JSON.stringify(response.data, null, 2)}`
+              }
+            ],
+            structuredContent: response.data as unknown as Record<string, unknown>
+          };
+        })
+    );
+
+    registerTool(
+      'willi-mako-modify-edifact',
+      {
+        title: 'Modify EDIFACT message',
+        description:
+          'Modifies an EDIFACT message based on natural language instructions while maintaining valid EDIFACT structure. Perfect for testing scenarios or creating message variants.',
+        inputSchema: {
+          instruction: z
+            .string()
+            .describe('Natural language instruction describing the desired modification'),
+          currentMessage: z.string().describe('The current EDIFACT message to modify')
+        }
+      },
+      async ({ instruction, currentMessage }, extra?: RequestContext) =>
+        withClient(extra, async (clientInstance) => {
+          const response = await clientInstance.modifyEdifactMessage({
+            instruction,
+            currentMessage
+          });
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `Modified message:\n\n${response.data.modifiedMessage}\n\nValid: ${response.data.isValid ? 'Yes' : 'No'}`
+              }
+            ],
+            structuredContent: response.data as unknown as Record<string, unknown>
+          };
+        })
+    );
+
     server.registerResource(
       'willi-mako-openapi',
       'willi-mako://openapi',

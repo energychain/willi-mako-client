@@ -6,6 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Added
+- **EDIFACT Message Analyzer (v0.7.0)**: Umfassendes Feature-Set für die Analyse, Validierung, Erklärung und Modifikation von EDIFACT-Nachrichten
+  - SDK-Methoden: `analyzeEdifactMessage`, `validateEdifactMessage`, `explainEdifactMessage`, `modifyEdifactMessage`, `chatAboutEdifactMessage`
+  - CLI-Befehle unter `willi-mako edifact`: `analyze`, `validate`, `explain`, `modify`, `chat`
+  - MCP-Tools: `willi-mako-analyze-edifact`, `willi-mako-validate-edifact`, `willi-mako-explain-edifact`, `willi-mako-modify-edifact`, `willi-mako-chat-edifact`
+  - Web-Dashboard: Neue Sektion "EDIFACT Message Analyzer (v0.7.0)" mit interaktiven UI-Komponenten
+  - Unterstützt alle gängigen EDIFACT-Nachrichtentypen: UTILMD, MSCONS, ORDERS, PRICAT, INVOIC, APERAK, CONTRL
+  - Strukturelle Analyse mit BDEW/EIC Code-Resolution und Segment-Beschreibungen
+  - Validierung mit detaillierten Fehler- und Warnungslisten (strukturell und semantisch)
+  - KI-generierte, menschenlesbare Erklärungen von EDIFACT-Nachrichten
+  - Natürlichsprachliche Modifikation von Nachrichten mit Validierung
+  - Interaktiver Chat mit Kontext-Awareness für Fragen zu EDIFACT-Nachrichten
+  - Vollständige Test-Suite mit 7 Test-Cases für alle Analyzer-Funktionen
+  - Umfassende Dokumentation: `docs/EDIFACT_ANALYZER.md` mit Workflow-Beispielen
+  - Beispiel-Script: `examples/edifact-analyzer-demo.ts` zur Demonstration aller Features
+
+### Changed
+- OpenAPI-Spezifikation auf Version 0.7.0 aktualisiert mit allen EDIFACT Analyzer Endpunkten
+- API-Dokumentation (`docs/API.md`) erweitert um EDIFACT Analyzer Methoden mit Verwendungsbeispielen
+- README.md aktualisiert mit EDIFACT Analyzer Feature-Highlights
+- MCP-Server-Instruktionen erweitert um neue EDIFACT Analyzer Tools
+
 ## [0.6.0] - 2025-11-07
 
 ### Added

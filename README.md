@@ -65,8 +65,9 @@ Mit dem SDK erhalten Sie:
 - 🛠️ **Tooling Sandbox** – sichere Node.js-Ausführung für ETL, Validierung, KI-Skripte.
 - 🗂️ **Artifact Storage** – persistente Protokolle, Audit-Trails und EDIFACT-Snapshots.
 - � **Document Management** – Hochladen, Verwalten und Durchsuchen von PDFs, DOCX, TXT und MD-Dateien in der Knowledge Base mit automatischer Textextraktion und AI-Kontext-Steuerung.
-- �📦 **OpenAPI Bundle** – `schemas/openapi.json` für offline Analysen.
-- 🖥️ **CLI & MCP** – vollständige Befehlsgruppen (`auth`, `sessions`, `chat`, `retrieval`, …) plus MCP-Server für KI-Agenten.
+- 📦 **OpenAPI Bundle** – `schemas/openapi.json` für offline Analysen.
+- 🖥️ **CLI & MCP** – vollständige Befehlsgruppen (`auth`, `sessions`, `chat`, `retrieval`, `edifact`, …) plus MCP-Server für KI-Agenten.
+- 🔍 **EDIFACT Message Analyzer (v0.7.0)** – Analyse, Validierung, Erklärung, Modifikation und Chat für EDIFACT-Nachrichten (UTILMD, MSCONS, ORDERS, etc.).
 - 🧪 **Vitest Testsuite** – Vertrauen in Stabilität und Regressionen.
 - 🛡️ **Compliance Fokus** – automatisierbare Prüfungen für UTILMD, MSCONS, ORDERS, PRICAT, INVOIC.
 
@@ -295,6 +296,11 @@ Weitere Anpassungen (Authentifizierung, Mehrbenutzer, Branding) sind in [`docs/I
 | `downloadDocument()` | Original-Datei herunterladen | PDF, DOCX, TXT, MD | Als ArrayBuffer |
 | `reprocessDocument()` | Dokument neu verarbeiten | – | Textextraktion & Embedding wiederholen |
 | `toggleAiContext()` | AI-Kontext aktivieren/deaktivieren | – | Steuert Verfügbarkeit für Chat/Reasoning |
+| `analyzeEdifactMessage()` | EDIFACT-Nachricht strukturell analysieren | UTILMD, MSCONS, ORDERS, PRICAT, INVOIC | v0.7.0: Code-Resolution & Segmentierung |
+| `validateEdifactMessage()` | EDIFACT-Nachricht validieren | UTILMD, MSCONS, ORDERS, PRICAT, INVOIC | v0.7.0: Strukturelle & semantische Prüfung |
+| `explainEdifactMessage()` | EDIFACT-Nachricht erklären | UTILMD, MSCONS, ORDERS, PRICAT, INVOIC | v0.7.0: KI-generierte Erklärung |
+| `modifyEdifactMessage()` | EDIFACT-Nachricht modifizieren | UTILMD, MSCONS, ORDERS, PRICAT, INVOIC | v0.7.0: Natürlichsprachliche Anweisungen |
+| `chatAboutEdifactMessage()` | Chat über EDIFACT-Nachricht | UTILMD, MSCONS, ORDERS, PRICAT, INVOIC | v0.7.0: Kontextbewusste Fragen & Antworten |
 | `getRemoteOpenApiDocument()` | Aktuelle OpenAPI laden | – | Für Schema-Diffs & Code-Gen |
 
 Fehler führen zu `WilliMakoError` mit `status` und `body`. Vollständige Typen siehe [`src/types.ts`](./src/types.ts) und [`docs/API.md`](./docs/API.md).

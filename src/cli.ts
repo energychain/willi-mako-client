@@ -1253,6 +1253,209 @@ program
     });
   });
 
+// =====================================================================
+// EDIFACT Message Analyzer Commands (Version 0.7.0)
+// =====================================================================
+
+const edifact = program.command('edifact').description('EDIFACT message analysis and manipulation');
+
+edifact
+  .command('analyze')
+  .description('Structurally analyze an EDIFACT message with code resolution')
+  .requiredOption('-m, --message <message>', 'EDIFACT message string')
+  .option('-f, --file <path>', 'Read EDIFACT message from file (alternative to --message)')
+  .option('--json', 'Output JSON response', true)
+  .action(async (options: { message?: string; file?: string; json?: boolean }) => {
+    const client = createClient({ requireToken: true });
+
+    let message: string;
+    if (options.file) {
+      message = await fs.readFile(resolve(options.file), 'utf8');
+    } else if (options.message) {
+      message = options.message;
+    } else {
+      throw new Error('Either --message or --file must be provided');
+    }
+
+    const response = await client.analyzeEdifactMessage({ message });
+
+    if (options.json !== false) {
+      outputJson(response);
+    } else {
+      console.log('\n📋 EDIFACT Analysis Result\n');
+      console.log(`Format: ${response.data.format}`);
+      console.log(`Summary: ${response.data.summary}\n`);
+
+      if (response.data.plausibilityChecks.length > 0) {
+        console.log('✓ Plausibility Checks:');
+        response.data.plausibilityChecks.forEach((check) => console.log(`  - ${check}`));
+        console.log('');
+      }
+
+      console.log(`Segments (${response.data.structuredData.segments.length}):`);
+      response.data.structuredData.segments.forEach((segment) => {
+        console.log(`\n  ${segment.tag}: ${segment.description || 'N/A'}`);
+        if (segment.resolvedCodes && Object.keys(segment.resolvedCodes).length > 0) {
+          console.log('    Resolved codes:', segment.resolvedCodes);
+        }
+      });
+    }
+  });
+
+edifact
+  .command('chat')
+  .description('Interactive chat about an EDIFACT message')
+  .requiredOption('-m, --message <message>', 'EDIFACT message string')
+  .option('-f, --file <path>', 'Read EDIFACT message from file (alternative to --message)')
+  .requiredOption('-q, --query <query>', 'Question about the EDIFACT message')
+  .option('--json', 'Output JSON response', true)
+  .action(async (options: { message?: string; file?: string; query: string; json?: boolean }) => {
+    const client = createClient({ requireToken: true });
+
+    let currentEdifactMessage: string;
+    if (options.file) {
+      currentEdifactMessage = await fs.readFile(resolve(options.file), 'utf8');
+    } else if (options.message) {
+      currentEdifactMessage = options.message;
+    } else {
+      throw new Error('Either --message or --file must be provided');
+    }
+
+    const response = await client.chatAboutEdifactMessage({
+      message: options.query,
+      currentEdifactMessage
+    });
+
+    if (options.json !== false) {
+      outputJson(response);
+    } else {
+      console.log('\n💬 AI Assistant Response\n');
+      console.log(response.data.response);
+      console.log(`\n(${response.data.timestamp})`);
+    }
+  });
+
+edifact
+  .command('explain')
+  .description('Generate human-readable explanation of an EDIFACT message')
+  .requiredOption('-m, --message <message>', 'EDIFACT message string')
+  .option('-f, --file <path>', 'Read EDIFACT message from file (alternative to --message)')
+  .option('--json', 'Output JSON response', true)
+  .action(async (options: { message?: string; file?: string; json?: boolean }) => {
+    const client = createClient({ requireToken: true });
+
+    let message: string;
+    if (options.file) {
+      message = await fs.readFile(resolve(options.file), 'utf8');
+    } else if (options.message) {
+      message = options.message;
+    } else {
+      throw new Error('Either --message or --file must be provided');
+    }
+
+    const response = await client.explainEdifactMessage({ message });
+
+    if (options.json !== false) {
+      outputJson(response);
+    } else {
+      console.log('\n📖 EDIFACT Message Explanation\n');
+      console.log(response.data.explanation);
+    }
+  });
+
+edifact
+  .command('validate')
+  .description('Validate an EDIFACT message structurally and semantically')
+  .requiredOption('-m, --message <message>', 'EDIFACT message string')
+  .option('-f, --file <path>', 'Read EDIFACT message from file (alternative to --message)')
+  .option('--json', 'Output JSON response', true)
+  .action(async (options: { message?: string; file?: string; json?: boolean }) => {
+    const client = createClient({ requireToken: true });
+
+    let message: string;
+    if (options.file) {
+      message = await fs.readFile(resolve(options.file), 'utf8');
+    } else if (options.message) {
+      message = options.message;
+    } else {
+      throw new Error('Either --message or --file must be provided');
+    }
+
+    const response = await client.validateEdifactMessage({ message });
+
+    if (options.json !== false) {
+      outputJson(response);
+    } else {
+      console.log('\n✓ EDIFACT Validation Result\n');
+      console.log(`Valid: ${response.data.isValid ? '✓ Yes' : '✗ No'}`);
+      console.log(`Message Type: ${response.data.messageType || 'Unknown'}`);
+      console.log(`Segment Count: ${response.data.segmentCount || 0}\n`);
+
+      if (response.data.errors.length > 0) {
+        console.log('❌ Errors:');
+        response.data.errors.forEach((error) => console.log(`  - ${error}`));
+        console.log('');
+      }
+
+      if (response.data.warnings.length > 0) {
+        console.log('⚠️  Warnings:');
+        response.data.warnings.forEach((warning) => console.log(`  - ${warning}`));
+      }
+
+      if (response.data.errors.length === 0 && response.data.warnings.length === 0) {
+        console.log('✓ No errors or warnings found.');
+      }
+    }
+  });
+
+edifact
+  .command('modify')
+  .description('Modify an EDIFACT message based on natural language instructions')
+  .requiredOption('-m, --message <message>', 'Current EDIFACT message string')
+  .option('-f, --file <path>', 'Read EDIFACT message from file (alternative to --message)')
+  .requiredOption('-i, --instruction <instruction>', 'Modification instruction in natural language')
+  .option('-o, --output <path>', 'Write modified message to file')
+  .option('--json', 'Output JSON response', true)
+  .action(
+    async (options: {
+      message?: string;
+      file?: string;
+      instruction: string;
+      output?: string;
+      json?: boolean;
+    }) => {
+      const client = createClient({ requireToken: true });
+
+      let currentMessage: string;
+      if (options.file) {
+        currentMessage = await fs.readFile(resolve(options.file), 'utf8');
+      } else if (options.message) {
+        currentMessage = options.message;
+      } else {
+        throw new Error('Either --message or --file must be provided');
+      }
+
+      const response = await client.modifyEdifactMessage({
+        instruction: options.instruction,
+        currentMessage
+      });
+
+      if (options.output) {
+        await fs.writeFile(resolve(options.output), response.data.modifiedMessage, 'utf8');
+        console.log(`✓ Modified message written to ${options.output}`);
+      }
+
+      if (options.json !== false) {
+        outputJson(response);
+      } else if (!options.output) {
+        console.log('\n📝 Modified EDIFACT Message\n');
+        console.log(response.data.modifiedMessage);
+        console.log(`\n✓ Valid: ${response.data.isValid ? 'Yes' : 'No'}`);
+        console.log(`(${response.data.timestamp})`);
+      }
+    }
+  );
+
 program
   .command('whoami')
   .description('Display the current configuration (safe to share)')

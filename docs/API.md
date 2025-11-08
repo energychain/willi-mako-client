@@ -21,6 +21,12 @@ This document provides an overview of the TypeScript/JavaScript API exposed by `
   - [`createNodeScriptJob(payload)`](#createnodescriptjobpayload)
   - [`getToolJob(jobId)`](#gettooljobjobid)
   - [`createArtifact(payload)`](#createartifactpayload)
+  - [EDIFACT Message Analyzer Methods](#edifact-message-analyzer-methods-v070)
+    - [`analyzeEdifactMessage(payload)`](#analyzeedifactmessagepayload)
+    - [`validateEdifactMessage(payload)`](#validateedifactmessagepayload)
+    - [`explainEdifactMessage(payload)`](#explainedifactmessagepayload)
+    - [`modifyEdifactMessage(payload)`](#modifyedifactmessagepayload)
+    - [`chatAboutEdifactMessage(payload)`](#chataboutedifactmessagepayload)
   - [`setToken(token)`](#settokentoken)
   - [`getBaseUrl()`](#getbaseurl)
 - [Error Handling](#error-handling)
@@ -322,6 +328,89 @@ await client.createArtifact({
 ```
 
 **Payload fields:** see `CreateArtifactRequest` in [`src/types.ts`](../src/types.ts) for full detail.
+
+### EDIFACT Message Analyzer Methods (v0.7.0)
+
+The EDIFACT Message Analyzer provides comprehensive tools for analyzing, validating, explaining, modifying, and discussing EDIFACT messages used in German energy market communication.
+
+#### `analyzeEdifactMessage(payload)`
+
+Performs structural analysis of an EDIFACT message, extracting segments and enriching them with code lookup information from BDEW/EIC databases.
+
+```typescript
+const analysis = await client.analyzeEdifactMessage({
+  message: 'UNH+00000000001111+MSCONS:D:11A:UN:2.6e\\nBGM+E01+1234567890+9\\nUNT+3+00000000001111'
+});
+
+console.log('Format:', analysis.data.format); // 'EDIFACT'
+console.log('Summary:', analysis.data.summary);
+console.log('Segments:', analysis.data.structuredData.segments);
+```
+
+Returns `EdifactAnalysisResult` with structured segments, plausibility checks, and resolved code mappings.
+
+#### `validateEdifactMessage(payload)`
+
+Validates an EDIFACT message structurally and semantically with detailed error and warning lists.
+
+```typescript
+const validation = await client.validateEdifactMessage({
+  message: 'UNH+1+UTILMD:D:04B:UN:2.3e\\n...'
+});
+
+console.log('Valid:', validation.data.isValid);
+console.log('Message Type:', validation.data.messageType);
+console.log('Errors:', validation.data.errors);
+console.log('Warnings:', validation.data.warnings);
+```
+
+Returns `EdifactValidationResult` with validation status, detected message type, and detailed diagnostics.
+
+#### `explainEdifactMessage(payload)`
+
+Generates a human-readable explanation of an EDIFACT message using LLM and expert knowledge.
+
+```typescript
+const explanation = await client.explainEdifactMessage({
+  message: 'UNH+1+MSCONS:D:11A:UN:2.6e\\n...'
+});
+
+console.log(explanation.data.explanation);
+```
+
+Returns `ExplainEdifactMessageResponse` with a structured, understandable explanation of the message content.
+
+#### `modifyEdifactMessage(payload)`
+
+Modifies an EDIFACT message based on natural language instructions while maintaining valid structure.
+
+```typescript
+const modified = await client.modifyEdifactMessage({
+  instruction: 'Erhöhe den Verbrauch in jedem Zeitfenster um 10%',
+  currentMessage: 'UNH+1+MSCONS:D:11A:UN:2.6e\\n...'
+});
+
+console.log('Modified:', modified.data.modifiedMessage);
+console.log('Valid:', modified.data.isValid);
+```
+
+Returns `ModifyEdifactMessageResponse` with the modified message and validation status.
+
+#### `chatAboutEdifactMessage(payload)`
+
+Enables interactive questions and discussions about an EDIFACT message with a context-aware AI assistant.
+
+```typescript
+const response = await client.chatAboutEdifactMessage({
+  message: 'Welche Zählernummer ist in dieser Nachricht enthalten?',
+  currentEdifactMessage: 'UNH+1+MSCONS:D:11A:UN:2.6e\\n...',
+  chatHistory: [] // Optional previous conversation
+});
+
+console.log('Answer:', response.data.response);
+```
+
+Returns `EdifactChatResponse` with the AI assistant's contextual answer.
 
 ### `setToken(token)`
 
