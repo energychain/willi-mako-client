@@ -412,6 +412,41 @@ console.log('Answer:', response.data.response);
 
 Returns `EdifactChatResponse` with the AI assistant's contextual answer.
 
+### `searchMarketPartners(query)` *(v0.7.1)*
+
+Searches for market partners using BDEW/EIC codes, company names, cities, etc. This is a **public endpoint** that does not require authentication.
+
+```typescript
+const results = await client.searchMarketPartners({
+  q: 'Stadtwerke München',
+  limit: 10
+});
+
+for (const partner of results.data.results) {
+  console.log(`${partner.companyName} (${partner.code})`);
+  console.log(`  Type: ${partner.codeType}, Source: ${partner.source}`);
+
+  if (partner.contacts?.length) {
+    console.log(`  Contacts: ${partner.contacts.length}`);
+    const firstContact = partner.contacts[0];
+    if (firstContact.City) {
+      console.log(`  Location: ${firstContact.PostCode || ''} ${firstContact.City}`);
+    }
+  }
+
+  if (partner.allSoftwareSystems?.length) {
+    const systems = partner.allSoftwareSystems.map(s => s.name).join(', ');
+    console.log(`  Software: ${systems}`);
+  }
+}
+```
+
+**Parameters:**
+- `query.q` – Search term (code, company name, city, etc.)
+- `query.limit` – Maximum number of results (1-20, default: 10)
+
+Returns `MarketPartnerSearchResponse` with an array of matching market partners including contact information, BDEW codes, software systems, and contact sheet URLs.
+
 ### `setToken(token)`
 
 Updates the bearer token at runtime.

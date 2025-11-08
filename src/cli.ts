@@ -1456,6 +1456,85 @@ edifact
     }
   );
 
+// Market Partners Search Commands (Version 0.7.1)
+
+const marketPartners = program
+  .command('market-partners')
+  .description('Search for market partners (BDEW/EIC codes)');
+
+marketPartners
+  .command('search')
+  .description('Search for market partners by code, company name, or city')
+  .requiredOption('-q, --query <query>', 'Search term (code, company name, city, etc.)')
+  .option('-l, --limit <limit>', 'Maximum number of results (1-20)', '10')
+  .option('--json', 'Output JSON response', true)
+  .action(async (options: { query: string; limit?: string; json?: boolean }) => {
+    const client = createClient({ requireToken: false }); // Public endpoint
+
+    const limit = options.limit ? parseInt(options.limit, 10) : 10;
+
+    if (isNaN(limit) || limit < 1 || limit > 20) {
+      throw new Error('Limit must be a number between 1 and 20');
+    }
+
+    const response = await client.searchMarketPartners({
+      q: options.query,
+      limit
+    });
+
+    if (options.json !== false) {
+      outputJson(response);
+    } else {
+      console.log(`\n🔍 Market Partner Search Results (${response.data.count})\n`);
+      console.log(`Query: "${response.data.query}"\n`);
+
+      if (response.data.results.length === 0) {
+        console.log('No results found.');
+      } else {
+        for (const partner of response.data.results) {
+          console.log(`📊 ${partner.companyName}`);
+          console.log(`   Code: ${partner.code} (${partner.codeType})`);
+          console.log(`   Source: ${partner.source}`);
+
+          if (partner.validFrom || partner.validTo) {
+            const validity = [];
+            if (partner.validFrom) validity.push(`from ${partner.validFrom}`);
+            if (partner.validTo) validity.push(`to ${partner.validTo}`);
+            console.log(`   Valid: ${validity.join(' ')}`);
+          }
+
+          if (partner.bdewCodes && partner.bdewCodes.length > 0) {
+            console.log(`   BDEW Codes: ${partner.bdewCodes.join(', ')}`);
+          }
+
+          if (partner.contacts && partner.contacts.length > 0) {
+            console.log(`   Contacts: ${partner.contacts.length} available`);
+            const firstContact = partner.contacts[0];
+            if (firstContact.City) {
+              console.log(`   Location: ${firstContact.PostCode || ''} ${firstContact.City}`);
+            }
+            if (firstContact.CodeContactEmail) {
+              console.log(`   Email: ${firstContact.CodeContactEmail}`);
+            }
+          }
+
+          if (partner.allSoftwareSystems && partner.allSoftwareSystems.length > 0) {
+            const systems = partner.allSoftwareSystems
+              .map((s) => `${s.name} (${s.confidence})`)
+              .join(', ');
+            console.log(`   Software: ${systems}`);
+          }
+
+          if (partner.contactSheetUrl) {
+            console.log(`   Contact Sheet: ${partner.contactSheetUrl}`);
+          }
+
+          console.log('');
+        }
+      }
+    }
+  });
+
 program
   .command('whoami')
   .description('Display the current configuration (safe to share)')

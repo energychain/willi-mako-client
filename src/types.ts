@@ -1269,3 +1269,90 @@ export interface ModifyEdifactMessageResponse {
     timestamp: string;
   };
 }
+
+/**
+ * Software system information detected for a market partner.
+ */
+export interface MarketPartnerSoftwareSystem {
+  /** Name of the software system */
+  name: string;
+  /** Confidence level of the detection */
+  confidence: 'High' | 'Medium' | 'Low';
+  /** Evidence text for the detection */
+  evidence_text: string;
+}
+
+/**
+ * Contact information for a market partner.
+ */
+export interface MarketPartnerContact {
+  /** BDEW code for this contact */
+  BdewCode?: string;
+  /** Company name */
+  CompanyName?: string;
+  /** City */
+  City?: string;
+  /** Postal code */
+  PostCode?: string;
+  /** Street address */
+  Street?: string;
+  /** Contact code */
+  CodeContact?: string;
+  /** Contact phone number */
+  CodeContactPhone?: string;
+  /** Contact email address */
+  CodeContactEmail?: string;
+}
+
+/**
+ * Market partner search result item.
+ */
+export interface MarketPartnerSearchResult {
+  /** BDEW or EIC code */
+  code: string;
+  /** Company name */
+  companyName: string;
+  /** Code type (e.g., BDEW, EIC) */
+  codeType: string;
+  /** Data source */
+  source: 'bdew' | 'eic';
+  /** Valid from date */
+  validFrom?: string;
+  /** Valid to date */
+  validTo?: string;
+  /** List of all BDEW codes for this company */
+  bdewCodes?: string[];
+  /** Contact information */
+  contacts?: MarketPartnerContact[];
+  /** URL to contact sheet */
+  contactSheetUrl?: string;
+  /** Markdown-formatted information */
+  markdown?: string;
+  /** Detected software systems */
+  allSoftwareSystems?: MarketPartnerSoftwareSystem[];
+}
+
+/**
+ * Query parameters for market partner search.
+ */
+export interface MarketPartnerSearchQuery {
+  /** Search term (code, company name, city, etc.) */
+  q: string;
+  /** Maximum number of results (1-20, default: 10) */
+  limit?: number;
+}
+
+/**
+ * Response from the market partner search endpoint.
+ */
+export interface MarketPartnerSearchResponse {
+  success: boolean;
+  data: {
+    /** Array of search results */
+    results: MarketPartnerSearchResult[];
+    /** Number of results returned */
+    count: number;
+    /** The search query that was used */
+    query: string;
+  };
+}

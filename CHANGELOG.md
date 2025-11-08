@@ -7,6 +7,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 
 ### Added
+- **Market Partners Search (v0.7.1)**: Neue öffentliche API zur Suche nach Marktpartnern über BDEW/EIC-Codes, Firmennamen oder Städten
+  - SDK-Methode: `searchMarketPartners` für Marktpartner-Suche (öffentlicher Endpunkt ohne Authentifizierung)
+  - CLI-Befehl: `willi-mako market-partners search` mit Optionen für Suchbegriff und Ergebnislimit
+  - MCP-Tool: `willi-mako-search-market-partners` für Integration in MCP-Workflows
+  - Web-Dashboard: Neue Sektion "Marktpartner-Suche (v0.7.1)" mit interaktiver Suchfunktion
+  - Rückgabe detaillierter Informationen: BDEW-Codes, Kontakte, Software-Systeme, Kontaktdatenblätter
+  - Vollständige Test-Suite mit 15 Test-Cases für Marktpartnersuche
+  - Beispiel-Script: `examples/market-partner-search.ts` zur Demonstration aller Suchszenarien
+  - Dokumentation in `docs/API.md` und `docs/EXAMPLES.md` ergänzt
 - **EDIFACT Message Analyzer (v0.7.0)**: Umfassendes Feature-Set für die Analyse, Validierung, Erklärung und Modifikation von EDIFACT-Nachrichten
   - SDK-Methoden: `analyzeEdifactMessage`, `validateEdifactMessage`, `explainEdifactMessage`, `modifyEdifactMessage`, `chatAboutEdifactMessage`
   - CLI-Befehle unter `willi-mako edifact`: `analyze`, `validate`, `explain`, `modify`, `chat`
@@ -23,10 +32,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - Beispiel-Script: `examples/edifact-analyzer-demo.ts` zur Demonstration aller Features
 
 ### Changed
-- OpenAPI-Spezifikation auf Version 0.7.0 aktualisiert mit allen EDIFACT Analyzer Endpunkten
-- API-Dokumentation (`docs/API.md`) erweitert um EDIFACT Analyzer Methoden mit Verwendungsbeispielen
-- README.md aktualisiert mit EDIFACT Analyzer Feature-Highlights
-- MCP-Server-Instruktionen erweitert um neue EDIFACT Analyzer Tools
+- OpenAPI-Spezifikation auf Version 0.7.1 aktualisiert mit Market Partners Search Endpunkt
+- API-Dokumentation (`docs/API.md`) erweitert um `searchMarketPartners` Methode mit Verwendungsbeispielen
+- Beispiele-Dokumentation (`docs/EXAMPLES.md`) ergänzt um Market Partners Search CLI-Befehle
+- MCP-Server-Instruktionen erweitert um neues Market Partners Search Tool
+- TypeScript-Typen erweitert: `MarketPartnerSearchQuery`, `MarketPartnerSearchResponse`, `MarketPartnerSearchResult`, `MarketPartnerContact`, `MarketPartnerSoftwareSystem`
 
 ## [0.6.0] - 2025-11-07
 

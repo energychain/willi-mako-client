@@ -223,6 +223,26 @@ willi-mako tools generate-script \
   --query "Baue ein Skript, das MSCONS-Profilwerte mit CSV-Daten abgleicht" \
   --attachment "./docs/mscons-bilanzierung.md|text/markdown|Bilanzierungsleitfaden" \
   --attachment '{"path":"./data/profilwerte.csv","mimeType":"text/csv","description":"Profilwerte Q1","weight":0.3}'
+
+# Search for market partners (v0.7.1) - public endpoint, no auth required
+willi-mako market-partners search --query "Stadtwerke München" --limit 5
+
+# Search by BDEW code
+willi-mako market-partners search --query "9900123456789"
+
+# Get detailed JSON output for further processing
+willi-mako market-partners search --query "Berlin" --json | jq '.data.results[] | {name: .companyName, code: .code, contacts: .contacts | length}'
+```
+
+> 💡 `willi-mako tools generate-script` startet seit v0.3 eine asynchrone Job-Pipeline. Die CLI zeigt Live-Updates zu `status`, `progress.stage` (z. B. `collecting-context`, `prompting`, `drafting`) sowie etwaige Warnungen an und beendet sich erst, wenn der Job `succeeded` oder `failed` erreicht. Mit `--json` erhältst du neben dem generierten Skript auch das vollständige Job-Objekt (`data.job`) inklusive `attempts`, `warnings`, `repairHistory` und `progressLog`. Über `--attachment` reichst du bis zu vier zusätzliche Textquellen (je ≤ ca. 1 MB Text, kombiniert ≤ ca. 2 MB) an, um die Prompterstellung zu steuern – wahlweise als `pfad|mimeType|Beschreibung|Gewicht` oder JSON. Bei Fehlern unternimmt die CLI automatisch bis zu drei Reparaturversuche (`♻️`-Logs), sofern der Fehlercode dies unterstützt. Deaktiviere dies mit `--no-auto-repair` oder passe die Versuchsanzahl mit `--repair-attempts` an. Ist zusätzlich `GEMINI_API_KEY` gesetzt, optimiert die CLI die Prompt-Anforderung mit `gemini-2.5-pro` und protokolliert die vorgeschlagene Validierungs-Checkliste im Terminal.
+
+---
+
+## Next Steps
+
+- Explore the [`examples/`](../examples) folder for runnable scripts.
+- Combine artifacts with your DWH/ETL tooling (e.g., Apache Airflow, Prefect, dbt) to automate compliance checkpoints.
+- Contribute your best practices back to the community via pull requests or discussions.
 ```
 
 > 💡 `willi-mako tools generate-script` startet seit v0.3 eine asynchrone Job-Pipeline. Die CLI zeigt Live-Updates zu `status`, `progress.stage` (z. B. `collecting-context`, `prompting`, `drafting`) sowie etwaige Warnungen an und beendet sich erst, wenn der Job `succeeded` oder `failed` erreicht. Mit `--json` erhältst du neben dem generierten Skript auch das vollständige Job-Objekt (`data.job`) inklusive `attempts`, `warnings`, `repairHistory` und `progressLog`. Über `--attachment` reichst du bis zu vier zusätzliche Textquellen (je ≤ ca. 1 MB Text, kombiniert ≤ ca. 2 MB) an, um die Prompterstellung zu steuern – wahlweise als `pfad|mimeType|Beschreibung|Gewicht` oder JSON. Bei Fehlern unternimmt die CLI automatisch bis zu drei Reparaturversuche (`♻️`-Logs), sofern der Fehlercode dies unterstützt. Deaktiviere dies mit `--no-auto-repair` oder passe die Versuchsanzahl mit `--repair-attempts` an. Ist zusätzlich `GEMINI_API_KEY` gesetzt, optimiert die CLI die Prompt-Anforderung mit `gemini-2.5-pro` und protokolliert die vorgeschlagene Validierungs-Checkliste im Terminal.

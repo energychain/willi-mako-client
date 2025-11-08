@@ -66,8 +66,9 @@ Mit dem SDK erhalten Sie:
 - 🗂️ **Artifact Storage** – persistente Protokolle, Audit-Trails und EDIFACT-Snapshots.
 - � **Document Management** – Hochladen, Verwalten und Durchsuchen von PDFs, DOCX, TXT und MD-Dateien in der Knowledge Base mit automatischer Textextraktion und AI-Kontext-Steuerung.
 - 📦 **OpenAPI Bundle** – `schemas/openapi.json` für offline Analysen.
-- 🖥️ **CLI & MCP** – vollständige Befehlsgruppen (`auth`, `sessions`, `chat`, `retrieval`, `edifact`, …) plus MCP-Server für KI-Agenten.
+- 🖥️ **CLI & MCP** – vollständige Befehlsgruppen (`auth`, `sessions`, `chat`, `retrieval`, `edifact`, `market-partners`, …) plus MCP-Server für KI-Agenten.
 - 🔍 **EDIFACT Message Analyzer (v0.7.0)** – Analyse, Validierung, Erklärung, Modifikation und Chat für EDIFACT-Nachrichten (UTILMD, MSCONS, ORDERS, etc.).
+- 🔎 **Market Partners Search (v0.7.1)** – Öffentliche Suche nach Marktpartnern über BDEW/EIC-Codes, Firmennamen oder Städten mit detaillierten Kontakt- und Software-Informationen.
 - 🧪 **Vitest Testsuite** – Vertrauen in Stabilität und Regressionen.
 - 🛡️ **Compliance Fokus** – automatisierbare Prüfungen für UTILMD, MSCONS, ORDERS, PRICAT, INVOIC.
 

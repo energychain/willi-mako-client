@@ -529,6 +529,38 @@ export async function startWebDashboard(
       return;
     }
 
+    // Market Partners Search Route (Version 0.7.1)
+    if (req.method === 'GET' && url.pathname === '/market-partners/search') {
+      try {
+        const query = url.query?.q as string | undefined;
+        const limitParam = url.query?.limit as string | undefined;
+
+        if (!query || query.trim().length === 0) {
+          sendJson(res, 400, { error: 'Query parameter "q" is required' });
+          return;
+        }
+
+        const limit = limitParam ? parseInt(limitParam, 10) : 10;
+
+        if (isNaN(limit) || limit < 1 || limit > 20) {
+          sendJson(res, 400, { error: 'Limit must be between 1 and 20' });
+          return;
+        }
+
+        const response = await client.searchMarketPartners({
+          q: query,
+          limit
+        });
+
+        sendJson(res, 200, response);
+      } catch (error) {
+        sendJson(res, error instanceof WilliMakoError ? error.status : 500, {
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+      return;
+    }
+
     res.statusCode = 404;
     res.end('Not Found');
   });
@@ -1238,6 +1270,27 @@ function bodyContent(): string {
           </div>
         </form>
         <pre id="edifact-chat-output">Noch keine Frage gestellt.</pre>
+      </section>
+
+      <section class="card">
+        <h2>🔍 Marktpartner-Suche (v0.7.1)</h2>
+        <p>
+          Suche nach Marktpartnern über BDEW/EIC-Codes, Firmennamen oder Städten.
+        </p>
+        <form id="market-partners-search-form">
+          <label>
+            Suchbegriff
+            <input type="text" name="query" placeholder="z.B. 'Stadtwerke München' oder '9900123456789'" required />
+          </label>
+          <label>
+            Maximale Anzahl Ergebnisse
+            <input type="number" name="limit" min="1" max="20" value="10" />
+          </label>
+          <div class="inline-controls">
+            <button type="submit">🔍 Suchen</button>
+          </div>
+        </form>
+        <div id="market-partners-output">Noch keine Suche durchgeführt.</div>
       </section>`;
 }
 
@@ -1940,6 +1993,76 @@ function clientScript(bootstrapState: string): string {
         }
         return { outputId: 'edifact-chat-output', data };
       }, 'edifact-chat-output');
+
+      attachFormHandler('market-partners-search-form', async (formData) => {
+        const query = formData.get('query');
+        const limit = formData.get('limit') || '10';
+
+        const response = await fetch(\`/market-partners/search?q=\${encodeURIComponent(query)}&limit=\${limit}\`);
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data?.error ?? 'Suche fehlgeschlagen');
+        }
+
+        const output = document.getElementById('market-partners-output');
+        if (data.data && data.data.results) {
+          const results = data.data.results;
+          if (results.length === 0) {
+            output.innerHTML = '<p>Keine Ergebnisse gefunden.</p>';
+          } else {
+            let html = \`<h3>📊 Ergebnisse (\${data.data.count})</h3>\`;
+            html += '<div style="display: grid; gap: 1rem;">';
+
+            for (const partner of results) {
+              html += '<div class="card" style="padding: 1rem; background: #f8f9fa;">';
+              html += \`<h4>\${partner.companyName}</h4>\`;
+              html += \`<p><strong>Code:</strong> \${partner.code} (\${partner.codeType})</p>\`;
+              html += \`<p><strong>Quelle:</strong> \${partner.source}</p>\`;
+
+              if (partner.validFrom || partner.validTo) {
+                const validity = [];
+                if (partner.validFrom) validity.push(\`ab \${partner.validFrom}\`);
+                if (partner.validTo) validity.push(\`bis \${partner.validTo}\`);
+                html += \`<p><strong>Gültig:</strong> \${validity.join(' ')}</p>\`;
+              }
+
+              if (partner.bdewCodes && partner.bdewCodes.length > 0) {
+                html += \`<p><strong>BDEW-Codes:</strong> \${partner.bdewCodes.join(', ')}</p>\`;
+              }
+
+              if (partner.contacts && partner.contacts.length > 0) {
+                html += \`<p><strong>Kontakte:</strong> \${partner.contacts.length} verfügbar</p>\`;
+                const firstContact = partner.contacts[0];
+                if (firstContact.City) {
+                  html += \`<p><strong>Standort:</strong> \${firstContact.PostCode || ''} \${firstContact.City}</p>\`;
+                }
+                if (firstContact.CodeContactEmail) {
+                  html += \`<p><strong>Email:</strong> \${firstContact.CodeContactEmail}</p>\`;
+                }
+              }
+
+              if (partner.allSoftwareSystems && partner.allSoftwareSystems.length > 0) {
+                const systems = partner.allSoftwareSystems
+                  .map(s => \`\${s.name} (\${s.confidence})\`)
+                  .join(', ');
+                html += \`<p><strong>Software:</strong> \${systems}</p>\`;
+              }
+
+              if (partner.contactSheetUrl) {
+                html += \`<p><a href="\${partner.contactSheetUrl}" target="_blank">Kontaktdatenblatt öffnen</a></p>\`;
+              }
+
+              html += '</div>';
+            }
+
+            html += '</div>';
+            output.innerHTML = html;
+          }
+        }
+
+        return { outputId: 'market-partners-output', data };
+      }, 'market-partners-output');
 
       updateStatus();`;
 

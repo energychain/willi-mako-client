@@ -1327,6 +1327,86 @@ Resources:
         })
     );
 
+    // Market Partners Search Tool (Version 0.7.1)
+    server.registerTool(
+      'willi-mako-search-market-partners',
+      {
+        title: 'Search market partners',
+        description:
+          'Search for market partners using BDEW/EIC codes, company names, cities, etc. Public endpoint without authentication requirement. Returns detailed information including contacts and software systems.',
+        inputSchema: {
+          q: z.string().min(1).describe('Search term (code, company name, city, etc.)'),
+          limit: z
+            .number()
+            .int()
+            .min(1)
+            .max(20)
+            .optional()
+            .describe('Maximum number of results (1-20, default: 10)')
+        }
+      },
+      async ({ q, limit }, extra?: RequestContext) =>
+        withClient(extra, async (clientInstance) => {
+          const response = await clientInstance.searchMarketPartners({
+            q,
+            limit
+          });
+
+          let summaryText = `Found ${response.data.count} market partner(s) for query "${response.data.query}":\n\n`;
+
+          for (const partner of response.data.results) {
+            summaryText += `📊 ${partner.companyName}\n`;
+            summaryText += `   Code: ${partner.code} (${partner.codeType})\n`;
+            summaryText += `   Source: ${partner.source}\n`;
+
+            if (partner.validFrom || partner.validTo) {
+              const validity = [];
+              if (partner.validFrom) validity.push(`from ${partner.validFrom}`);
+              if (partner.validTo) validity.push(`to ${partner.validTo}`);
+              summaryText += `   Valid: ${validity.join(' ')}\n`;
+            }
+
+            if (partner.bdewCodes && partner.bdewCodes.length > 0) {
+              summaryText += `   BDEW Codes: ${partner.bdewCodes.join(', ')}\n`;
+            }
+
+            if (partner.contacts && partner.contacts.length > 0) {
+              summaryText += `   Contacts: ${partner.contacts.length} available\n`;
+              const firstContact = partner.contacts[0];
+              if (firstContact.City) {
+                summaryText += `   Location: ${firstContact.PostCode || ''} ${firstContact.City}\n`;
+              }
+              if (firstContact.CodeContactEmail) {
+                summaryText += `   Email: ${firstContact.CodeContactEmail}\n`;
+              }
+            }
+
+            if (partner.allSoftwareSystems && partner.allSoftwareSystems.length > 0) {
+              const systems = partner.allSoftwareSystems
+                .map((s) => `${s.name} (${s.confidence})`)
+                .join(', ');
+              summaryText += `   Software: ${systems}\n`;
+            }
+
+            if (partner.contactSheetUrl) {
+              summaryText += `   Contact Sheet: ${partner.contactSheetUrl}\n`;
+            }
+
+            summaryText += '\n';
+          }
+
+          return {
+            content: [
+              {
+                type: 'text',
+                text: summaryText
+              }
+            ],
+            structuredContent: response.data as unknown as Record<string, unknown>
+          };
+        })
+    );
+
     server.registerResource(
       'willi-mako-openapi',
       'willi-mako://openapi',

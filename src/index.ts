@@ -57,7 +57,9 @@ import type {
   ValidateEdifactMessageRequest,
   ValidateEdifactMessageResponse,
   ModifyEdifactMessageRequest,
-  ModifyEdifactMessageResponse
+  ModifyEdifactMessageResponse,
+  MarketPartnerSearchQuery,
+  MarketPartnerSearchResponse
 } from './types.js';
 
 const require: NodeJS.Require = createRequire(import.meta.url);
@@ -1220,6 +1222,58 @@ export class WilliMakoClient {
         'Content-Type': 'application/json'
       }
     });
+  }
+
+  /**
+   * Searches for market partners using BDEW/EIC codes, company names, cities, etc.
+   * This is a public endpoint that does not require authentication.
+   *
+   * @param query - Search parameters including the search term and optional limit
+   * @returns Search results containing market partner information
+   *
+   * @example
+   * ```typescript
+   * // Search by company name
+   * const results = await client.searchMarketPartners({
+   *   q: 'Stadtwerke München',
+   *   limit: 5
+   * });
+   *
+   * for (const partner of results.data.results) {
+   *   console.log(`${partner.companyName} (${partner.code})`);
+   *   console.log(`  Type: ${partner.codeType}, Source: ${partner.source}`);
+   *   if (partner.contacts?.length) {
+   *     console.log(`  Contacts: ${partner.contacts.length}`);
+   *   }
+   *   if (partner.allSoftwareSystems?.length) {
+   *     console.log(`  Software: ${partner.allSoftwareSystems.map(s => s.name).join(', ')}`);
+   *   }
+   * }
+   *
+   * // Search by BDEW code
+   * const codeResults = await client.searchMarketPartners({
+   *   q: '9900123456789'
+   * });
+   * ```
+   */
+  public async searchMarketPartners(
+    query: MarketPartnerSearchQuery
+  ): Promise<MarketPartnerSearchResponse> {
+    const params = new URLSearchParams({
+      q: query.q
+    });
+
+    if (query.limit !== undefined) {
+      params.set('limit', query.limit.toString());
+    }
+
+    return this.request<MarketPartnerSearchResponse>(
+      `/market-partners/search?${params.toString()}`,
+      {
+        method: 'GET',
+        skipAuth: true // Public endpoint
+      }
+    );
   }
 
   private resolveUrl(path: string): string {
