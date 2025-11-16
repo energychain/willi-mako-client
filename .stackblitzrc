@@ -1,6 +1,6 @@
 {
   "installDependencies": true,
-  "startCommand": "npm run dev",
+  "startCommand": "npm run build && npm link && npm run dev",
   "env": {
     "WILLI_MAKO_TOKEN": ""
   }

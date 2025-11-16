@@ -15,6 +15,10 @@ npm install
 echo "🔨 Building project..."
 npm run build
 
+# Link CLI globally
+echo "🔗 Linking CLI globally..."
+npm link
+
 echo ""
 echo "✅ Setup abgeschlossen!"
 echo ""

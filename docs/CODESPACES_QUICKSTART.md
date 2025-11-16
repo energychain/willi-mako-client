@@ -79,6 +79,7 @@ GitHub Codespaces lädt automatisch:
 - ✅ Node.js 20 LTS
 - ✅ Alle npm Dependencies
 - ✅ Gebautes Projekt
+- ✅ CLI global installiert (`willi-mako` Befehl verfügbar)
 - ✅ VS Code im Browser (oder verbinde dein Desktop-VS Code!)
 
 ⏱️ **Erste Öffnung:** ~1-2 Minuten
