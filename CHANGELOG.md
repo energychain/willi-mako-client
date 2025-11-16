@@ -12,7 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - Added `npm link` to Gitpod initialization task (`.gitpod.yml`)
   - Updated StackBlitz start command to include build and link (`.stackblitzrc`)
   - Updated `docs/CODESPACES_QUICKSTART.md` to reflect CLI availability
-  - Quick test command `willi-mako market-partners search "Netze BW"` now works immediately after environment setup
+  - Quick test command `willi-mako market-partners search -q "Netze BW"` now works immediately after environment setup
 
 ### Changed
 - **📦 Build Process**: Removed `prepublishOnly` hook from `package.json` that was blocking npm publishes with test failures

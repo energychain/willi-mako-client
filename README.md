@@ -304,7 +304,7 @@ Wähle deine bevorzugte Cloud-IDE:
 4. **Use Cases testen**:
    ```bash
    # Marktpartner suchen (kein Login!)
-   willi-mako market-partners search "Netze BW"
+   willi-mako market-partners search -q "Netze BW"
 
    # EDIFACT analysieren
    npm run example:edifact-analyze
@@ -344,7 +344,7 @@ Wähle deine bevorzugte Cloud-IDE:
 
 3. **Testen**:
    ```bash
-   willi-mako market-partners search "Netze BW"
+   willi-mako market-partners search -q "Netze BW"
    npm run example:utilmd
    ```
 

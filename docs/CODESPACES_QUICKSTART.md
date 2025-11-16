@@ -130,7 +130,7 @@ Diese werden dann automatisch als ENV-Variablen geladen! 🎉
 Führe einen einfachen Befehl aus (funktioniert **ohne Login**):
 
 ```bash
-willi-mako market-partners search "Netze BW"
+willi-mako market-partners search -q "Netze BW"
 ```
 
 **Erwartete Ausgabe:**
@@ -177,13 +177,13 @@ Du hast eine EDIFACT-Nachricht erhalten und möchtest wissen, wer der Absender i
 
 ```bash
 # Suche nach Name
-willi-mako market-partners search "Netze BW"
+willi-mako market-partners search -q "Netze BW"
 
 # Suche nach Code
-willi-mako market-partners search "9900123456789"
+willi-mako market-partners search -q "9900123456789"
 
 # Suche nach Stadt
-willi-mako market-partners search "Stuttgart"
+willi-mako market-partners search -q "Stuttgart"
 ```
 
 **Option 2: Via TypeScript/JavaScript**
