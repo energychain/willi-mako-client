@@ -1,5 +1,20 @@
 blank_issues_enabled: false
 contact_links:
-  - name: STROMDAO Support
+  - name: 💬 GitHub Discussions
+    url: https://github.com/energychain/willi-mako-client/discussions
+    about: Join our community! Ask questions, share use cases, discuss integrations.
+  - name: 📚 Documentation
+    url: https://github.com/energychain/willi-mako-client/blob/main/README.md
+    about: Read the full documentation and API reference.
+  - name: 🔌 Integration Help
+    url: https://github.com/energychain/willi-mako-client/discussions/new?category=integration-help
+    about: Need help integrating Willi-Mako into your system? Ask the community!
+  - name: 🎯 Submit Use Case
+    url: https://github.com/energychain/willi-mako-client/discussions/new?category=use-cases
+    about: Share your success story with the energy sector community.
+  - name: ⚖️ Compliance Questions
+    url: https://github.com/energychain/willi-mako-client/discussions/new?category=compliance
+    about: Questions about EnWG, MaKo, BNetzA regulations? Get expert advice.
+  - name: 🏢 STROMDAO Support
     url: mailto:dev@stromdao.com
-    about: Contact the STROMDAO team directly for vendor-specific questions or SLA topics.
+    about: Commercial support, SLA, and vendor-specific questions.

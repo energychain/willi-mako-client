@@ -1,0 +1,142 @@
+labels: ["use-case", "showcase"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 🎯 Use Case Submission
+
+        Teilen Sie Ihren erfolgreichen Einsatz des Willi-Mako-Clients mit der Community!
+
+        **Ihre Use Cases helfen anderen Unternehmen** in der Energiewirtschaft,
+        die richtige Lösung für ihre Herausforderungen zu finden.
+
+  - type: input
+    id: company-name
+    attributes:
+      label: Unternehmensname (optional)
+      description: Name Ihres Unternehmens (kann anonymisiert werden)
+      placeholder: "z.B. Stadtwerke Musterstadt GmbH"
+
+  - type: input
+    id: title
+    attributes:
+      label: Use Case Titel
+      description: Kurze, prägnante Beschreibung
+      placeholder: "z.B. Automatisierte MSCONS-Verarbeitung für 50.000 Zählpunkte"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: market-role
+    attributes:
+      label: Marktrolle
+      options:
+        - Lieferant
+        - Netzbetreiber (VNB)
+        - Übertragungsnetzbetreiber (ÜNB)
+        - Messstellenbetreiber (MSB)
+        - Bilanzkreisverantwortlicher (BKV)
+        - Software-Anbieter
+        - Andere
+    validations:
+      required: true
+
+  - type: dropdown
+    id: company-size
+    attributes:
+      label: Unternehmensgröße
+      options:
+        - Klein (< 50 Mitarbeiter)
+        - Mittel (50-250 Mitarbeiter)
+        - Groß (> 250 Mitarbeiter)
+        - Enterprise (> 1000 Mitarbeiter)
+
+  - type: textarea
+    id: challenge
+    attributes:
+      label: Herausforderung
+      description: Welches Problem wurde gelöst?
+      placeholder: |
+        Beschreiben Sie die Ausgangssituation:
+        - Was war das Problem?
+        - Warum war eine Lösung notwendig?
+        - Welche Anforderungen gab es?
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Lösung
+      description: Wie wurde der Willi-Mako-Client eingesetzt?
+      placeholder: |
+        Beschreiben Sie die Umsetzung:
+        - Welche Features wurden genutzt?
+        - Wie wurde integriert?
+        - Welche anderen Tools wurden kombiniert?
+    validations:
+      required: true
+
+  - type: textarea
+    id: results
+    attributes:
+      label: Ergebnisse & Kennzahlen
+      description: Messbare Erfolge (optional)
+      placeholder: |
+        z.B.:
+        - 80% Zeitersparnis bei Datenverarbeitung
+        - 50.000 MSCONS-Nachrichten/Monat automatisiert
+        - Fehlerquote von 5% auf 0.1% reduziert
+
+  - type: checkboxes
+    id: features-used
+    attributes:
+      label: Genutzte Features
+      description: Welche Willi-Mako-Funktionen wurden eingesetzt?
+      options:
+        - label: EDIFACT Parsing/Validation
+        - label: Marktpartner-Suche (BDEW-Codes)
+        - label: Semantic Search in Wissensdatenbank
+        - label: Chat-Assistent für Regulatorik
+        - label: UTILMD (Stammdaten)
+        - label: MSCONS (Zählwerte)
+        - label: ORDERS (Bestellung)
+        - label: PRICAT (Preislisten)
+        - label: INVOIC (Rechnungen)
+        - label: Custom EDIFACT-Formate
+
+  - type: dropdown
+    id: volume
+    attributes:
+      label: Nachrichtenvolumen
+      description: Wie viele Nachrichten werden verarbeitet?
+      options:
+        - Gering (< 100/Monat)
+        - Mittel (100-1.000/Monat)
+        - Hoch (1.000-10.000/Monat)
+        - Sehr hoch (> 10.000/Monat)
+
+  - type: checkboxes
+    id: public-sharing
+    attributes:
+      label: Veröffentlichung
+      options:
+        - label: Darf als Referenz auf der Website genannt werden
+        - label: Darf in Case Studies verwendet werden
+        - label: Darf in Präsentationen gezeigt werden
+        - label: Nur anonymisiert teilen
+        - label: Nur intern für Community-Statistik
+
+  - type: textarea
+    id: code-sample
+    attributes:
+      label: Code-Beispiel (optional)
+      description: Teilen Sie einen Auszug Ihrer Integration (anonymisiert)
+      render: typescript
+
+  - type: textarea
+    id: contact
+    attributes:
+      label: Kontakt (optional)
+      description: Wie können wir Sie erreichen für Follow-up?
+      placeholder: "E-Mail oder LinkedIn-Profil"

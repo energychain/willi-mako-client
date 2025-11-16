@@ -1,0 +1,52 @@
+# Automatic PR labeling configuration
+# https://github.com/actions/labeler
+
+# Documentation
+documentation:
+  - changed-files:
+    - any-glob-to-any-file: ['docs/**/*', '*.md', 'examples/**/*.md']
+
+# Source code
+source:
+  - changed-files:
+    - any-glob-to-any-file: ['src/**/*']
+
+# Tests
+tests:
+  - changed-files:
+    - any-glob-to-any-file: ['tests/**/*', '**/*.test.ts', '**/*.spec.ts']
+
+# CI/CD
+ci-cd:
+  - changed-files:
+    - any-glob-to-any-file: ['.github/**/*', '.gitpod.yml', '.devcontainer/**/*']
+
+# Dependencies
+dependencies:
+  - changed-files:
+    - any-glob-to-any-file: ['package.json', 'package-lock.json']
+
+# Configuration
+config:
+  - changed-files:
+    - any-glob-to-any-file: ['*.json', '*.yml', '*.yaml', 'tsconfig*.json', '.eslintrc*', '.prettierrc*']
+
+# Examples
+examples:
+  - changed-files:
+    - any-glob-to-any-file: ['examples/**/*']
+
+# CLI
+cli:
+  - changed-files:
+    - any-glob-to-any-file: ['src/cli.ts', 'src/cli-*.ts', 'bin/**/*']
+
+# Docker
+docker:
+  - changed-files:
+    - any-glob-to-any-file: ['**/Dockerfile', '**/docker-compose.yml', 'examples/docker/**/*']
+
+# Cloud IDEs
+cloud-ide:
+  - changed-files:
+    - any-glob-to-any-file: ['.gitpod.yml', '.devcontainer/**/*', '.stackblitzrc']

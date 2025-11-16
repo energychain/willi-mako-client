@@ -1,0 +1,86 @@
+labels: ["compliance", "regulation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## ⚖️ Compliance & Regulatorik
+
+        Fragen zu regulatorischen Anforderungen in der deutschen Energiewirtschaft?
+
+        **Die Community hilft bei:**
+        - EnWG, StromNZV, GasNZV
+        - MaBiS, MPES, WiM, GPKE, GeLi Gas
+        - BNetzA-Festlegungen
+        - BDEW MaKo-Richtlinien
+        - MessEG, MessEV
+
+  - type: dropdown
+    id: regulation-type
+    attributes:
+      label: Regulierungsbereich
+      options:
+        - Energiewirtschaftsgesetz (EnWG)
+        - Stromnetzzugangsverordnung (StromNZV)
+        - Gasnetzzugangsverordnung (GasNZV)
+        - Marktprozesse (GPKE/WiM/GeLi Gas)
+        - Messstellenbetrieb (MessEG/MessEV)
+        - BNetzA-Festlegungen
+        - BDEW MaKo-Richtlinien
+        - EU-Regulierung (REMIT, etc.)
+        - Andere
+    validations:
+      required: true
+
+  - type: dropdown
+    id: energy-sector
+    attributes:
+      label: Energiesektor
+      options:
+        - Strom
+        - Gas
+        - Beides
+    validations:
+      required: true
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Compliance-Frage
+      description: Beschreiben Sie Ihre regulatorische Fragestellung
+      placeholder: |
+        Beispiel: "Müssen wir bei einem Lieferantenwechsel nach §20 EnWG
+        die UTILMD-Nachrichten innerhalb von 6 Wochen verarbeiten?"
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Kontext
+      description: Zusätzliche Informationen
+      placeholder: |
+        - Marktrolle
+        - Prozessschritt
+        - Zeitliche Anforderungen
+        - Betroffene Systeme
+
+  - type: dropdown
+    id: urgency
+    attributes:
+      label: Dringlichkeit
+      options:
+        - Niedrig (Planung)
+        - Mittel (Implementierung läuft)
+        - Hoch (Produktion betroffen)
+        - Kritisch (Compliance-Verletzung droht)
+
+  - type: checkboxes
+    id: documentation
+    attributes:
+      label: Bereits konsultierte Quellen
+      options:
+        - label: BNetzA-Website durchsucht
+        - label: BDEW-Dokumente gelesen
+        - label: Willi-Mako Wissensdatenbank durchsucht
+        - label: Rechtsberatung eingeholt
+        - label: Branchenverbände kontaktiert

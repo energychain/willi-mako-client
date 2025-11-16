@@ -9,7 +9,17 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
 
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/energychain/willi-mako-client)
+[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/energychain/willi-mako-client)
+[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/energychain/willi-mako-client)
+
+[![All Contributors](https://img.shields.io/github/all-contributors/energychain/willi-mako-client?color=ee8449)](#contributors)
+[![GitHub Sponsors](https://img.shields.io/github/sponsors/energychain?logo=github&color=pink)](https://github.com/sponsors/energychain)
+[![Community](https://img.shields.io/badge/Community-Join%20Us-blue)](./COMMUNITY.md)
+
 **Offizielles TypeScript SDK & CLI für die AI-Plattform [Willi-Mako](https://stromhaltig.de) von STROMDAO GmbH.**
+
+[📚 Documentation](./docs/) • [🎯 Use Cases](./docs/USE_CASE_GALLERY.md) • [🤝 Community](./COMMUNITY.md) • [💚 Sponsor](./docs/SPONSORSHIP.md) • [🏆 Certification](./docs/CERTIFICATION.md)
 
 </div>
 
@@ -27,13 +37,18 @@
   - [Docker Quickstart](#docker-quickstart)
   - [MCP Server Quickstart](#mcp-server-quickstart)
   - [Lightweight Web UI Quickstart](#lightweight-web-ui-quickstart)
-  - [GitPod Quickstart](#gitpod-quickstart)
+  - [☁️ Cloud IDE Quickstarts](#️-cloud-ide-quickstarts)
+    - [GitHub Codespaces](#github-codespaces-recommended)
+    - [Gitpod](#gitpod)
+    - [StackBlitz](#stackblitz-web-dashboard-only)
 - [Core Use Cases](#-core-use-cases)
 - [API Overview](#-api-overview)
 - [CLI Usage](#-cli-usage)
 - [Examples](#-examples)
 - [Documentation](#-documentation)
+- [Community](#-community)
 - [Development](#-development)
+  - [CI/CD Pipeline](#cicd-pipeline)
 - [Integrations (Docker, Power BI, n8n)](#-integrations-docker-power-bi-n8n)
 - [Contributing](#-contributing)
 - [Support](#-support)
@@ -247,21 +262,137 @@ Für MaKo-Fachbereiche ohne lokale Node.js-Installation liefert die CLI ein geb�
 
 Weitere Anpassungen (Authentifizierung, Mehrbenutzer, Branding) sind in [`docs/INTEGRATIONS.md`](./docs/INTEGRATIONS.md#lightweight-web-interface) beschrieben.
 
-### GitPod Quickstart
+---
 
-1. **Öffnen**:
+## ☁️ Cloud IDE Quickstarts
+
+**Für Einsteiger ohne lokale Installation** – Teste das SDK direkt im Browser mit vollständiger Entwicklungsumgebung!
+
+Wähle deine bevorzugte Cloud-IDE:
+
+### GitHub Codespaces (⭐ Empfohlen)
+
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/energychain/willi-mako-client)
+
+**Beste Wahl für:** Vollständige SDK-Features, CLI-Tools, nahtlose GitHub-Integration
+
+**Vorteile:**
+- ✅ **60 Stunden/Monat kostenlos** (mehr als Gitpod!)
+- ✅ Läuft im Browser ODER in VS Code Desktop
+- ✅ Nahtlose GitHub-Integration (Projekt liegt schon hier!)
+- ✅ Sehr schnelle Start-Zeiten (~15-30 Sekunden)
+- ✅ Secrets Management für API-Tokens
+- ✅ Perfekt für TypeScript/Node.js/CLI
+
+**Schnellstart:**
+
+1. **Codespace erstellen**: Klicke auf Button oben oder öffne:
+   ```
+   https://codespaces.new/energychain/willi-mako-client
+   ```
+
+2. **Registrieren**: Kostenloser Account bei [stromhaltig.de/app/](https://stromhaltig.de/app/)
+
+3. **Credentials setzen**:
+   ```bash
+   export WILLI_MAKO_EMAIL='deine@email.de'
+   export WILLI_MAKO_PASSWORD='dein-passwort'
+   ```
+
+   💎 **Pro-Tipp:** Speichere Credentials als [Codespaces Secrets](https://github.com/settings/codespaces) für automatisches Laden!
+
+4. **Use Cases testen**:
+   ```bash
+   # Marktpartner suchen (kein Login!)
+   willi-mako market-partners search "Netze BW"
+
+   # EDIFACT analysieren
+   npm run example:edifact-analyze
+
+   # Lieferantenwechsel validieren
+   npm run example:utilmd
+   ```
+
+**📖 Vollständige Anleitung:** [`docs/CODESPACES_QUICKSTART.md`](./docs/CODESPACES_QUICKSTART.md) – 7 Use Cases mit fachlichen + technischen Erklärungen!
+
+---
+
+### Gitpod
+
+[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/energychain/willi-mako-client)
+
+**Beste Wahl für:** Alternative zu Codespaces, Multi-Git-Provider (GitHub, GitLab, Bitbucket)
+
+**Vorteile:**
+- ✅ 50 Stunden/Monat kostenlos
+- ✅ Unterstützt GitHub, GitLab, Bitbucket
+- ✅ Schneller Start (~30 Sekunden)
+- ✅ Vollständige SDK-Features
+
+**Schnellstart:**
+
+1. **Workspace öffnen**:
    ```
    https://gitpod.io/#https://github.com/energychain/willi-mako-client
    ```
 
-2. **Workspace initialisiert**: `npm install`, `npm run build`, `npm test`.
-
-3. **Secrets setzen**:
+2. **Credentials setzen**:
    ```bash
-   gp env WILLI_MAKO_TOKEN="<dein-token>"
+   export WILLI_MAKO_EMAIL='deine@email.de'
+   export WILLI_MAKO_PASSWORD='dein-passwort'
    ```
 
-4. **CLI nutzen** oder Beispiele ausführen (`willi-mako openapi`, `node --loader ts-node/esm examples/utilmd-audit.ts`).
+3. **Testen**:
+   ```bash
+   willi-mako market-partners search "Netze BW"
+   npm run example:utilmd
+   ```
+
+**📖 Vollständige Anleitung:** [`docs/GITPOD_QUICKSTART.md`](./docs/GITPOD_QUICKSTART.md) – speziell für Einsteiger!
+
+---
+
+### StackBlitz (Web-Dashboard only)
+
+[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/energychain/willi-mako-client)
+
+**Beste Wahl für:** Schnelle Web-Dashboard-Demo ohne Setup
+
+**Vorteile:**
+- ✅ **Instant-Start** (läuft komplett im Browser!)
+- ✅ Keine Registrierung erforderlich
+- ✅ Perfekt für Web-UI-Prototyping
+- ✅ Kostenlos unbegrenzt
+
+**Einschränkungen:**
+- ⚠️ Nur Web-Dashboard (`examples/web-dashboard.ts`)
+- ⚠️ CLI-Tools nicht verfügbar
+- ⚠️ Sandbox-Jobs eingeschränkt
+
+**Schnellstart:**
+```
+https://stackblitz.com/github/energychain/willi-mako-client
+```
+
+**📖 Details:** [`docs/STACKBLITZ.md`](./docs/STACKBLITZ.md)
+
+---
+
+### 🆚 Vergleich Cloud-IDEs
+
+| Feature | Codespaces ⭐ | Gitpod | StackBlitz |
+|---------|--------------|--------|------------|
+| **Kostenlos/Monat** | 60h | 50h | ∞ |
+| **CLI-Tools** | ✅ | ✅ | ❌ |
+| **SDK vollständig** | ✅ | ✅ | ⚠️ |
+| **Web-Dashboard** | ✅ | ✅ | ✅ |
+| **Start-Zeit** | ~15s | ~30s | ~5s |
+| **VS Code Desktop** | ✅ | ✅ | ❌ |
+| **Secrets Management** | ✅ | ⚠️ | ❌ |
+
+**💡 Empfehlung:**
+- **Vollständiges SDK**: GitHub Codespaces oder Gitpod
+- **Nur Web-Demo**: StackBlitz
 
 ---
 
@@ -912,10 +1043,48 @@ willi-mako-client/
 ├── examples/         # Beispielskripte & Demos
 ├── docs/             # Zusatzdokumentation
 ├── tests/            # Vitest Tests
+├── .github/          # GitHub Actions Workflows
+│   ├── workflows/    # CI/CD Pipelines
+│   └── dependabot.yml
 └── dist/             # Build-Ausgabe (gitignored)
 ```
 
 > Siehe [`CONTRIBUTING.md`](./CONTRIBUTING.md) für Coding-Guidelines, Branch-Strategie und Review-Checklisten.
+
+### CI/CD Pipeline
+
+Das Projekt nutzt eine vollautomatische CI/CD-Pipeline mit GitHub Actions:
+
+✅ **Automatische Tests** auf Node.js 18, 20, 22
+✅ **Code Coverage** Reports (Codecov)
+✅ **Security Scanning** (npm audit, CodeQL, Snyk)
+✅ **Dependency Updates** (Dependabot mit Auto-Merge)
+✅ **Automatisches npm Publishing** bei Git-Tags
+✅ **Cloud IDE Prebuilds** (Codespaces, Gitpod)
+
+**Workflows:**
+- `ci.yml` – Linting, Tests, Coverage, Security
+- `release.yml` – npm Publishing bei Git-Tags
+- `codeql.yml` – Security Scanning
+- `prebuilds.yml` – Cloud IDE Optimierung
+- `auto-merge-dependabot.yml` – Automatische Dependency Updates
+- `stale.yml` – Issue/PR Management
+
+📖 **Vollständige Dokumentation:** [`docs/CI_CD.md`](./docs/CI_CD.md)
+
+**Quick Start für Contributors:**
+```bash
+# Feature Branch erstellen
+git checkout -b feature/neue-funktion
+
+# Entwickeln & Commiten
+git commit -m "feat: neue Funktion"
+
+# PR erstellen (CI läuft automatisch)
+gh pr create --base develop
+
+# Nach Merge: Automatisches Testing & Deployment
+```
 
 ---
 
@@ -930,34 +1099,93 @@ Der neue Leitfaden [`docs/INTEGRATIONS.md`](./docs/INTEGRATIONS.md) beschreibt S
 
 ---
 
+## 🌍 Community
+
+**Join the Willi-Mako Community!** We're building the standard for energy market communication in Germany—together.
+
+### 💬 Get Involved
+
+- **[Discussions](https://github.com/energychain/willi-mako-client/discussions)** – Ask questions, share use cases, get help
+- **[Use Case Gallery](./docs/USE_CASE_GALLERY.md)** – See real-world implementations
+- **[Certification Program](./docs/CERTIFICATION.md)** – Get officially certified
+- **[Sponsorship](./docs/SPONSORSHIP.md)** – Support the project & influence roadmap
+
+### 🏆 Recognition
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+
+**Contribute and get recognized!** See [COMMUNITY.md](./COMMUNITY.md) for details.
+
+### 💚 Become a Sponsor
+
+**Support open energy infrastructure:**
+
+[![GitHub Sponsors](https://img.shields.io/badge/Sponsor-GitHub%20Sponsors-pink?logo=github)](https://github.com/sponsors/energychain)
+
+- 🥉 **Bronze** (€500/month) – Logo on README
+- 🥈 **Silver** (€2,000/month) – Roadmap influence
+- 🥇 **Gold** (€5,000/month) – Strategic partnership
+- 💎 **Platinum** (€10,000+/month) – Steering committee
+
+[Learn more →](./docs/SPONSORSHIP.md)
+
+---
+
 ## 🤝 Contributing
 
 Wir freuen uns über Beiträge aus der Energie-Community!
 
-1. [Code of Conduct](./CODE_OF_CONDUCT.md) lesen.
-2. [CONTRIBUTING.md](./CONTRIBUTING.md) beachten.
-3. Offene [Issues](https://github.com/energychain/willi-mako-client/issues) prüfen oder neue Diskussion starten.
+**Quick Links:**
+- 👋 [Good First Issues](https://github.com/energychain/willi-mako-client/issues?q=is%3Aissue+is%3Aopen+label%3A%22good-first-issue%22)
+- 📖 [Contributing Guide](./CONTRIBUTING.md)
+- 💬 [Community Guidelines](./COMMUNITY.md)
+- 📜 [Code of Conduct](./CODE_OF_CONDUCT.md)
 
-Bitte bei Pull Requests:
+**How to contribute:**
 
-- Tests und Dokumentation aktualisieren.
-- Aussagekräftige Commit-Messages (`feat:`, `fix:`, `docs:` …).
-- Use-Case oder Problemstellung beschreiben.
+1. **Report bugs** – [Create an issue](https://github.com/energychain/willi-mako-client/issues/new?template=bug_report.md)
+2. **Request features** – [Start a discussion](https://github.com/energychain/willi-mako-client/discussions/new?category=ideas)
+3. **Improve docs** – [Documentation issues](https://github.com/energychain/willi-mako-client/issues?q=is%3Aissue+is%3Aopen+label%3Adocumentation)
+4. **Submit code** – Fork, branch, code, test, PR!
+5. **Share use cases** – [Submit your story](https://github.com/energychain/willi-mako-client/discussions/new?category=use-cases)
+
+**Contribution types recognized:**
+- 💻 Code
+- 📖 Documentation
+- 🐛 Bug reports
+- 🤔 Ideas & Planning
+- 🔌 Integration examples
+- 🎯 Use cases
+- ⚖️ Compliance expertise
+- ⚡ Energy sector knowledge
 
 ---
 
 ## 💬 Support
 
-- 📩 **Mail**: [dev@stromdao.com](mailto:dev@stromdao.com)
+**Need help?**
+
+- � **[GitHub Discussions](https://github.com/energychain/willi-mako-client/discussions)** – Community support
+- 🐛 **[Bug Reports](https://github.com/energychain/willi-mako-client/issues/new?template=bug_report.md)** – Report issues
+- 💡 **[Feature Requests](https://github.com/energychain/willi-mako-client/discussions/new?category=ideas)** – Suggest improvements
+- � **[Integration Help](https://github.com/energychain/willi-mako-client/discussions/new?category=integration-help)** – Technical questions
+- ⚖️ **[Compliance Questions](https://github.com/energychain/willi-mako-client/discussions/new?category=compliance)** – Regulatory guidance
+
+**Commercial support:**
+
+- � **Email**: [dev@stromdao.com](mailto:dev@stromdao.com)
+- 🏢 **Partnership**: [Submit inquiry](https://github.com/energychain/willi-mako-client/issues/new?template=partnership.md)
 - 🌐 **Website**: [stromhaltig.de](https://stromhaltig.de)
-- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/energychain/willi-mako-client/issues)
-- 💡 **Feature-Ideen**: [GitHub Discussions](https://github.com/energychain/willi-mako-client/discussions)
 
-Bitte angeben:
-
-- SDK-Version (`npm ls willi-mako-client`)
-- Node-Version (`node -v`)
-- Relevante Logs oder Artefakt-Metadaten
+**When reporting issues, include:**
+- SDK version: `npm ls willi-mako-client`
+- Node version: `node -v`
+- Relevant logs or error messages
 
 ---
 
@@ -970,6 +1198,16 @@ Copyright (c) 2025 STROMDAO GmbH
 ```
 
 Frei nutzbar in Open-Source- und kommerziellen Projekten. Beiträge werden, sofern nicht anders angegeben, ebenfalls unter MIT veröffentlicht.
+
+---
+
+<div align="center">
+
+**Made with 💚 by [STROMDAO](https://stromdao.de) and the [Willi-Mako Community](./COMMUNITY.md)**
+
+[⭐ Star us on GitHub](https://github.com/energychain/willi-mako-client) • [💚 Become a Sponsor](https://github.com/sponsors/energychain) • [🤝 Join the Community](./COMMUNITY.md)
+
+</div>
 
 ---
 

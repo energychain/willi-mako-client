@@ -1,0 +1,78 @@
+name: Add Contributor
+
+on:
+  issues:
+    types: [opened, edited]
+  issue_comment:
+    types: [created, edited]
+  pull_request_target:
+    types: [opened, edited]
+
+jobs:
+  add-contributor:
+    runs-on: ubuntu-latest
+    if: contains(github.event.comment.body, '@all-contributors please add') || contains(github.event.issue.body, '@all-contributors please add')
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: All Contributors
+        uses: all-contributors/all-contributors-bot@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  auto-add-contributor:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request_target' && github.event.action == 'opened'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install all-contributors-cli
+        run: npm install -g all-contributors-cli
+
+      - name: Auto-add PR author
+        run: |
+          # Check if contributor already exists
+          if ! grep -q "${{ github.event.pull_request.user.login }}" .all-contributorsrc; then
+            all-contributors add ${{ github.event.pull_request.user.login }} code
+
+            # Commit if changes were made
+            if [[ -n $(git status -s) ]]; then
+              git config user.name "github-actions[bot]"
+              git config user.email "github-actions[bot]@users.noreply.github.com"
+              git add .all-contributorsrc README.md
+              git commit -m "docs: add @${{ github.event.pull_request.user.login }} as contributor"
+              git push
+            fi
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '🎉 Thank you for your contribution! You have been automatically added to our contributors list.\n\n' +
+                    'If you want to update your contribution type, comment:\n' +
+                    '`@all-contributors please add @${{ github.event.pull_request.user.login }} for <contribution-type>`\n\n' +
+                    'Available types: `code`, `doc`, `bug`, `ideas`, `integration`, `usecase`, `compliance`, `energy`'
+            })

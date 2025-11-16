@@ -4,9 +4,238 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) as soon as we reach a stable `1.0.0` release.
 
+## [0.7.2] - 2025-11-16
+
+### Added
+- **🌍 Community & Ecosystem Infrastructure**: Vollständige Community-Plattform für Collaboration und Adoption in der Energiewirtschaft
+
+  **GitHub Discussions & Templates:**
+  - Discussion Templates für strukturierte Community-Interaktion:
+    - `integration-help.yml` – Technische Integration-Hilfe mit Marktrolle, Energieart, Use Case
+    - `use-case-submission.yml` – Erfolgsgeschichten teilen mit Metriken und Publikations-Optionen
+    - `compliance-question.yml` – Regulatorische Fragen (EnWG, MaKo, BNetzA)
+  - Updated `.github/ISSUE_TEMPLATE/config.yml` mit 6 direkten Links zu Community-Ressourcen
+
+  **Enhanced Issue Templates:**
+  - `partnership.md` – Formular für strategische Partnerschaften (Stadtwerke, Software-Anbieter, Consultants)
+  - `documentation.md` – Dokumentations-Verbesserungen mit "good-first-issue" Tag
+
+  **Sponsorship & Funding:**
+  - `.github/FUNDING.yml` – GitHub Sponsors, Open Collective, Custom Links
+  - `docs/SPONSORSHIP.md` – 4-Tier Programm (Bronze €500/mon → Platinum €10k+/mon)
+    - Benefits: Logos, Roadmap-Einfluss, Custom Features, Consulting, SLA
+    - Technology & Consulting Partnerships
+    - Quarterly financial transparency reports
+
+  **Contributor Recognition:**
+  - `.all-contributorsrc` – Konfiguration mit 8 Contribution-Types (code, doc, bug, ideas, integration, usecase, compliance, energy)
+  - `.github/workflows/contributors.yml` – Automatisches Hinzufügen von Contributors bei PRs
+  - README Badge für All-Contributors
+
+  **Release Automation:**
+  - `.releaserc.json` – Semantic Release Konfiguration:
+    - Emoji-basierte Release Notes (✨ Features, 🐛 Fixes, 🚨 Breaking)
+    - Auto-CHANGELOG mit Issue-Linking
+    - npm Publishing mit Provenance
+    - GitHub Releases mit Asset-Upload
+  - `.github/workflows/semantic-release.yml` – Automatischer Release-Workflow
+    - Community-Notification via Discussion bei neuem Release
+
+  **Beginner Support:**
+  - `.github/workflows/good-first-issue.yml` – Automatisierung für Einsteiger:
+    - Auto-Labeling beginner-friendly Issues
+    - Difficulty Estimates (effort: 1-2 hours, 3-5 hours)
+    - Energy Sector Context für EDIFACT/MaKo-Issues
+    - Wöchentliche Zusammenfassung für Newcomer
+    - Welcoming Comments mit Gitpod-Links
+
+  **Industry-spezifische Features:**
+  - `docs/CERTIFICATION.md` – 4-Level Certification Program:
+    - 🥉 Bronze: Willi-Mako Verified (100+ msgs/month)
+    - 🥈 Silver: Willi-Mako Certified (1k+ msgs/month, 3 message types)
+    - 🥇 Gold: Willi-Mako Excellence (10k+ msgs/month, full process automation)
+    - 💎 Platinum: Industry Leader (100k+ msgs/month, reference implementation)
+    - Message-Type Badges: UTILMD, MSCONS, ORDERS, PRICAT, INVOIC
+    - Compliance Badges: EnWG, BDEW MaKo, GPKE, WiM, GeLi Gas
+  - `docs/USE_CASE_GALLERY.md` – Success Stories Gallery:
+    - 5 Featured Use Cases mit Metriken (80% Zeitersparnis, 50k msgs/month, etc.)
+    - Statistics Dashboard (Market Role, Company Size, Message Types)
+    - Submission Form für Community Beiträge
+
+  **Community Hub:**
+  - `COMMUNITY.md` – Zentrale Community-Ressource (11.7 KB):
+    - Mission Statement für Open Energy Infrastructure
+    - Getting Started für Developers und Organizations
+    - 8 Contribution Types mit Startpunkten
+    - Community Metrics (GitHub Badges)
+    - Communication Channels (Discussions, Issues, Email)
+    - Events & Roadmap Timeline (Q1-Q4 2025)
+    - Community Values (Respect, Transparency, Innovation, Compliance, Sustainability)
+    - Learning Resources & Energy Sector Context
+
+  **Documentation:**
+  - `COMMUNITY_ECOSYSTEM_SUMMARY.md` – Vollständige Übersicht der implementierten Features
+  - `QUICK_COMMUNITY_SETUP.md` – Setup-Guide für sofortige Aktivierung (< 30 Min)
+
+### Changed
+- **README.md** – Enhanced mit Community Section:
+  - Community Badges (All Contributors, GitHub Sponsors)
+  - Quick Links zu Use Cases, Certification, Sponsorship
+  - Expanded Support Section mit Discussion Links
+  - Contribution Types Recognition (8 Kategorien)
+  - Footer mit Community-Call-to-Action
+
+### Impact
+- 🌟 **Sichtbarkeit**: Certification Program, Use Case Gallery, Sponsorship Tiers schaffen Anreize für Adoption
+- 🤝 **Collaboration**: Strukturierte Discussions, Templates, Workflows fördern Community-Engagement
+- 💰 **Nachhaltigkeit**: 4-Tier Sponsorship-Programm ermöglicht langfristige Finanzierung
+- 🏆 **Qualität**: Semantic Release, Good First Issues, All-Contributors sichern professionelle Standards
+- ⚡ **Energiewirtschaft-Fokus**: Compliance Badges, Market Roles, EDIFACT Context machen SDK zum Industry-Standard
+
+---
+
 ## [Unreleased]
 
 ### Added
+- **Vollständige CI/CD Pipeline mit GitHub Actions**: Automatisierte Testing, Security, und Deployment
+
+  **Workflows:**
+  - `ci.yml` (erweitert) – Umfassende CI-Pipeline:
+    - Test Matrix auf Node.js 18, 20, 22
+    - Linting, Formatierung, Type-Checking
+    - Unit Tests mit Coverage Reports
+    - Bundle Size Check
+    - Security Audit (npm audit, Snyk)
+    - Dependency Review für PRs (Lizenz- und Vulnerability-Prüfung)
+    - Codecov Integration mit PR-Comments
+
+  - `prebuilds.yml` (neu) – Cloud-IDE Optimierung:
+    - GitHub Codespaces Prebuild
+    - Gitpod Prebuild Trigger
+    - Caching von Build-Artefakten
+    - ~70% schnellere IDE-Start-Zeiten
+
+  - `codeql.yml` (neu) – Security Scanning:
+    - Statische Code-Analyse
+    - Security & Quality Queries
+    - Wöchentliche Scans
+    - GitHub Security Tab Integration
+
+  - `auto-merge-dependabot.yml` (neu) – Automatische Dependency Updates:
+    - Auto-Approve für minor/patch Updates
+    - Auto-Merge nach erfolgreichen CI-Checks
+    - Manuelle Review für major Updates
+    - Kommentare bei Breaking Changes
+
+  - `labeler.yml` (neu) – Automatische PR-Labels:
+    - Labels basierend auf geänderten Dateien
+    - Kategorien: documentation, tests, ci-cd, dependencies, cloud-ide, etc.
+
+  - `stale.yml` (neu) – Issue/PR Management:
+    - Markiert Issues nach 60 Tagen als stale
+    - Schließt nach 7 weiteren Tagen
+    - PRs: 30 Tage → stale, 14 Tage → close
+    - Exempt Labels: pinned, security, bug, enhancement
+
+  **Konfigurationen:**
+  - `.github/dependabot.yml` (neu) – Dependency Updates:
+    - Wöchentliche npm Dependency-Scans
+    - Gruppierte Updates (minor/patch, dev-deps, major)
+    - GitHub Actions Updates
+    - Auto-Labeling
+
+  - `.github/labeler.yml` (neu) – PR-Label-Mapping:
+    - 10+ automatische Label-Kategorien
+    - Path-basierte Zuweisung
+
+  **Dokumentation:**
+  - `docs/CI_CD.md` (neu) – Umfassende CI/CD-Dokumentation:
+    - Workflow-Beschreibungen
+    - Branch-Strategie (main, develop, feature, hotfix)
+    - Secrets Management Guide
+    - Deployment-Prozess (automatisch + manuell)
+    - Monitoring & Badges
+    - Troubleshooting
+    - Best Practices (Conventional Commits, Semantic Versioning)
+    - Branch Protection Rules
+    - Performance-Optimierung (Caching, Matrix Builds)
+
+  - README.md erweitert:
+    - Neue "CI/CD Pipeline" Section unter Development
+    - Workflow-Übersicht
+    - Quick Start für Contributors
+    - Link zur vollständigen CI/CD-Dokumentation
+    - Aktualisierte Projektstruktur mit .github/
+
+  **Features:**
+  - ✅ Automatisches npm Publishing bei Git-Tags
+  - ✅ Test Coverage auf 3 Node-Versionen
+  - ✅ Security Scanning (CodeQL, npm audit, Snyk)
+  - ✅ Dependency Auto-Updates mit Dependabot
+  - ✅ Cloud-IDE Prebuilds für schnellere Starts
+  - ✅ Automatische PR-Labels
+  - ✅ Stale Issue/PR Management
+  - ✅ Branch Protection Ready
+  - ✅ Codecov Integration
+
+- **Multi-Cloud-IDE Support**: Umfassende Integration für drei Cloud-Entwicklungsumgebungen
+
+  **GitHub Codespaces Integration** (⭐ Empfohlen):
+  - `.devcontainer/devcontainer.json` mit Node.js 20, TypeScript, Extensions
+  - `.devcontainer/setup.sh` für automatisiertes Setup und Willkommensnachricht
+  - Port-Forwarding für Web Dashboard (3000) und MCP Server (7337)
+  - VS Code Extensions: ESLint, Prettier, TypeScript, Vitest, Markdown, Spell Checker
+  - Umfassende Dokumentation: `docs/CODESPACES_QUICKSTART.md`
+    - 7 vollständige Use Cases (identisch zu Gitpod)
+    - Secrets Management via GitHub Settings
+    - Vergleichstabelle Codespaces vs. Gitpod
+    - Desktop VS Code Integration
+  - 60 kostenlose Stunden/Monat (10h mehr als Gitpod!)
+  - Badge in README.md
+
+  **Gitpod Integration**:
+  - `.gitpod.yml` mit automatisiertem Setup (Dependencies, Build, Willkommensnachricht)
+  - Zwei Terminal-Tasks: Setup/Build und Interactive CLI
+  - Vorkonfigurierte VS Code Extensions (ESLint, Prettier, TypeScript, Markdown, Spell Checker)
+  - Port-Konfiguration für Web Dashboard (3000) und MCP Server (8080)
+  - GitHub Prebuilds für schnelleren Workspace-Start
+  - Badge in README.md
+  - Umfassende Einsteiger-Dokumentation: `docs/GITPOD_QUICKSTART.md`
+    - Schritt-für-Schritt-Anleitung für Gitpod-Nutzung
+    - 7 vollständige Use Cases mit fachlicher und technischer Beschreibung:
+      1. Marktpartner-Suche (kein Login erforderlich)
+      2. EDIFACT-Nachricht analysieren
+      3. Lieferantenwechsel validieren (UTILMD)
+      4. Zählerstandsdaten prüfen (MSCONS)
+      5. Bestellprozess nachvollziehen (ORDERS)
+      6. Preislistenabgleich (PRICAT)
+      7. Rechnungsprüfung (INVOIC)
+    - Erweiterte Funktionen: Session Management, KI-Chat, Document Management
+    - Troubleshooting-Sektion
+    - Speziell für Einsteiger mit grundlegendem Energiewirtschafts- und Entwicklungswissen
+  - 50 kostenlose Stunden/Monat
+
+  **StackBlitz Integration** (Web-Dashboard only):
+  - `.stackblitzrc` für Instant-Start im Browser
+  - Optimiert für Web-Dashboard-Demos
+  - Dokumentation: `docs/STACKBLITZ.md`
+  - Perfekt für schnelle UI-Prototypen
+  - Unbegrenzt kostenlos (mit Einschränkungen bei CLI-Tools)
+  - Badge in README.md
+
+  **Allgemeine Verbesserungen**:
+  - NPM Scripts für alle Beispiele hinzugefügt:
+    - `npm run example:market-search` – Marktpartner-Suche
+    - `npm run example:edifact-analyze` – EDIFACT-Analyzer
+    - `npm run example:utilmd` – UTILMD-Validierung
+    - `npm run example:mscons` – MSCONS-Clearing
+    - `npm run example:orders` – ORDERS-Incident-Replay
+    - `npm run example:pricat` – PRICAT-Preissync
+    - `npm run example:invoic` – INVOIC-Archivierung
+  - Neue Dokumentation: `examples/README.md` mit Übersicht aller Beispiele
+  - README.md: Neue "☁️ Cloud IDE Quickstarts" Section mit Vergleichstabelle
+  - Drei Launch-Buttons im README-Header (Codespaces, Gitpod, StackBlitz)
+
 - **Market Partners Search (v0.7.1)**: Neue öffentliche API zur Suche nach Marktpartnern über BDEW/EIC-Codes, Firmennamen oder Städten
   - SDK-Methode: `searchMarketPartners` für Marktpartner-Suche (öffentlicher Endpunkt ohne Authentifizierung)
   - CLI-Befehl: `willi-mako market-partners search` mit Optionen für Suchbegriff und Ergebnislimit

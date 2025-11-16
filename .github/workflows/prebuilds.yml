@@ -1,0 +1,55 @@
+name: Prebuilds
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  codespaces-prebuild:
+    name: GitHub Codespaces Prebuild
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+
+      - name: Cache build artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            dist
+            node_modules
+          key: codespaces-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            codespaces-${{ runner.os }}-
+
+  gitpod-prebuild:
+    name: Gitpod Prebuild
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Trigger Gitpod Prebuild
+        run: |
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.GITPOD_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{"context": "https://github.com/${{ github.repository }}/tree/${{ github.ref_name }}"}' \
+            https://api.gitpod.io/v1/prebuild
+        continue-on-error: true

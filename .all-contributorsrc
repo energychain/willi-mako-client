@@ -1,0 +1,72 @@
+{
+  "projectName": "willi-mako-client",
+  "projectOwner": "energychain",
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "files": [
+    "README.md"
+  ],
+  "imageSize": 100,
+  "commit": true,
+  "commitConvention": "angular",
+  "contributors": [
+    {
+      "login": "energychain",
+      "name": "STROMDAO",
+      "avatar_url": "https://github.com/energychain.png",
+      "profile": "https://stromdao.de",
+      "contributions": [
+        "code",
+        "doc",
+        "infra",
+        "maintenance"
+      ]
+    }
+  ],
+  "contributorsPerLine": 7,
+  "skipCi": true,
+  "badgeTemplate": "[![All Contributors](https://img.shields.io/github/all-contributors/energychain/willi-mako-client?color=ee8449&style=flat-square)](#contributors)",
+  "contributorTemplate": "<a href=\"<%= contributor.profile %>\"><img src=\"<%= contributor.avatar_url %>\" width=\"<%= options.imageSize %>px;\" alt=\"<%= contributor.name %>\"/><br /><sub><b><%= contributor.name %></b></sub></a>",
+  "types": {
+    "code": {
+      "symbol": "💻",
+      "description": "Code",
+      "link": "[<%= symbol %>](<%= url %> \"Code\")"
+    },
+    "doc": {
+      "symbol": "📖",
+      "description": "Documentation",
+      "link": "[<%= symbol %>](<%= url %> \"Documentation\")"
+    },
+    "bug": {
+      "symbol": "🐛",
+      "description": "Bug reports",
+      "link": "[<%= symbol %>](<%= url %> \"Bug reports\")"
+    },
+    "ideas": {
+      "symbol": "🤔",
+      "description": "Ideas & Planning",
+      "link": "[<%= symbol %>](<%= url %> \"Ideas & Planning\")"
+    },
+    "integration": {
+      "symbol": "🔌",
+      "description": "Integration",
+      "link": "[<%= symbol %>](<%= url %> \"Integration\")"
+    },
+    "usecase": {
+      "symbol": "🎯",
+      "description": "Use Case",
+      "link": "[<%= symbol %>](<%= url %> \"Use Case\")"
+    },
+    "compliance": {
+      "symbol": "⚖️",
+      "description": "Compliance Expertise",
+      "link": "[<%= symbol %>](<%= url %> \"Compliance Expertise\")"
+    },
+    "energy": {
+      "symbol": "⚡",
+      "description": "Energy Sector Expertise",
+      "link": "[<%= symbol %>](<%= url %> \"Energy Sector Expertise\")"
+    }
+  }
+}

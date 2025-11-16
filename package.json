@@ -1,6 +1,6 @@
 {
   "name": "willi-mako-client",
-  "version": "0.7.1",
+  "version": "0.7.2",
   "description": "Official TypeScript client & CLI for the Willi-Mako API v2 (Marktkommunikation, compliance & ETL automation)",
   "type": "module",
   "main": "dist/index.js",
@@ -39,7 +39,14 @@
     "test:coverage": "vitest run --coverage",
     "docs": "typedoc",
     "prepublishOnly": "npm run lint && npm run typecheck && npm test && npm run clean && npm run build",
-    "prepare": "husky"
+    "prepare": "husky",
+    "example:market-search": "node --loader ts-node/esm examples/market-partner-search.ts",
+    "example:edifact-analyze": "node --loader ts-node/esm examples/edifact-analyzer-demo.ts",
+    "example:utilmd": "node --loader ts-node/esm examples/utilmd-audit.ts",
+    "example:mscons": "node --loader ts-node/esm examples/mscons-clearing.ts",
+    "example:orders": "node --loader ts-node/esm examples/orders-incident-report.ts",
+    "example:pricat": "node --loader ts-node/esm examples/pricat-price-sync.ts",
+    "example:invoic": "node --loader ts-node/esm examples/invoic-archive.ts"
   },
   "keywords": [
     "willi-mako",

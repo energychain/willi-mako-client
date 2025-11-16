@@ -1,29 +1,70 @@
+# Gitpod-Konfiguration für Willi-Mako Client SDK
+# Ermöglicht schnellen Einstieg in Marktkommunikation und EDIFACT-Workflows
+
 image: gitpod/workspace-node:latest
 
 tasks:
-  - name: Install Dependencies
-    init: npm install
+  - name: Setup & Build
+    init: |
+      echo "📦 Installiere Dependencies..."
+      npm install
+      echo "🔨 Building Projekt..."
+      npm run build
+      echo "✅ Setup abgeschlossen!"
     command: |
-      echo "🔌 Willi-Mako Client SDK Development Environment"
-      echo "================================================"
       echo ""
-      echo "Available commands:"
-      echo "  npm run build       - Build the project"
-      echo "  npm test            - Run tests"
-      echo "  npm run lint        - Lint code"
-      echo "  npm run format      - Format code"
-      echo "  npm run docs        - Generate API docs"
+      echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      echo "🔌 WILLI-MAKO CLIENT SDK - Gitpod Quickstart"
+      echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
       echo ""
-      echo "Don't forget to set WILLI_MAKO_TOKEN:"
-      echo "  gp env WILLI_MAKO_TOKEN='your-token'"
+      echo "📖 Vollständige Anleitung: docs/GITPOD_QUICKSTART.md"
+      echo ""
+      echo "🔐 SCHRITT 1: Kostenlos registrieren"
+      echo "   👉 https://stromhaltig.de/app/"
+      echo ""
+      echo "🔑 SCHRITT 2: Authentifizierung einrichten"
+      echo "   Option A - Mit E-Mail & Passwort:"
+      echo "     export WILLI_MAKO_EMAIL='deine@email.de'"
+      echo "     export WILLI_MAKO_PASSWORD='dein-passwort'"
+      echo ""
+      echo "   Option B - Mit API-Token (im Dashboard generieren):"
+      echo "     export WILLI_MAKO_TOKEN='dein-api-token'"
+      echo ""
+      echo "🧪 SCHRITT 3: Use Cases testen"
+      echo "   willi-mako market-partners search 'Netze BW'  # Kein Login nötig!"
+      echo "   npm run example:market-search                  # Marktpartner-Demo"
+      echo "   npm run example:edifact-analyze                # EDIFACT-Analyse"
+      echo "   npm run example:utilmd                         # Lieferantenwechsel"
+      echo "   npm run example:mscons                         # Zählerstand-Clearing"
+      echo ""
+      echo "💡 WEITERE BEFEHLE:"
+      echo "   npm run build       - Projekt bauen"
+      echo "   npm test            - Tests ausführen"
+      echo "   npm run lint        - Code prüfen"
+      echo "   willi-mako --help   - Alle CLI-Befehle anzeigen"
+      echo ""
+      echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      echo ""
+
+  - name: Interactive CLI
+    openMode: split-right
+    command: |
+      echo "🖥️  Interaktives CLI-Terminal"
+      echo ""
+      echo "Hier kannst du direkt CLI-Befehle ausführen:"
+      echo "  willi-mako --help"
+      echo "  willi-mako auth login"
+      echo "  willi-mako sessions create --ttl 60"
       echo ""
 
 vscode:
   extensions:
-    - dbaeumer.vscode-eslint
-    - esbenp.prettier-vscode
-    - ms-vscode.vscode-typescript-next
-    - vitest.explorer
+    - dbaeumer.vscode-eslint          # ESLint für Code-Qualität
+    - esbenp.prettier-vscode          # Prettier für Code-Formatierung
+    - ms-vscode.vscode-typescript-next # TypeScript Language Support
+    - vitest.explorer                  # Vitest Test Explorer
+    - yzhang.markdown-all-in-one      # Markdown-Editor mit Preview
+    - streetsidesoftware.code-spell-checker # Rechtschreibprüfung
 
 ports:
   - port: 4173

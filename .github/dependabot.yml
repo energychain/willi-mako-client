@@ -1,0 +1,60 @@
+version: 2
+updates:
+  # NPM dependencies
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "energychain/maintainers"
+    assignees:
+      - "energychain/maintainers"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "automated"
+    versioning-strategy: increase
+    groups:
+      # Group all non-major updates together
+      minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+      # Separate group for dev dependencies
+      dev-dependencies:
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+      # Group major updates separately for careful review
+      major-updates:
+        patterns:
+          - "*"
+        update-types:
+          - "major"
+    ignore:
+      # Ignore specific packages if needed
+      # - dependency-name: "package-name"
+      #   versions: ["1.x", "2.x"]
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(ci)"
+    labels:
+      - "github-actions"
+      - "dependencies"
+      - "automated"

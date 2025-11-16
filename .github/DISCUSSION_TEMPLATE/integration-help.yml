@@ -1,0 +1,95 @@
+labels: ["integration", "help-wanted"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 🔌 Integration Support
+
+        Benötigen Sie Hilfe bei der Integration des Willi-Mako-Clients in Ihr System?
+
+        **Energiewirtschaftliche Expertise erwünscht!** Die Community kann Ihnen bei:
+        - EDIFACT-Formaten (UTILMD, MSCONS, ORDERS, PRICAT, INVOIC)
+        - Marktprozessen (GPKE, WiM, GeLi Gas)
+        - Regulatorischen Anforderungen (EnWG, MaBiS, MPES, etc.)
+
+        helfen.
+
+  - type: dropdown
+    id: integration-type
+    attributes:
+      label: Integrationstyp
+      description: Welche Art von Integration planen Sie?
+      options:
+        - Lieferantenwechselprozess (GPKE)
+        - Netznutzungsabrechnung (WiM)
+        - Gaszählpunkte (GeLi Gas)
+        - Marktkommunikation allgemein
+        - Custom Integration
+    validations:
+      required: true
+
+  - type: dropdown
+    id: market-role
+    attributes:
+      label: Marktrolle
+      description: In welcher Rolle agieren Sie?
+      options:
+        - Lieferant
+        - Netzbetreiber
+        - Messstellenbetreiber
+        - Bilanzkreisverantwortlicher
+        - Marktgebietsverantwortlicher
+        - Software-Anbieter / Dienstleister
+        - Andere
+    validations:
+      required: true
+
+  - type: dropdown
+    id: energy-type
+    attributes:
+      label: Energieart
+      description: Strom oder Gas?
+      options:
+        - Strom
+        - Gas
+        - Beides
+    validations:
+      required: true
+
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Use Case Beschreibung
+      description: Beschreiben Sie Ihren konkreten Anwendungsfall
+      placeholder: |
+        Beispiel: "Wir möchten MSCONS-Nachrichten automatisch verarbeiten und in unser Abrechnungssystem überführen..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: current-setup
+    attributes:
+      label: Aktuelle Systemlandschaft
+      description: Welche Systeme nutzen Sie bereits?
+      placeholder: |
+        - ERP: SAP
+        - Marktkommunikation: EDI@Energy
+        - Datenbank: PostgreSQL
+        - Runtime: Node.js 20
+
+  - type: textarea
+    id: code-sample
+    attributes:
+      label: Code-Beispiel (optional)
+      description: Falls bereits Code vorhanden ist
+      render: typescript
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Community Contribution
+      description: Wären Sie bereit, Ihre Lösung als Beispiel zu teilen?
+      options:
+        - label: Ja, ich würde gerne ein Example beitragen
+        - label: Ja, ich würde gerne einen Blog-Post schreiben
+        - label: Nein, nur interne Nutzung

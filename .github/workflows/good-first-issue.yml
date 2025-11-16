@@ -1,0 +1,204 @@
+name: Good First Issue Automation
+
+on:
+  issues:
+    types: [opened, labeled, unlabeled]
+  schedule:
+    # Run weekly to suggest issues for beginners
+    - cron: '0 9 * * 1' # Every Monday at 9 AM UTC
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  auto-label-beginner-friendly:
+    name: Auto-label beginner-friendly issues
+    runs-on: ubuntu-latest
+    if: github.event_name == 'issues' && github.event.action == 'opened'
+
+    steps:
+      - name: Check if issue is beginner-friendly
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const title = issue.title.toLowerCase();
+            const body = issue.body?.toLowerCase() || '';
+            const labels = issue.labels.map(l => l.name);
+
+            // Criteria for "good first issue"
+            const isDocumentation = labels.includes('documentation') ||
+                                   title.includes('doc') ||
+                                   title.includes('readme') ||
+                                   title.includes('typo');
+
+            const isSmallFix = title.includes('fix typo') ||
+                              title.includes('broken link') ||
+                              title.includes('update example');
+
+            const isExampleRequest = labels.includes('example') ||
+                                    title.includes('example') ||
+                                    body.includes('example');
+
+            const isTestAddition = title.includes('add test') ||
+                                  title.includes('test coverage');
+
+            // Check complexity indicators (NOT good first issue)
+            const isComplex = title.includes('refactor') ||
+                             title.includes('architecture') ||
+                             title.includes('breaking change') ||
+                             labels.includes('major');
+
+            // Auto-label as "good first issue" if criteria met
+            if ((isDocumentation || isSmallFix || isExampleRequest || isTestAddition) && !isComplex) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                labels: ['good-first-issue']
+              });
+
+              // Add welcoming comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: `👋 **Welcome potential contributor!**\n\n` +
+                      `This issue has been automatically labeled as a **good first issue** because it seems like a great starting point.\n\n` +
+                      `**New to Willi-Mako?** Here's how to get started:\n` +
+                      `1. 🚀 Use our [Gitpod workspace](https://gitpod.io/#https://github.com/energychain/willi-mako-client) for instant setup\n` +
+                      `2. 📖 Read the [Contributing Guide](../CONTRIBUTING.md)\n` +
+                      `3. 💬 Comment below if you'd like to work on this!\n\n` +
+                      `**Questions?** Join our [Discussions](https://github.com/energychain/willi-mako-client/discussions) and we'll help you! 🤝`
+              });
+            }
+
+  suggest-issues:
+    name: Suggest issues for new contributors
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+
+    steps:
+      - name: Find and promote good first issues
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Get all open "good first issue" without assignees
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'good-first-issue',
+              state: 'open',
+              per_page: 10
+            });
+
+            const unassigned = issues.filter(i => !i.assignee && !i.pull_request);
+
+            if (unassigned.length > 0) {
+              // Create a discussion promoting these issues
+              const issueList = unassigned.map(i =>
+                `- [${i.title}](${i.html_url}) - ${i.labels.map(l => l.name).join(', ')}`
+              ).join('\n');
+
+              console.log(`Found ${unassigned.length} good first issues for new contributors`);
+              console.log(issueList);
+
+              // Could create a Discussion post here
+              // (Requires GitHub Discussions API access)
+            }
+
+  help-wanted-reminder:
+    name: Remind about help-wanted issues
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+
+    steps:
+      - name: Find stale help-wanted issues
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'help-wanted',
+              state: 'open',
+              sort: 'updated',
+              direction: 'asc',
+              per_page: 100
+            });
+
+            for (const issue of issues) {
+              const updatedAt = new Date(issue.updated_at);
+
+              // If help-wanted issue hasn't been updated in 30 days
+              if (updatedAt < thirtyDaysAgo && !issue.assignee) {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  body: `🔍 **This issue is still looking for a contributor!**\n\n` +
+                        `We'd love help with this. If you're interested:\n` +
+                        `- Comment below to claim it\n` +
+                        `- Ask any questions you have\n` +
+                        `- Check out our [Contributing Guide](../CONTRIBUTING.md)\n\n` +
+                        `**New to open source?** This could be a great opportunity! We're happy to mentor. 🎓`
+                });
+              }
+            }
+
+  add-difficulty-labels:
+    name: Add difficulty estimates
+    runs-on: ubuntu-latest
+    if: github.event_name == 'issues' && github.event.action == 'labeled' && github.event.label.name == 'good-first-issue'
+
+    steps:
+      - name: Estimate difficulty
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const labels = issue.labels.map(l => l.name);
+
+            // Auto-estimate difficulty based on labels
+            if (labels.includes('documentation')) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                labels: ['effort: 1-2 hours']
+              });
+            } else if (labels.includes('example')) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                labels: ['effort: 3-5 hours']
+              });
+            }
+
+            // Add energy sector context if relevant
+            const body = issue.body?.toLowerCase() || '';
+            if (body.includes('edifact') || body.includes('utilmd') || body.includes('mscons')) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                labels: ['domain: energy-sector']
+              });
+
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: `⚡ **Energy Sector Context**\n\n` +
+                      `This issue involves German energy market processes. ` +
+                      `If you're new to the domain, check out:\n` +
+                      `- [EDIFACT Analyzer Guide](../docs/EDIFACT_ANALYZER.md)\n` +
+                      `- [Examples](../examples/)\n` +
+                      `- Ask in [Discussions](https://github.com/energychain/willi-mako-client/discussions) for domain help!`
+              });
+            }
