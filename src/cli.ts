@@ -66,7 +66,7 @@ program
   .description('Print the OpenAPI document (remote by default)')
   .option('--local', 'Use the bundled schema instead of fetching the remote document', false)
   .action(async (options) => {
-    const client = createClient();
+    const client = await createClient();
 
     if (options.local) {
       outputJson(bundledOpenApiDocument);
@@ -97,7 +97,7 @@ auth
       shell?: SupportedShell;
       json?: boolean;
     }) => {
-      const client = createClient();
+      const client = await createClient();
       const response = await client.login(
         {
           email: options.email,
@@ -149,7 +149,7 @@ sessions
       shell?: SupportedShell;
       json?: boolean;
     }) => {
-      const client = createClient({ requireToken: true });
+      const client = await createClient({ requireToken: true });
       const payload: CreateSessionRequest = {
         preferences: (options.preferences as CreateSessionRequest['preferences']) ?? undefined,
         contextSettings: (options.context as Record<string, unknown>) ?? undefined,
@@ -185,7 +185,7 @@ sessions
       sessionId: string,
       options: { exportEnv?: boolean; shell?: SupportedShell; json?: boolean }
     ) => {
-      const client = createClient({ requireToken: true });
+      const client = await createClient({ requireToken: true });
       const response = await client.getSession(sessionId);
       applySessionEnvironmentId(response);
 
@@ -209,7 +209,7 @@ sessions
   .description('Delete an existing session')
   .option('--json', 'Print JSON response payload', true)
   .action(async (sessionId: string, options: { json?: boolean }) => {
-    const client = createClient({ requireToken: true });
+    const client = await createClient({ requireToken: true });
     await client.deleteSession(sessionId);
     clearSessionEnvironmentId(sessionId);
 
@@ -232,7 +232,7 @@ chat
   )
   .action(
     async (options: { session: string; message: string; context?: unknown; timeline?: string }) => {
-      const client = createClient({ requireToken: true });
+      const client = await createClient({ requireToken: true });
       const payload: ChatRequest = {
         sessionId: options.session,
         message: options.message,
@@ -259,7 +259,7 @@ chat
   )
   .action(
     async (options: { session: string; message: string; context?: unknown; timeline?: string }) => {
-      const client = createClient({ requireToken: true });
+      const client = await createClient({ requireToken: true });
       const payload = {
         sessionId: options.session,
         message: options.message,
@@ -286,7 +286,7 @@ chat
   )
   .action(
     async (options: { session: string; message: string; context?: unknown; timeline?: string }) => {
-      const client = createClient({ requireToken: true });
+      const client = await createClient({ requireToken: true });
       const payload = {
         sessionId: options.session,
         message: options.message,
@@ -312,7 +312,7 @@ retrieval
     parseJsonOptional
   )
   .action(async (options: { session: string; query: string; options?: unknown }) => {
-    const client = createClient({ requireToken: true });
+    const client = await createClient({ requireToken: true });
     const payload: SemanticSearchRequest = {
       sessionId: options.session,
       query: options.query,
@@ -336,7 +336,7 @@ retrieval
     parseJsonOptional
   )
   .action(async (options: { session: string; query: string; options?: unknown }) => {
-    const client = createClient({ requireToken: true });
+    const client = await createClient({ requireToken: true });
     const payload = {
       sessionId: options.session,
       query: options.query,
@@ -358,7 +358,7 @@ retrieval
     parseJsonOptional
   )
   .action(async (options: { session: string; query: string; options?: unknown }) => {
-    const client = createClient({ requireToken: true });
+    const client = await createClient({ requireToken: true });
     const payload = {
       sessionId: options.session,
       query: options.query,
@@ -395,7 +395,7 @@ reasoning
       pipeline?: unknown;
       detailedIntent?: boolean;
     }) => {
-      const client = createClient({ requireToken: true });
+      const client = await createClient({ requireToken: true });
       const payload: ReasoningGenerateRequest = {
         sessionId: options.session,
         query: options.query,
@@ -422,7 +422,7 @@ context
   .option('--context <json>', 'Optional context override', parseJsonOptional)
   .action(
     async (options: { session: string; query: string; messages?: unknown; context?: unknown }) => {
-      const client = createClient({ requireToken: true });
+      const client = await createClient({ requireToken: true });
       const payload: ContextResolveRequest = {
         sessionId: options.session,
         query: options.query,
@@ -446,7 +446,7 @@ clarification
   .requiredOption('-q, --query <query>', 'User query that may need clarification')
   .option('--enhanced-query', 'Request an enhanced query suggestion', false)
   .action(async (options: { session: string; query: string; enhancedQuery?: boolean }) => {
-    const client = createClient({ requireToken: true });
+    const client = await createClient({ requireToken: true });
     const payload: ClarificationAnalyzeRequest = {
       sessionId: options.session,
       query: options.query,
@@ -517,7 +517,7 @@ tools
       repairContext?: string;
       repairInstructions?: string;
     }) => {
-      const client = createClient({ requireToken: true });
+      const client = await createClient({ requireToken: true });
 
       let sessionId = options.session;
       let createdSessionId: string | null = null;
@@ -885,7 +885,7 @@ tools
   .option('-t, --timeout <ms>', 'Timeout in milliseconds (500-60000)', parseIntBase10)
   .option('-m, --metadata <json>', 'Optional JSON metadata payload', parseJsonOptional)
   .action(async (options) => {
-    const client = createClient({ requireToken: true });
+    const client = await createClient({ requireToken: true });
 
     const payload: RunNodeScriptJobRequest = {
       sessionId: options.session,
@@ -902,7 +902,7 @@ tools
   .command('job <jobId>')
   .description('Retrieve the status of a tooling job')
   .action(async (jobId: string) => {
-    const client = createClient({ requireToken: true });
+    const client = await createClient({ requireToken: true });
     const response = await client.getToolJob(jobId);
     outputJson(response);
   });
@@ -923,7 +923,7 @@ artifacts
   .option('--tags <list>', 'Comma separated tags', parseCommaList)
   .option('-m, --metadata <json>', 'Optional JSON metadata payload', parseJsonOptional)
   .action(async (options) => {
-    const client = createClient({ requireToken: true });
+    const client = await createClient({ requireToken: true });
     const content = options.content ?? (await readStdin());
 
     const response = await client.createArtifact({
@@ -953,7 +953,7 @@ documents
   .option('--ai-context', 'Enable AI context for this document', false)
   .option('--json', 'Print JSON response', true)
   .action(async (filePath: string, options) => {
-    const client = createClient({ requireToken: true });
+    const client = await createClient({ requireToken: true });
     const absPath = resolve(filePath);
     const fileBuffer = await fs.readFile(absPath);
     const filename = basename(absPath);
@@ -981,7 +981,7 @@ documents
   .option('--ai-context', 'Enable AI context for all documents', false)
   .option('--json', 'Print JSON response', true)
   .action(async (filePaths: string[], options) => {
-    const client = createClient({ requireToken: true });
+    const client = await createClient({ requireToken: true });
 
     if (filePaths.length > 10) {
       throw new Error('Maximum 10 files allowed per upload');
@@ -1019,7 +1019,7 @@ documents
   .option('--unprocessed', 'Filter by unprocessed documents only')
   .option('--json', 'Print JSON response', true)
   .action(async (options) => {
-    const client = createClient({ requireToken: true });
+    const client = await createClient({ requireToken: true });
 
     const query: Parameters<typeof client.listDocuments>[0] = {
       page: options.page,
@@ -1064,7 +1064,7 @@ documents
   .description('Retrieve a single document by ID')
   .option('--json', 'Print JSON response', true)
   .action(async (documentId: string, options) => {
-    const client = createClient({ requireToken: true });
+    const client = await createClient({ requireToken: true });
     const response = await client.getDocument(documentId);
 
     if (options.json !== false) {
@@ -1108,7 +1108,7 @@ documents
   )
   .option('--json', 'Print JSON response', true)
   .action(async (documentId: string, options) => {
-    const client = createClient({ requireToken: true });
+    const client = await createClient({ requireToken: true });
 
     const updatePayload: Parameters<typeof client.updateDocument>[1] = {};
     if (options.title) {
@@ -1138,7 +1138,7 @@ documents
   .description('Delete a document permanently')
   .option('--confirm', 'Confirm deletion', false)
   .action(async (documentId: string, options) => {
-    const client = createClient({ requireToken: true });
+    const client = await createClient({ requireToken: true });
 
     if (!options.confirm) {
       console.error('⚠️  Use --confirm to confirm deletion');
@@ -1153,7 +1153,7 @@ documents
   .command('download <documentId> <outputPath>')
   .description('Download the original document file')
   .action(async (documentId: string, outputPath: string) => {
-    const client = createClient({ requireToken: true });
+    const client = await createClient({ requireToken: true });
     const fileData = await client.downloadDocument(documentId);
     const absPath = resolve(outputPath);
 
@@ -1166,7 +1166,7 @@ documents
   .description('Trigger reprocessing of a document (re-extract text and re-embed)')
   .option('--json', 'Print JSON response', true)
   .action(async (documentId: string, options) => {
-    const client = createClient({ requireToken: true });
+    const client = await createClient({ requireToken: true });
     const response = await client.reprocessDocument(documentId);
 
     if (options.json !== false) {
@@ -1181,7 +1181,7 @@ documents
   .description('Toggle AI context for a document (enable: true, disable: false)')
   .option('--json', 'Print JSON response', true)
   .action(async (documentId: string, enabled: string, options) => {
-    const client = createClient({ requireToken: true });
+    const client = await createClient({ requireToken: true });
     const enabledBool = enabled === 'true';
 
     const response = await client.toggleAiContext(documentId, enabledBool);
@@ -1266,7 +1266,7 @@ edifact
   .option('-f, --file <path>', 'Read EDIFACT message from file (alternative to --message)')
   .option('--json', 'Output JSON response', true)
   .action(async (options: { message?: string; file?: string; json?: boolean }) => {
-    const client = createClient({ requireToken: true });
+    const client = await createClient({ requireToken: true });
 
     let message: string;
     if (options.file) {
@@ -1310,7 +1310,7 @@ edifact
   .requiredOption('-q, --query <query>', 'Question about the EDIFACT message')
   .option('--json', 'Output JSON response', true)
   .action(async (options: { message?: string; file?: string; query: string; json?: boolean }) => {
-    const client = createClient({ requireToken: true });
+    const client = await createClient({ requireToken: true });
 
     let currentEdifactMessage: string;
     if (options.file) {
@@ -1342,7 +1342,7 @@ edifact
   .option('-f, --file <path>', 'Read EDIFACT message from file (alternative to --message)')
   .option('--json', 'Output JSON response', true)
   .action(async (options: { message?: string; file?: string; json?: boolean }) => {
-    const client = createClient({ requireToken: true });
+    const client = await createClient({ requireToken: true });
 
     let message: string;
     if (options.file) {
@@ -1370,7 +1370,7 @@ edifact
   .option('-f, --file <path>', 'Read EDIFACT message from file (alternative to --message)')
   .option('--json', 'Output JSON response', true)
   .action(async (options: { message?: string; file?: string; json?: boolean }) => {
-    const client = createClient({ requireToken: true });
+    const client = await createClient({ requireToken: true });
 
     let message: string;
     if (options.file) {
@@ -1424,7 +1424,7 @@ edifact
       output?: string;
       json?: boolean;
     }) => {
-      const client = createClient({ requireToken: true });
+      const client = await createClient({ requireToken: true });
 
       let currentMessage: string;
       if (options.file) {
@@ -1469,7 +1469,7 @@ marketPartners
   .option('-l, --limit <limit>', 'Maximum number of results (1-20)', '10')
   .option('--json', 'Output JSON response', true)
   .action(async (options: { query: string; limit?: string; json?: boolean }) => {
-    const client = createClient({ requireToken: false }); // Public endpoint
+    const client = await createClient({ requireToken: false }); // Public endpoint
 
     const limit = options.limit ? parseInt(options.limit, 10) : 10;
 
@@ -1862,9 +1862,37 @@ function resolveShell(shell?: string): SupportedShell {
   return 'posix';
 }
 
-function createClient(options: ClientFactoryOptions = {}): WilliMakoClient {
+async function createClient(options: ClientFactoryOptions = {}): Promise<WilliMakoClient> {
   const opts = program.opts();
-  const token = opts.token ?? process.env.WILLI_MAKO_TOKEN ?? null;
+  let token = opts.token ?? process.env.WILLI_MAKO_TOKEN ?? null;
+
+  // Auto-login: If EMAIL and PASSWORD are set but no token, fetch token automatically
+  if (!token && process.env.WILLI_MAKO_EMAIL && process.env.WILLI_MAKO_PASSWORD) {
+    const email = process.env.WILLI_MAKO_EMAIL;
+    const password = process.env.WILLI_MAKO_PASSWORD;
+
+    // Create temporary client without token to perform login
+    const tempClient = new WilliMakoClient({
+      baseUrl: opts.baseUrl
+    });
+
+    try {
+      const loginResponse = await tempClient.login({ email, password });
+      token = loginResponse.data.accessToken;
+
+      // Set token in environment for this process
+      process.env.WILLI_MAKO_TOKEN = token;
+
+      if (process.env.DEBUG) {
+        console.error('✓ Auto-login successful using WILLI_MAKO_EMAIL and WILLI_MAKO_PASSWORD');
+      }
+    } catch (error) {
+      console.error('✗ Auto-login failed:', error instanceof Error ? error.message : String(error));
+      console.error(
+        '  Please check your WILLI_MAKO_EMAIL and WILLI_MAKO_PASSWORD environment variables.'
+      );
+    }
+  }
 
   if (options.requireToken && !token) {
     throw new Error('A bearer token is required. Set --token or WILLI_MAKO_TOKEN.');

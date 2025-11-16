@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) as soon as we reach a stable `1.0.0` release.
 
+## [0.7.4] - 2025-11-16
+
+### Added
+- **🔐 Auto-Login with Environment Variables**: CLI now automatically fetches token if `WILLI_MAKO_EMAIL` and `WILLI_MAKO_PASSWORD` are set
+  - No need to manually run `willi-mako auth login` anymore
+  - Token is automatically fetched and stored in `WILLI_MAKO_TOKEN` for the current process
+  - Enable debug output with `DEBUG=1` environment variable
+  - Falls back to manual `--token` or `WILLI_MAKO_TOKEN` if email/password not set
+
+### Fixed
+- **📝 Documentation**: Corrected EDIFACT analyze command syntax in all docs
+  - Changed from `willi-mako edifact analyze test-message.edi` (incorrect)
+  - To: `willi-mako edifact analyze -f test-message.edi` (correct with `-f` flag)
+  - Updated in `CODESPACES_QUICKSTART.md` and `GITPOD_QUICKSTART.md`
+
 ## [0.7.3] - 2025-11-16
 
 ### Fixed

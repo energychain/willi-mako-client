@@ -243,7 +243,7 @@ NAD+MS+9900123456789::293'
 Analysiere die Nachricht:
 
 ```bash
-willi-mako edifact analyze test-message.edi
+willi-mako edifact analyze -f test-message.edi
 ```
 
 **Option 2: Via TypeScript**
