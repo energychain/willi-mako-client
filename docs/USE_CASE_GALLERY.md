@@ -1,6 +1,6 @@
 # 🎯 Use Case Gallery
 
-> **Real-world implementations** of the Willi-Mako Client SDK in the German energy sector.
+> **Real-world implementations** of the Willi-Mako Client SDK in the German energy sector – from EDIFACT message processing to regulatory compliance, network operations, and strategic research analysis.
 
 ---
 

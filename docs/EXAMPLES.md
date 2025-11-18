@@ -1,6 +1,6 @@
 # Willi-Mako Client SDK – Example Playbook
 
-This playbook illustrates how to combine the SDK, conversational endpoints and the CLI for common energy-market scenarios revolving around UTILMD, MSCONS, ORDERS, PRICAT, and INVOIC.
+This playbook illustrates how to combine the SDK, conversational endpoints and the CLI for comprehensive energy-market scenarios. Beyond EDIFACT message processing (UTILMD, MSCONS, ORDERS, PRICAT, INVOIC), you can leverage semantic search across regulatory documents (BNetzA, BDEW, VKU), query technical specifications (TAB, VDE-FNN), and integrate scientific studies for strategic analysis.
 
 ## Table of Contents
 
