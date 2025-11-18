@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="720" viewBox="0 0 1080 720">
+  <style>
+    .frame { fill: #0f172a; }
+    .toolbar { fill: #1f2937; }
+    .button { fill: #334155; stroke: #0ea5e9; stroke-width: 1.4; rx: 6; }
+    .button-text { font: 500 14px 'Inter', sans-serif; fill: #e0f2fe; }
+    .window { fill: #f8fafc; rx: 18; }
+    .title { font: 600 24px 'Inter', sans-serif; fill: #0f172a; }
+    .subtitle { font: 400 16px 'Inter', sans-serif; fill: #475569; }
+    .section-title { font: 600 16px 'Inter', sans-serif; fill: #1e293b; }
+    .label { font: 500 14px 'Inter', sans-serif; fill: #1e293b; }
+    .textarea { fill: #fff; stroke: #cbd5f5; stroke-width: 1.6; rx: 12; }
+    .card { fill: #fff; stroke: #dbeafe; stroke-width: 1.2; rx: 14; }
+    .card-title { font: 600 16px 'Inter', sans-serif; fill: #0f172a; }
+    .card-body { font: 400 14px 'Inter', sans-serif; fill: #334155; }
+    .status { font: 600 14px 'Inter', sans-serif; fill: #16a34a; }
+    .log { font: 400 13px 'Fira Mono', monospace; fill: #1e293b; }
+    .chip { fill: #ecfeff; stroke: #06b6d4; stroke-width: 1.2; rx: 12; }
+    .chip-text { font: 500 12px 'Inter', sans-serif; fill: #0e7490; }
+  </style>
+
+  <rect class="frame" x="0" y="0" width="1080" height="720" rx="32" />
+  <rect class="toolbar" x="30" y="30" width="1020" height="44" rx="12" />
+  <circle cx="60" cy="52" r="8" fill="#f87171" />
+  <circle cx="88" cy="52" r="8" fill="#facc15" />
+  <circle cx="116" cy="52" r="8" fill="#34d399" />
+  <rect class="button" x="888" y="38" width="148" height="28" />
+  <text class="button-text" x="962" y="58" text-anchor="middle">Deploy to Proxy</text>
+
+  <rect class="window" x="30" y="86" width="1020" height="604" />
+  <text class="title" x="70" y="140">Willi-Mako Web Dashboard</text>
+  <text class="subtitle" x="70" y="172">Sandbox Jobs erstellen, Artefakte inspizieren, Compliance-Hinweise exportieren.</text>
+
+  <text class="section-title" x="70" y="220">1. EDIFACT Nachricht</text>
+  <rect class="textarea" x="70" y="235" width="520" height="180" />
+  <text class="label" x="84" y="259">UNH+1+UTILMD:D:04B:UN:2.3e...</text>
+  <text class="label" x="84" y="285">NAD+MS+9900000000009::9'</text>
+  <text class="label" x="84" y="311">LOC+172+EIC123456789012'</text>
+  <rect class="button" x="412" y="395" width="160" height="38" fill="#0ea5e9" stroke="#0284c7" />
+  <text class="button-text" x="492" y="420" text-anchor="middle" fill="#ecfeff">Analyse starten</text>
+
+  <rect class="card" x="620" y="235" width="380" height="180" />
+  <text class="card-title" x="650" y="265">Status & Events</text>
+  <text class="status" x="650" y="292">● succeeded</text>
+  <text class="card-body" x="650" y="318">Job-ID: wm-session-9f2c</text>
+  <text class="card-body" x="650" y="342">Dauer: 1.42 s</text>
+  <text class="card-body" x="650" y="366">Artefakte erzeugt: 2</text>
+
+  <rect class="card" x="70" y="440" width="930" height="220" />
+  <text class="card-title" x="100" y="472">stdout – Auswertung</text>
+  <rect class="chip" x="880" y="444" width="100" height="28" />
+  <text class="chip-text" x="930" y="463" text-anchor="middle">UTILMD</text>
+  <text class="log" x="100" y="502">{</text>
+  <text class="log" x="120" y="526">"validation": {</text>
+  <text class="log" x="140" y="550">"role": "MarketPartner",</text>
+  <text class="log" x="140" y="574">"status": "ok"</text>
+  <text class="log" x="120" y="598">},</text>
+  <text class="log" x="120" y="622">"hints": ["MSCONS-Plausibilisierung empfohlen"]</text>
+  <text class="log" x="100" y="646">}</text>
+
+  <text class="section-title" x="650" y="430">Nächste Schritte</text>
+  <text class="card-body" x="650" y="456">• Artefakt "utilmd-audit.json" öffnen</text>
+  <text class="card-body" x="650" y="480">• Slack Notification an MaKo-Team senden</text>
+  <text class="card-body" x="650" y="504">• MSCONS Vergleich im Dashboard anstoßen</text>
+</svg>

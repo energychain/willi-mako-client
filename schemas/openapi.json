@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Willi-Mako API v2",
-    "version": "0.8.0",
-    "description": "KI-gestützte Wissensplattform für die deutsche Energiewirtschaft. Umfasst Marktkommunikation (EDIFACT, GPKE, WiM, GeLi Gas, UTILMD, MSCONS), Regulierung (BNetzA, EnWG, StromNEV, ARegV, §14a EnWG), Netzbetrieb (TAB, VDE-FNN, SAIDI/SAIFI) und wissenschaftliche Studien. API v2 bietet Tooling, Artefakt-Management und mehrstufige Reasoning-Pipelines. Version 0.8.0 erweitert Positionierung: Von Marktkommunikation zu ganzheitlicher Energiewirtschafts-Expertise."
+  "version": "0.8.1",
+  "description": "KI-gestützte Wissensplattform für die deutsche Energiewirtschaft. Umfasst Marktkommunikation (EDIFACT, GPKE, WiM, GeLi Gas, UTILMD, MSCONS), Regulierung (BNetzA, EnWG, StromNEV, ARegV, §14a EnWG), Netzbetrieb (TAB, VDE-FNN, SAIDI/SAIFI) und wissenschaftliche Studien. API v2 bietet Tooling, Artefakt-Management und mehrstufige Reasoning-Pipelines. Version 0.8.1 erweitert Positionierung: Von Marktkommunikation zu ganzheitlicher Energiewirtschafts-Expertise."
   },
   "servers": [
     {

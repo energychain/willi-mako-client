@@ -141,13 +141,14 @@ describe('Market Partners Search (v0.7.1)', () => {
       expect(response.data).toBeDefined();
     });
 
-    it('should return error for invalid limit', async () => {
-      await expect(
-        client.searchMarketPartners({
-          q: 'test',
-          limit: 25 // Max is 20
-        })
-      ).rejects.toThrow();
+    it('should clamp limit values that exceed the maximum', async () => {
+      const response = await client.searchMarketPartners({
+        q: 'test',
+        limit: 25 // Backend caps at 20
+      });
+
+      expect(response.success).toBe(true);
+      expect(response.data.results.length).toBeLessThanOrEqual(20);
     });
 
     it('should return error for empty query', async () => {

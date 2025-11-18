@@ -1,0 +1,1018 @@
+<!DOCTYPE html><html class="default" lang="en"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>Willi-Mako Client SDK - v0.8.1</title><meta name="description" content="Documentation for Willi-Mako Client SDK"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="assets/style.css"/><link rel="stylesheet" href="assets/highlight.css"/><script defer src="assets/main.js"></script><script async src="assets/icons.js" id="tsd-icons-script"></script><script async src="assets/search.js" id="tsd-search-script"></script><script async src="assets/navigation.js" id="tsd-nav-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar"><div class="tsd-toolbar-contents container"><div class="table-cell" id="tsd-search" data-base="."><div class="field"><label for="tsd-search-field" class="tsd-widget tsd-toolbar-icon search no-caption"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><use href="assets/icons.svg#icon-search"></use></svg></label><input type="text" id="tsd-search-field" aria-label="Search"/></div><div class="field"><div id="tsd-toolbar-links"></div></div><ul class="results"><li class="state loading">Preparing search index...</li><li class="state failure">The search index is not available</li></ul><a href="index.html" class="title">Willi-Mako Client SDK - v0.8.1</a></div><div class="table-cell" id="tsd-widgets"><a href="#" class="tsd-widget tsd-toolbar-icon menu no-caption" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><use href="assets/icons.svg#icon-menu"></use></svg></a></div></div></header><div class="container container-main"><div class="col-content"><div class="tsd-page-title"><h1>Willi-Mako Client SDK - v0.8.1</h1></div><div class="tsd-panel tsd-typography"><a id="md:🔌-willi-mako-client-sdk" class="tsd-anchor"></a><h1 class="tsd-anchor-link">🔌 Willi-Mako Client SDK<a href="#md:🔌-willi-mako-client-sdk" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h1><div align="center">
+<p><a href="https://www.npmjs.com/package/willi-mako-client" target="_blank" class="external"><img src="https://img.shields.io/npm/v/willi-mako-client" alt="npm version"></a>
+<a href="https://github.com/energychain/willi-mako-client/actions/workflows/ci.yml" target="_blank" class="external"><img src="https://github.com/energychain/willi-mako-client/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+<a href="https://codecov.io/gh/energychain/willi-mako-client" target="_blank" class="external"><img src="https://codecov.io/gh/energychain/willi-mako-client/branch/main/graph/badge.svg" alt="codecov"></a>
+<a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
+<a href="https://www.typescriptlang.org/" target="_blank" class="external"><img src="https://img.shields.io/badge/TypeScript-5.0+-blue.svg" alt="TypeScript"></a>
+<a href="https://nodejs.org/" target="_blank" class="external"><img src="https://img.shields.io/badge/Node.js-18+-green.svg" alt="Node.js"></a></p>
+<p><a href="https://codespaces.new/energychain/willi-mako-client" target="_blank" class="external"><img src="https://github.com/codespaces/badge.svg" alt="Open in GitHub Codespaces"></a>
+<a href="https://gitpod.io/#https://github.com/energychain/willi-mako-client" target="_blank" class="external"><img src="https://gitpod.io/button/open-in-gitpod.svg" alt="Open in Gitpod"></a>
+<a href="https://stackblitz.com/github/energychain/willi-mako-client" target="_blank" class="external"><img src="https://developer.stackblitz.com/img/open_in_stackblitz.svg" alt="Open in StackBlitz"></a></p>
+<p><a href="#md:contributors"><img src="https://img.shields.io/github/all-contributors/energychain/willi-mako-client?color=ee8449" alt="All Contributors"></a>
+<a href="https://github.com/sponsors/energychain" target="_blank" class="external"><img src="https://img.shields.io/github/sponsors/energychain?logo=github&amp;color=pink" alt="GitHub Sponsors"></a>
+<a href="./COMMUNITY.md"><img src="https://img.shields.io/badge/Community-Join%20Us-blue" alt="Community"></a></p>
+<p><strong>Offizielles TypeScript SDK &amp; CLI für die AI-Plattform <a href="https://stromhaltig.de" target="_blank" class="external">Willi-Mako</a> von STROMDAO GmbH.</strong></p>
+<p><a href="./docs/">📚 Documentation</a> • <a href="media/USE_CASE_GALLERY.md">🎯 Use Cases</a> • <a href="media/COMMUNITY.md">🤝 Community</a> • <a href="media/SPONSORSHIP.md">💚 Sponsor</a> • <a href="media/CERTIFICATION.md">🏆 Certification</a></p>
+</div>
+<blockquote>
+<p><strong>Kurzüberblick (DE):</strong> Willi-Mako digitalisiert die Marktkommunikation der Energiewirtschaft. Das SDK stellt geprüfte Prozesse rund um UTILMD, MSCONS, ORDERS, PRICAT, INVOIC und weitere Formate für ETL-Pipelines, Compliance-Automatisierung und KI-gestützte Workflows bereit.</p>
+</blockquote>
+<hr>
+<a id="md:📚-table-of-contents" class="tsd-anchor"></a><h2 class="tsd-anchor-link">📚 Table of Contents<a href="#md:📚-table-of-contents" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><ul>
+<li><a href="#md:-about-the-project">About the Project</a></li>
+<li><a href="#md:-key-features">Key Features</a></li>
+<li><a href="#md:-installation">Installation</a></li>
+<li><a href="#md:-quick-start">Quick Start</a>
+<ul>
+<li><a href="#md:local-sdk-quickstart">Local SDK Quickstart</a></li>
+<li><a href="#md:docker-quickstart">Docker Quickstart</a></li>
+<li><a href="#md:mcp-server-quickstart">MCP Server Quickstart</a></li>
+<li><a href="#md:lightweight-web-ui-quickstart">Lightweight Web UI Quickstart</a></li>
+<li><a href="#md:%EF%B8%8F-cloud-ide-quickstarts">☁️ Cloud IDE Quickstarts</a>
+<ul>
+<li><a href="#md:github-codespaces-recommended">GitHub Codespaces</a></li>
+<li><a href="#md:gitpod">Gitpod</a></li>
+<li><a href="#md:stackblitz-web-dashboard-only">StackBlitz</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#md:-core-use-cases">Core Use Cases</a></li>
+<li><a href="#md:-api-overview">API Overview</a></li>
+<li><a href="#md:-cli-usage">CLI Usage</a></li>
+<li><a href="#md:-examples">Examples</a></li>
+<li><a href="#md:-documentation">Documentation</a></li>
+<li><a href="#md:-community">Community</a></li>
+<li><a href="#md:-development">Development</a>
+<ul>
+<li><a href="#md:cicd-pipeline">CI/CD Pipeline</a></li>
+</ul>
+</li>
+<li><a href="#md:-integrations-docker-power-bi-n8n">Integrations (Docker, Power BI, n8n)</a></li>
+<li><a href="#md:-contributing">Contributing</a></li>
+<li><a href="#md:-support">Support</a></li>
+<li><a href="#md:-license">License</a></li>
+</ul>
+<hr>
+<a id="md:🌍-about-the-project" class="tsd-anchor"></a><h2 class="tsd-anchor-link">🌍 About the Project<a href="#md:🌍-about-the-project" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><p><strong>Willi-Mako</strong> ist die Wissens- und Automatisierungsplattform für Marktkommunikation (<em>MaKo</em>) und ganzheitliche Energiewirtschafts-Expertise. Ab Version 0.8.0 erweitert die Plattform ihre Positionierung von reiner Marktkommunikation zu umfassender Energiewirtschafts-Kompetenz, die neben EDIFACT-Standards nun auch wissenschaftliche Studien, regulatorische Veröffentlichungen (BNetzA, BDEW, VKU) und Asset Management für Netzbetreiber abdeckt.</p>
+<p>Sie unterstützt Marktrollen wie <strong>Lieferanten</strong>, <strong>Netzbetreiber</strong> und <strong>Messstellenbetreiber</strong> bei Aufgaben rund um:</p>
+<ul>
+<li>📊 <strong>Marktkommunikation</strong>: edi@energy-Standards (UTILMD, MSCONS, ORDERS, PRICAT, INVOIC), GPKE, WiM, GeLi Gas</li>
+<li>⚖️ <strong>Regulierung</strong>: EnWG, StromNEV, ARegV, §14a EnWG, BNetzA-Festlegungen und Monitoringberichte</li>
+<li>🔌 <strong>Netzbetrieb</strong>: TAB (Technische Anschlussbedingungen), VDE-FNN, SAIDI/SAIFI, Asset Management (ISO 55000)</li>
+<li>📚 <strong>Wissenschaft</strong>: Studien, Tagungsbände und Veröffentlichungen zu Energiewirtschaftsthemen</li>
+</ul>
+<p>Mit dem SDK erhalten Sie:</p>
+<ul>
+<li>⚡ Einen typisierten TypeScript-Client für das produktive API v2 (<code>https://stromhaltig.de/api/v2</code>).</li>
+<li>🖥️ Ein CLI (<code>willi-mako</code>) für Ad-hoc-Tests, Automatisierung und CI/CD.</li>
+<li>📦 Eine gebündelte OpenAPI-Spezifikation für Code-Generatoren und Dritttools.</li>
+<li>📘 Dokumentation, Beispiele und Integrationsanleitungen (Docker, MCP, GitPod, Power BI, n8n).</li>
+</ul>
+<p><img src="media/willi-mako-architecture.svg" alt="Willi-Mako Architekturüberblick"></p>
+<hr>
+<a id="md:✨-key-features" class="tsd-anchor"></a><h2 class="tsd-anchor-link">✨ Key Features<a href="#md:✨-key-features" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><ul>
+<li>🚀 <strong>Zero-config defaults</strong> – sofort produktiv mit <code>https://stromhaltig.de/api/v2</code>.</li>
+<li>🔐 <strong>Flexible Auth</strong> – Login-Helper mit optionaler Tokenpersistenz oder direkte Verwendung von Service Tokens.</li>
+<li>🧱 <strong>Session Lifecycle APIs</strong> – Sessions anlegen, inspizieren, bereinigen und dabei Präferenzen/Kontexte steuern.</li>
+<li>🧠 <strong>Conversational Stack</strong> – Chat, semantische Suche, Reasoning, Kontextauflösung und Klarstellungsanalyse aus einer Hand.</li>
+<li>� <strong>Erweiterte Wissensabdeckung (v0.8.0)</strong> – Combined-Search und willi-netz Collection umfassen nun wissenschaftliche Studien, BNetzA-Regulierung, BDEW-, VKU- und andere Veröffentlichungen für ganzheitliche Energiewirtschafts-Expertise.</li>
+<li>�🛠️ <strong>Tooling Sandbox</strong> – sichere Node.js-Ausführung für ETL, Validierung, KI-Skripte.</li>
+<li>🗂️ <strong>Artifact Storage</strong> – persistente Protokolle, Audit-Trails und EDIFACT-Snapshots.</li>
+<li>📄 <strong>Document Management</strong> – Hochladen, Verwalten und Durchsuchen von PDFs, DOCX, TXT und MD-Dateien in der Knowledge Base mit automatischer Textextraktion und AI-Kontext-Steuerung.</li>
+<li>📦 <strong>OpenAPI Bundle</strong> – <code>schemas/openapi.json</code> für offline Analysen.</li>
+<li>🖥️ <strong>CLI &amp; MCP</strong> – vollständige Befehlsgruppen (<code>auth</code>, <code>sessions</code>, <code>chat</code>, <code>retrieval</code>, <code>edifact</code>, <code>market-partners</code>, …) plus MCP-Server für KI-Agenten.</li>
+<li>🔍 <strong>EDIFACT Message Analyzer</strong> – Analyse, Validierung, Erklärung, Modifikation und Chat für EDIFACT-Nachrichten (UTILMD, MSCONS, ORDERS, etc.).</li>
+<li>🔎 <strong>Market Partners Search</strong> – Öffentliche Suche nach Marktpartnern über BDEW/EIC-Codes, Firmennamen oder Städten mit detaillierten Kontakt- und Software-Informationen.</li>
+<li>🧪 <strong>Vitest Testsuite</strong> – Vertrauen in Stabilität und Regressionen.</li>
+<li>🛡️ <strong>Compliance Fokus</strong> – automatisierbare Prüfungen für UTILMD, MSCONS, ORDERS, PRICAT, INVOIC.</li>
+</ul>
+<hr>
+<a id="md:📦-installation" class="tsd-anchor"></a><h2 class="tsd-anchor-link">📦 Installation<a href="#md:📦-installation" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><pre><code class="bash"><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">install</span><span class="hl-1"> </span><span class="hl-2">willi-mako-client</span><br/><span class="hl-3"># oder</span><br/><span class="hl-0">pnpm</span><span class="hl-1"> </span><span class="hl-2">add</span><span class="hl-1"> </span><span class="hl-2">willi-mako-client</span><br/><span class="hl-3"># oder</span><br/><span class="hl-0">yarn</span><span class="hl-1"> </span><span class="hl-2">add</span><span class="hl-1"> </span><span class="hl-2">willi-mako-client</span>
+</code><button type="button">Copy</button></pre>
+
+<blockquote>
+<p>Voraussetzung: <strong>Node.js 18+</strong> (inkl. nativer <code>fetch</code>) sowie optional <strong>TypeScript 5+</strong> für Projekte mit Typprüfung.</p>
+</blockquote>
+<hr>
+<a id="md:🚀-quick-start" class="tsd-anchor"></a><h2 class="tsd-anchor-link">🚀 Quick Start<a href="#md:🚀-quick-start" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><a id="md:local-sdk-quickstart" class="tsd-anchor"></a><h3 class="tsd-anchor-link">Local SDK Quickstart<a href="#md:local-sdk-quickstart" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><ol>
+<li>
+<p><strong>Token setzen</strong> (über das Willi-Mako-Dashboard erhältlich):</p>
+<pre><code class="bash"><span class="hl-4">export</span><span class="hl-1"> </span><span class="hl-5">WILLI_MAKO_TOKEN</span><span class="hl-1">=</span><span class="hl-2">&quot;&lt;dein-token&gt;&quot;</span>
+</code><button type="button">Copy</button></pre>
+
+</li>
+<li>
+<p><strong>Client initialisieren und API prüfen</strong>:</p>
+<pre><code class="typescript"><span class="hl-6">import</span><span class="hl-1"> { </span><span class="hl-5">WilliMakoClient</span><span class="hl-1"> } </span><span class="hl-6">from</span><span class="hl-1"> </span><span class="hl-2">&#39;willi-mako-client&#39;</span><span class="hl-1">;</span><br/><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">client</span><span class="hl-1"> = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-0">WilliMakoClient</span><span class="hl-1">();</span><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">schema</span><span class="hl-1"> = </span><span class="hl-6">await</span><span class="hl-1"> </span><span class="hl-5">client</span><span class="hl-1">.</span><span class="hl-0">getRemoteOpenApiDocument</span><span class="hl-1">();</span><br/><br/><span class="hl-5">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-2">&#39;Verbunden mit:&#39;</span><span class="hl-1">, (</span><span class="hl-5">schema</span><span class="hl-1"> </span><span class="hl-6">as</span><span class="hl-1"> </span><span class="hl-8">any</span><span class="hl-1">)?.</span><span class="hl-5">info</span><span class="hl-1">?.</span><span class="hl-5">title</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+</li>
+<li>
+<p><strong>Sandbox-Job starten</strong> (UTILMD-Dekodierung als Beispiel):</p>
+<pre><code class="typescript"><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">job</span><span class="hl-1"> = </span><span class="hl-6">await</span><span class="hl-1"> </span><span class="hl-5">client</span><span class="hl-1">.</span><span class="hl-0">createNodeScriptJob</span><span class="hl-1">({</span><br/><span class="hl-1">  </span><span class="hl-5">sessionId:</span><span class="hl-1"> </span><span class="hl-2">&#39;session-utilmd-demo&#39;</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-5">source:</span><span class="hl-1"> </span><span class="hl-2">`</span><br/><span class="hl-2">    const message = &#39;UNH+1+UTILMD:D:04B:UN:2.3e&#39;;</span><br/><span class="hl-2">    const segments = message.split(&#39;+&#39;);</span><br/><span class="hl-2">    console.log(JSON.stringify({ type: segments[1], segments }));</span><br/><span class="hl-2">  `</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-5">timeoutMs:</span><span class="hl-1"> </span><span class="hl-9">5000</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-5">metadata:</span><span class="hl-1"> { </span><span class="hl-5">format:</span><span class="hl-1"> </span><span class="hl-2">&#39;UTILMD&#39;</span><span class="hl-1">, </span><span class="hl-5">purpose:</span><span class="hl-1"> </span><span class="hl-2">&#39;parsing-demo&#39;</span><span class="hl-1"> }</span><br/><span class="hl-1">});</span><br/><br/><span class="hl-5">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-2">&#39;Job-ID:&#39;</span><span class="hl-1">, </span><span class="hl-5">job</span><span class="hl-1">.</span><span class="hl-5">data</span><span class="hl-1">.</span><span class="hl-5">job</span><span class="hl-1">.</span><span class="hl-5">id</span><span class="hl-1">, </span><span class="hl-2">&#39;Status:&#39;</span><span class="hl-1">, </span><span class="hl-5">job</span><span class="hl-1">.</span><span class="hl-5">data</span><span class="hl-1">.</span><span class="hl-5">job</span><span class="hl-1">.</span><span class="hl-5">status</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+</li>
+<li>
+<p><strong>Artefakt speichern</strong> (Audit-Report oder ETL-Ergebnis):</p>
+<pre><code class="typescript"><span class="hl-6">await</span><span class="hl-1"> </span><span class="hl-5">client</span><span class="hl-1">.</span><span class="hl-0">createArtifact</span><span class="hl-1">({</span><br/><span class="hl-1">  </span><span class="hl-5">sessionId:</span><span class="hl-1"> </span><span class="hl-2">&#39;session-utilmd-demo&#39;</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-5">type:</span><span class="hl-1"> </span><span class="hl-2">&#39;compliance-report&#39;</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-5">name:</span><span class="hl-1"> </span><span class="hl-2">&#39;utilmd-audit.json&#39;</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-5">mimeType:</span><span class="hl-1"> </span><span class="hl-2">&#39;application/json&#39;</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-5">encoding:</span><span class="hl-1"> </span><span class="hl-2">&#39;utf8&#39;</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-5">content:</span><span class="hl-1"> </span><span class="hl-7">JSON</span><span class="hl-1">.</span><span class="hl-0">stringify</span><span class="hl-1">({ </span><span class="hl-5">valid:</span><span class="hl-1"> </span><span class="hl-4">true</span><span class="hl-1">, </span><span class="hl-5">issues:</span><span class="hl-1"> [] }),</span><br/><span class="hl-1">  </span><span class="hl-5">tags:</span><span class="hl-1"> [</span><span class="hl-2">&#39;utilmd&#39;</span><span class="hl-1">, </span><span class="hl-2">&#39;audit&#39;</span><span class="hl-1">, </span><span class="hl-2">&#39;demo&#39;</span><span class="hl-1">]</span><br/><span class="hl-1">});</span>
+</code><button type="button">Copy</button></pre>
+
+</li>
+</ol>
+<a id="md:docker-quickstart" class="tsd-anchor"></a><h3 class="tsd-anchor-link">Docker Quickstart<a href="#md:docker-quickstart" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><p>Führen Sie den Client isoliert in einem Container aus. Im Ordner <a href="./examples/docker"><code>examples/docker/</code></a> finden Sie eine referenzierte <code>Dockerfile</code>.</p>
+<ol>
+<li>
+<p><strong>Image bauen</strong>:</p>
+<pre><code class="bash"><span class="hl-0">docker</span><span class="hl-1"> </span><span class="hl-2">build</span><span class="hl-1"> </span><span class="hl-4">-t</span><span class="hl-1"> </span><span class="hl-2">willi-mako-cli</span><span class="hl-1"> </span><span class="hl-2">./examples/docker</span>
+</code><button type="button">Copy</button></pre>
+
+</li>
+<li>
+<p><strong>CLI im Container ausführen</strong>:</p>
+<pre><code class="bash"><span class="hl-0">docker</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-4">--rm</span><span class="hl-1"> </span><span class="hl-10">\</span><br/><span class="hl-1">  </span><span class="hl-4">-e</span><span class="hl-1"> </span><span class="hl-2">WILLI_MAKO_TOKEN=&quot;</span><span class="hl-5">$WILLI_MAKO_TOKEN</span><span class="hl-2">&quot;</span><span class="hl-1"> </span><span class="hl-10">\</span><br/><span class="hl-1">  </span><span class="hl-2">willi-mako-cli</span><span class="hl-1"> </span><span class="hl-2">openapi</span>
+</code><button type="button">Copy</button></pre>
+
+</li>
+<li>
+<p><strong>Eigenes Skript mounten</strong> (z. B. <code>scripts/job.ts</code>):</p>
+<pre><code class="bash"><span class="hl-0">docker</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-4">--rm</span><span class="hl-1"> </span><span class="hl-10">\</span><br/><span class="hl-1">  </span><span class="hl-4">-e</span><span class="hl-1"> </span><span class="hl-2">WILLI_MAKO_TOKEN=&quot;</span><span class="hl-5">$WILLI_MAKO_TOKEN</span><span class="hl-2">&quot;</span><span class="hl-1"> </span><span class="hl-10">\</span><br/><span class="hl-1">  </span><span class="hl-4">-v</span><span class="hl-1"> </span><span class="hl-2">&quot;$(</span><span class="hl-0">pwd</span><span class="hl-2">)/scripts:/workspace/scripts:ro&quot;</span><span class="hl-1"> </span><span class="hl-10">\</span><br/><span class="hl-1">  </span><span class="hl-4">--entrypoint</span><span class="hl-1"> </span><span class="hl-2">node</span><span class="hl-1"> </span><span class="hl-10">\</span><br/><span class="hl-1">  </span><span class="hl-2">willi-mako-cli</span><span class="hl-1"> </span><span class="hl-4">--loader</span><span class="hl-1"> </span><span class="hl-2">ts-node/esm</span><span class="hl-1"> </span><span class="hl-2">/workspace/scripts/job.ts</span>
+</code><button type="button">Copy</button></pre>
+
+</li>
+</ol>
+<p>Der Container installiert das SDK global und setzt <code>willi-mako</code> als EntryPoint. Weitere Hinweise siehe <a href="./docs/INTEGRATIONS.md#docker-tooling-workspaces"><code>docs/INTEGRATIONS.md</code></a>.</p>
+<a id="md:mcp-server-quickstart" class="tsd-anchor"></a><h3 class="tsd-anchor-link">MCP Server Quickstart<a href="#md:mcp-server-quickstart" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><p>Expose die Plattform als <strong>Model Context Protocol (MCP)</strong>-Server, damit interne LLMs geprüfte Marktkommunikationsprozesse anstoßen können. Die CLI kapselt das komplette Setup, eigene Anpassungen können weiterhin auf <a href="media/mcp-server.ts"><code>examples/mcp-server.ts</code></a> aufbauen.</p>
+<ol>
+<li>
+<p><strong>Server starten</strong> – Standardmäßig lauscht der Transport auf <code>http://localhost:7337/mcp</code>:</p>
+<pre><code class="bash"><span class="hl-0">willi-mako</span><span class="hl-1"> </span><span class="hl-2">mcp</span><span class="hl-1"> </span><span class="hl-4">--port</span><span class="hl-1"> </span><span class="hl-9">7337</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Authentifizierungsmöglichkeiten:</p>
+<ul>
+<li><strong>Bearer</strong>: Sende einen <code>Authorization: Bearer &lt;token&gt;</code>-Header oder setze <code>WILLI_MAKO_TOKEN</code>. Die CLI akzeptiert weiterhin <code>--token</code>.</li>
+<li><strong>Basic</strong>: Alternativ können Clients <code>Authorization: Basic base64(email:password)</code> schicken. Der Server tauscht die Credentials automatisch gegen einen JWT und cached ihn.</li>
+<li><strong>URL-Bearer</strong>: Optional den JWT als erstes Pfadsegment übergeben (<code>/{token}/mcp</code>). Der Server interpretiert das Segment als Bearer-Token, entfernt es aus der weitergeleiteten URL und protokolliert nur den bereinigten Pfad.</li>
+<li><strong>Tool-Login</strong>: Ohne Header lässt sich <code>willi-mako-login</code> nutzen; das Token wird pro MCP-Session gespeichert.</li>
+<li><strong>Ad-hoc Sessions</strong>: Wenn Tools ohne <code>sessionId</code> aufgerufen werden, erstellt der Server automatisch eine Session und gibt die ID im Response-Body zurück.</li>
+</ul>
+<p>👉 Für Schritt-für-Schritt-Anleitungen zu VS Code, Claude, ChatGPT, anythingLLM und n8n siehe <a href="./docs/INTEGRATIONS.md#schritt-f%C3%BCr-schritt-mcp-integrationen-in-g%C3%A4ngigen-umgebungen">docs/INTEGRATIONS.md</a>.</p>
+<p>📚 Eine ausführliche Service-Dokumentation (Architektur, Deployment, Public Endpoint <code>https://mcp.stromhaltig.de/</code>) findest du in <a href="media/MCP_SERVICE.md">docs/MCP_SERVICE.md</a>.</p>
+</li>
+<li>
+<p><strong>Bereitgestellte Tools &amp; Ressourcen</strong></p>
+<ul>
+<li><code>willi-mako-login</code>, <code>willi-mako-create-session</code>, <code>willi-mako-get-session</code>, <code>willi-mako-delete-session</code></li>
+<li><code>willi-mako-chat</code>, <code>willi-mako-semantic-search</code>, <code>willi-mako-reasoning-generate</code></li>
+<li><code>willi-mako-resolve-context</code>, <code>willi-mako-clarification-analyze</code></li>
+<li><code>willi-mako-create-node-script</code>, <code>willi-mako-get-tool-job</code>, <code>willi-mako-create-artifact</code></li>
+<li><strong>Document Management</strong>: <code>willi-mako-upload-document</code>, <code>willi-mako-upload-multiple-documents</code>, <code>willi-mako-list-documents</code>, <code>willi-mako-get-document</code>, <code>willi-mako-update-document</code>, <code>willi-mako-delete-document</code>, <code>willi-mako-reprocess-document</code>, <code>willi-mako-toggle-ai-context</code></li>
+<li>Ressource <code>willi-mako://openapi</code> – liefert die aktuelle OpenAPI-Spezifikation</li>
+</ul>
+<p>💡 <strong>Document Upload via MCP:</strong> Die Upload-Tools unterstützen zwei Methoden:</p>
+<ul>
+<li><strong>URL-Download</strong>: Dokumente von öffentlich zugänglichen URLs herunterladen und hochladen</li>
+<li><strong>Base64-Encoding</strong>: Dokumente als Base64-kodierte Strings übergeben (ideal für AI-Agents)</li>
+</ul>
+<p>Beispiel-Aufruf in AI-Chat:</p>
+<pre><code><span class="hl-5">Lade</span><span class="hl-1"> </span><span class="hl-5">das</span><span class="hl-1"> </span><span class="hl-7">PDF</span><span class="hl-1"> </span><span class="hl-5">von</span><span class="hl-1"> </span><span class="hl-11">https</span><span class="hl-1">:</span><span class="hl-3">//example.com/compliance.pdf hoch</span><br/><span class="hl-5">mit</span><span class="hl-1"> </span><span class="hl-5">dem</span><span class="hl-1"> </span><span class="hl-5">Titel</span><span class="hl-1"> </span><span class="hl-2">&quot;GPKE Compliance Guide 2024&quot;</span>
+</code><button>Copy</button></pre>
+
+<p>Der Agent verwendet dann:</p>
+<pre><code class="json"><span class="hl-1">{</span><br/><span class="hl-1">  </span><span class="hl-12">&quot;source&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;url&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-12">&quot;url&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;https://example.com/compliance.pdf&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-12">&quot;filename&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;compliance.pdf&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-12">&quot;title&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;GPKE Compliance Guide 2024&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-12">&quot;tags&quot;</span><span class="hl-1">: [</span><span class="hl-2">&quot;gpke&quot;</span><span class="hl-1">, </span><span class="hl-2">&quot;compliance&quot;</span><span class="hl-1">]</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<p>💡 <strong>Domänenwissen an Bord:</strong> Chat &amp; Reasoning decken tiefgehende Prozesse der Energiewirtschaft ab (GPKE, WiM, GeLi Gas, Mehr-/Mindermengen, Lieferantenwechsel), berücksichtigen Regularien wie EnWG, StromNZV, StromNEV, EEG sowie MessEG/MessEV und kennen die Spezifika der EDIFACT/edi@energy-Formate (BDEW MaKo, UTILMD, MSCONS, ORDERS, PRICAT, INVOIC). Für wiederkehrende Prüf-Checklisten können Sie zusätzliche MCP-Tools definieren, die das Chat-Tool mit vordefinierten Prompts aufrufen, statt eigene Skripte zu pflegen.</p>
+</li>
+<li>
+<p><strong>VS Code / GitHub Copilot verbinden</strong>:</p>
+<pre><code class="bash"><span class="hl-0">code</span><span class="hl-1"> </span><span class="hl-4">--add-mcp</span><span class="hl-1"> </span><span class="hl-2">&#39;{&quot;name&quot;:&quot;willi-mako&quot;,&quot;type&quot;:&quot;http&quot;,&quot;url&quot;:&quot;http://localhost:7337/mcp&quot;}&#39;</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Danach lassen sich die Tools direkt in Copilot-Chat verwenden (z. B. <code>@willi-mako-semantic-search</code>).</p>
+</li>
+<li>
+<p><strong>Weitere Clients</strong>: Claude Desktop, Cursor, LangChain, Semantic Kernel etc. sprechen ebenfalls den Streamable-HTTP-Transport an. Details siehe <a href="./docs/INTEGRATIONS.md#mcp-server-und-ki-entwicklungsumgebungen"><code>docs/INTEGRATIONS.md</code></a>.</p>
+</li>
+</ol>
+<a id="md:lightweight-web-ui-quickstart" class="tsd-anchor"></a><h3 class="tsd-anchor-link">Lightweight Web UI Quickstart<a href="#md:lightweight-web-ui-quickstart" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><p>Für MaKo-Fachbereiche ohne lokale Node.js-Installation liefert die CLI ein gebündeltes Dashboard (Basis: <a href="media/web-dashboard.ts"><code>src/demos/web-dashboard.ts</code></a>).</p>
+<ol>
+<li>
+<p><strong>Abhängigkeiten installieren</strong> (CLI &amp; Dashboard werden gemeinsam ausgeliefert):</p>
+<pre><code class="bash"><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">install</span>
+</code><button type="button">Copy</button></pre>
+
+</li>
+<li>
+<p><strong>Server starten</strong>:</p>
+<pre><code class="bash"><span class="hl-0">willi-mako</span><span class="hl-1"> </span><span class="hl-4">--token</span><span class="hl-1"> </span><span class="hl-2">&quot;</span><span class="hl-5">$WILLI_MAKO_TOKEN</span><span class="hl-2">&quot;</span><span class="hl-1"> </span><span class="hl-2">serv</span><span class="hl-1"> </span><span class="hl-4">--port</span><span class="hl-1"> </span><span class="hl-9">4173</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Ohne <code>--token</code> startet der Server ebenfalls und ermöglicht den Login über das Formular.</p>
+</li>
+<li>
+<p><strong>Im Browser öffnen</strong>: <code>http://localhost:4173</code></p>
+</li>
+<li>
+<p><strong>Formular verwenden</strong> – EDIFACT-Message einfügen, Preview starten. Der Server erstellt intern Sandbox-Jobs, pollt Ergebnisse und zeigt Output sowie Artefakt-Vorschläge an. Eigene Anpassungen können auf <a href="media/web-dashboard-1.ts"><code>examples/web-dashboard.ts</code></a> aufsetzen.</p>
+</li>
+</ol>
+<p><img src="media/web-dashboard-screenshot.svg" alt="Web Dashboard Vorschau"></p>
+<p>Weitere Anpassungen (Authentifizierung, Mehrbenutzer, Branding) sind in <a href="./docs/INTEGRATIONS.md#lightweight-web-interface"><code>docs/INTEGRATIONS.md</code></a> beschrieben.</p>
+<hr>
+<a id="md:☁️-cloud-ide-quickstarts" class="tsd-anchor"></a><h2 class="tsd-anchor-link">☁️ Cloud IDE Quickstarts<a href="#md:☁️-cloud-ide-quickstarts" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><p><strong>Für Einsteiger ohne lokale Installation</strong> – Teste das SDK direkt im Browser mit vollständiger Entwicklungsumgebung!</p>
+<p>Wähle deine bevorzugte Cloud-IDE:</p>
+<a id="md:github-codespaces-⭐-empfohlen" class="tsd-anchor"></a><h3 class="tsd-anchor-link">GitHub Codespaces (⭐ Empfohlen)<a href="#md:github-codespaces-⭐-empfohlen" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><p><a href="https://codespaces.new/energychain/willi-mako-client" target="_blank" class="external"><img src="https://github.com/codespaces/badge.svg" alt="Open in GitHub Codespaces"></a></p>
+<p><strong>Beste Wahl für:</strong> Vollständige SDK-Features, CLI-Tools, nahtlose GitHub-Integration</p>
+<p><strong>Vorteile:</strong></p>
+<ul>
+<li>✅ <strong>60 Stunden/Monat kostenlos</strong> (mehr als Gitpod!)</li>
+<li>✅ Läuft im Browser ODER in VS Code Desktop</li>
+<li>✅ Nahtlose GitHub-Integration (Projekt liegt schon hier!)</li>
+<li>✅ Sehr schnelle Start-Zeiten (~15-30 Sekunden)</li>
+<li>✅ Secrets Management für API-Tokens</li>
+<li>✅ Perfekt für TypeScript/Node.js/CLI</li>
+</ul>
+<p><strong>Schnellstart:</strong></p>
+<ol>
+<li>
+<p><strong>Codespace erstellen</strong>: Klicke auf Button oben oder öffne:</p>
+<pre><code><span class="hl-11">https</span><span class="hl-1">:</span><span class="hl-3">//codespaces.new/energychain/willi-mako-client</span>
+</code><button>Copy</button></pre>
+
+</li>
+<li>
+<p><strong>Registrieren</strong>: Kostenloser Account bei <a href="https://stromhaltig.de/app/" target="_blank" class="external">stromhaltig.de/app/</a></p>
+</li>
+<li>
+<p><strong>Credentials setzen</strong>:</p>
+<pre><code class="bash"><span class="hl-4">export</span><span class="hl-1"> </span><span class="hl-5">WILLI_MAKO_EMAIL</span><span class="hl-1">=</span><span class="hl-2">&#39;deine@email.de&#39;</span><br/><span class="hl-4">export</span><span class="hl-1"> </span><span class="hl-5">WILLI_MAKO_PASSWORD</span><span class="hl-1">=</span><span class="hl-2">&#39;dein-passwort&#39;</span>
+</code><button type="button">Copy</button></pre>
+
+<p>💎 <strong>Pro-Tipp:</strong> Speichere Credentials als <a href="https://github.com/settings/codespaces" target="_blank" class="external">Codespaces Secrets</a> für automatisches Laden!</p>
+</li>
+<li>
+<p><strong>Use Cases testen</strong>:</p>
+<pre><code class="bash"><span class="hl-3"># Marktpartner suchen (kein Login!)</span><br/><span class="hl-0">willi-mako</span><span class="hl-1"> </span><span class="hl-2">market-partners</span><span class="hl-1"> </span><span class="hl-2">search</span><span class="hl-1"> </span><span class="hl-4">-q</span><span class="hl-1"> </span><span class="hl-2">&quot;Netze BW&quot;</span><br/><br/><span class="hl-3"># EDIFACT analysieren</span><br/><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-2">example:edifact-analyze</span><br/><br/><span class="hl-3"># Lieferantenwechsel validieren</span><br/><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-2">example:utilmd</span>
+</code><button type="button">Copy</button></pre>
+
+</li>
+</ol>
+<p><strong>📖 Vollständige Anleitung:</strong> <a href="media/CODESPACES_QUICKSTART.md"><code>docs/CODESPACES_QUICKSTART.md</code></a> – 7 Use Cases mit fachlichen + technischen Erklärungen!</p>
+<hr>
+<a id="md:gitpod" class="tsd-anchor"></a><h3 class="tsd-anchor-link">Gitpod<a href="#md:gitpod" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><p><a href="https://gitpod.io/#https://github.com/energychain/willi-mako-client" target="_blank" class="external"><img src="https://gitpod.io/button/open-in-gitpod.svg" alt="Open in Gitpod"></a></p>
+<p><strong>Beste Wahl für:</strong> Alternative zu Codespaces, Multi-Git-Provider (GitHub, GitLab, Bitbucket)</p>
+<p><strong>Vorteile:</strong></p>
+<ul>
+<li>✅ 50 Stunden/Monat kostenlos</li>
+<li>✅ Unterstützt GitHub, GitLab, Bitbucket</li>
+<li>✅ Schneller Start (~30 Sekunden)</li>
+<li>✅ Vollständige SDK-Features</li>
+</ul>
+<p><strong>Schnellstart:</strong></p>
+<ol>
+<li>
+<p><strong>Workspace öffnen</strong>:</p>
+<pre><code><span class="hl-11">https</span><span class="hl-1">:</span><span class="hl-3">//gitpod.io/#https://github.com/energychain/willi-mako-client</span>
+</code><button>Copy</button></pre>
+
+</li>
+<li>
+<p><strong>Credentials setzen</strong>:</p>
+<pre><code class="bash"><span class="hl-4">export</span><span class="hl-1"> </span><span class="hl-5">WILLI_MAKO_EMAIL</span><span class="hl-1">=</span><span class="hl-2">&#39;deine@email.de&#39;</span><br/><span class="hl-4">export</span><span class="hl-1"> </span><span class="hl-5">WILLI_MAKO_PASSWORD</span><span class="hl-1">=</span><span class="hl-2">&#39;dein-passwort&#39;</span>
+</code><button type="button">Copy</button></pre>
+
+</li>
+<li>
+<p><strong>Testen</strong>:</p>
+<pre><code class="bash"><span class="hl-0">willi-mako</span><span class="hl-1"> </span><span class="hl-2">market-partners</span><span class="hl-1"> </span><span class="hl-2">search</span><span class="hl-1"> </span><span class="hl-4">-q</span><span class="hl-1"> </span><span class="hl-2">&quot;Netze BW&quot;</span><br/><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-2">example:utilmd</span>
+</code><button type="button">Copy</button></pre>
+
+</li>
+</ol>
+<p><strong>📖 Vollständige Anleitung:</strong> <a href="media/GITPOD_QUICKSTART.md"><code>docs/GITPOD_QUICKSTART.md</code></a> – speziell für Einsteiger!</p>
+<hr>
+<a id="md:stackblitz-web-dashboard-only" class="tsd-anchor"></a><h3 class="tsd-anchor-link">StackBlitz (Web-Dashboard only)<a href="#md:stackblitz-web-dashboard-only" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><p><a href="https://stackblitz.com/github/energychain/willi-mako-client" target="_blank" class="external"><img src="https://developer.stackblitz.com/img/open_in_stackblitz.svg" alt="Open in StackBlitz"></a></p>
+<p><strong>Beste Wahl für:</strong> Schnelle Web-Dashboard-Demo ohne Setup</p>
+<p><strong>Vorteile:</strong></p>
+<ul>
+<li>✅ <strong>Instant-Start</strong> (läuft komplett im Browser!)</li>
+<li>✅ Keine Registrierung erforderlich</li>
+<li>✅ Perfekt für Web-UI-Prototyping</li>
+<li>✅ Kostenlos unbegrenzt</li>
+</ul>
+<p><strong>Einschränkungen:</strong></p>
+<ul>
+<li>⚠️ Nur Web-Dashboard (<code>examples/web-dashboard.ts</code>)</li>
+<li>⚠️ CLI-Tools nicht verfügbar</li>
+<li>⚠️ Sandbox-Jobs eingeschränkt</li>
+</ul>
+<p><strong>Schnellstart:</strong></p>
+<pre><code><span class="hl-11">https</span><span class="hl-1">:</span><span class="hl-3">//stackblitz.com/github/energychain/willi-mako-client</span>
+</code><button>Copy</button></pre>
+
+<p><strong>📖 Details:</strong> <a href="media/STACKBLITZ.md"><code>docs/STACKBLITZ.md</code></a></p>
+<hr>
+<a id="md:🆚-vergleich-cloud-ides" class="tsd-anchor"></a><h3 class="tsd-anchor-link">🆚 Vergleich Cloud-IDEs<a href="#md:🆚-vergleich-cloud-ides" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Codespaces ⭐</th>
+<th>Gitpod</th>
+<th>StackBlitz</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Kostenlos/Monat</strong></td>
+<td>60h</td>
+<td>50h</td>
+<td>∞</td>
+</tr>
+<tr>
+<td><strong>CLI-Tools</strong></td>
+<td>✅</td>
+<td>✅</td>
+<td>❌</td>
+</tr>
+<tr>
+<td><strong>SDK vollständig</strong></td>
+<td>✅</td>
+<td>✅</td>
+<td>⚠️</td>
+</tr>
+<tr>
+<td><strong>Web-Dashboard</strong></td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+</tr>
+<tr>
+<td><strong>Start-Zeit</strong></td>
+<td>~15s</td>
+<td>~30s</td>
+<td>~5s</td>
+</tr>
+<tr>
+<td><strong>VS Code Desktop</strong></td>
+<td>✅</td>
+<td>✅</td>
+<td>❌</td>
+</tr>
+<tr>
+<td><strong>Secrets Management</strong></td>
+<td>✅</td>
+<td>⚠️</td>
+<td>❌</td>
+</tr>
+</tbody>
+</table>
+<p><strong>💡 Empfehlung:</strong></p>
+<ul>
+<li><strong>Vollständiges SDK</strong>: GitHub Codespaces oder Gitpod</li>
+<li><strong>Nur Web-Demo</strong>: StackBlitz</li>
+</ul>
+<hr>
+<a id="md:🧩-core-use-cases" class="tsd-anchor"></a><h2 class="tsd-anchor-link">🧩 Core Use Cases<a href="#md:🧩-core-use-cases" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><ul>
+<li><strong>Compliance &amp; Audit</strong> – Prüfen von UTILMD/PRICAT/INVOIC vor Rechnungsstellung, revisionssichere Reports ablegen.</li>
+<li><strong>Klärfallanalyse</strong> – MSCONS/ORDERS-Flows reproduzieren, Abweichungen in Messwerten oder Stammdaten identifizieren.</li>
+<li><strong>ETL Automation</strong> – Transformationsjobs &amp; Validierungsskripte über die Sandbox orchestrieren.</li>
+<li><strong>Rollen-spezifisch</strong> – Lieferanten, Netzbetreiber, MSBs automatisieren Stammdatenabgleiche, Lieferantenwechsel, Clearing.</li>
+</ul>
+<hr>
+<a id="md:🧭-api-overview" class="tsd-anchor"></a><h2 class="tsd-anchor-link">🧭 API Overview<a href="#md:🧭-api-overview" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><table>
+<thead>
+<tr>
+<th>Methode</th>
+<th>Zweck</th>
+<th>Typische Formate</th>
+<th>Hinweise</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>login()</code></td>
+<td>JWT-Token aus E-Mail/Passwort erzeugen</td>
+<td>–</td>
+<td>Optional automatische Token-Persistenz</td>
+</tr>
+<tr>
+<td><code>createSession()</code></td>
+<td>Session mit Präferenzen/Kontext anlegen</td>
+<td>UTILMD, MSCONS, ORDERS, PRICAT, INVOIC</td>
+<td>TTL &amp; Preferences steuerbar</td>
+</tr>
+<tr>
+<td><code>getSession()</code> / <code>deleteSession()</code></td>
+<td>Session inspizieren oder entfernen</td>
+<td>–</td>
+<td>Liefert Policy-Flags &amp; Workspace-Kontext</td>
+</tr>
+<tr>
+<td><code>chat()</code></td>
+<td>Konversation mit dem Assistenten führen</td>
+<td>Freitext</td>
+<td>Unterstützt Timeline &amp; Kontext-Overrides</td>
+</tr>
+<tr>
+<td><code>semanticSearch()</code></td>
+<td>Wissensgraph durchsuchen</td>
+<td>Dokumente, Artikel</td>
+<td>Hybrid Retrieval mit konfigurierbarem Limit</td>
+</tr>
+<tr>
+<td><code>generateReasoning()</code></td>
+<td>Multi-Step-Reasoning ausführen</td>
+<td>Incident-Analysen, Auswertungen</td>
+<td>Pipeline &amp; Intent-Analyse steuerbar</td>
+</tr>
+<tr>
+<td><code>resolveContext()</code></td>
+<td>Kontextentscheidungen ableiten</td>
+<td>Routing, Intent, Ressourcen</td>
+<td>Nutzt Conversation History</td>
+</tr>
+<tr>
+<td><code>analyzeClarification()</code></td>
+<td>Klärungsbedarf erkennen</td>
+<td>Kundenanfragen</td>
+<td>Liefert Klarstellungsfragen &amp; Enhanced Query</td>
+</tr>
+<tr>
+<td><code>createNodeScriptJob()</code></td>
+<td>Sandbox-Job starten</td>
+<td>UTILMD, MSCONS, ORDERS, PRICAT, INVOIC</td>
+<td>Rückgabe: Job-ID &amp; Status</td>
+</tr>
+<tr>
+<td><code>getToolJob(jobId)</code></td>
+<td>Job-Status + Ergebnisse</td>
+<td>–</td>
+<td>Polling bis <code>succeeded</code> oder <code>failed</code></td>
+</tr>
+<tr>
+<td><code>createArtifact()</code></td>
+<td>Artefakt speichern</td>
+<td>Reports, EDIFACT, Compliance</td>
+<td>Unterstützt Metadaten &amp; Tags</td>
+</tr>
+<tr>
+<td><code>uploadDocument()</code></td>
+<td>Dokument in Knowledge Base hochladen</td>
+<td>PDF, DOCX, TXT, MD</td>
+<td>Max. 50MB, automatische Textextraktion</td>
+</tr>
+<tr>
+<td><code>listDocuments()</code></td>
+<td>Dokumente mit Pagination auflisten</td>
+<td>–</td>
+<td>Unterstützt Suche &amp; Filter</td>
+</tr>
+<tr>
+<td><code>getDocument()</code></td>
+<td>Dokument-Details abrufen</td>
+<td>–</td>
+<td>Inkl. Verarbeitungsstatus &amp; extrahiertem Text</td>
+</tr>
+<tr>
+<td><code>updateDocument()</code></td>
+<td>Dokument-Metadaten aktualisieren</td>
+<td>–</td>
+<td>Title, Description, Tags, AI-Kontext</td>
+</tr>
+<tr>
+<td><code>deleteDocument()</code></td>
+<td>Dokument löschen</td>
+<td>–</td>
+<td>Permanent, inkl. Vektoren</td>
+</tr>
+<tr>
+<td><code>downloadDocument()</code></td>
+<td>Original-Datei herunterladen</td>
+<td>PDF, DOCX, TXT, MD</td>
+<td>Als ArrayBuffer</td>
+</tr>
+<tr>
+<td><code>reprocessDocument()</code></td>
+<td>Dokument neu verarbeiten</td>
+<td>–</td>
+<td>Textextraktion &amp; Embedding wiederholen</td>
+</tr>
+<tr>
+<td><code>toggleAiContext()</code></td>
+<td>AI-Kontext aktivieren/deaktivieren</td>
+<td>–</td>
+<td>Steuert Verfügbarkeit für Chat/Reasoning</td>
+</tr>
+<tr>
+<td><code>analyzeEdifactMessage()</code></td>
+<td>EDIFACT-Nachricht strukturell analysieren</td>
+<td>UTILMD, MSCONS, ORDERS, PRICAT, INVOIC</td>
+<td>v0.7.0: Code-Resolution &amp; Segmentierung</td>
+</tr>
+<tr>
+<td><code>validateEdifactMessage()</code></td>
+<td>EDIFACT-Nachricht validieren</td>
+<td>UTILMD, MSCONS, ORDERS, PRICAT, INVOIC</td>
+<td>v0.7.0: Strukturelle &amp; semantische Prüfung</td>
+</tr>
+<tr>
+<td><code>explainEdifactMessage()</code></td>
+<td>EDIFACT-Nachricht erklären</td>
+<td>UTILMD, MSCONS, ORDERS, PRICAT, INVOIC</td>
+<td>v0.7.0: KI-generierte Erklärung</td>
+</tr>
+<tr>
+<td><code>modifyEdifactMessage()</code></td>
+<td>EDIFACT-Nachricht modifizieren</td>
+<td>UTILMD, MSCONS, ORDERS, PRICAT, INVOIC</td>
+<td>v0.7.0: Natürlichsprachliche Anweisungen</td>
+</tr>
+<tr>
+<td><code>chatAboutEdifactMessage()</code></td>
+<td>Chat über EDIFACT-Nachricht</td>
+<td>UTILMD, MSCONS, ORDERS, PRICAT, INVOIC</td>
+<td>v0.7.0: Kontextbewusste Fragen &amp; Antworten</td>
+</tr>
+<tr>
+<td><code>getRemoteOpenApiDocument()</code></td>
+<td>Aktuelle OpenAPI laden</td>
+<td>–</td>
+<td>Für Schema-Diffs &amp; Code-Gen</td>
+</tr>
+</tbody>
+</table>
+<p>Fehler führen zu <code>WilliMakoError</code> mit <code>status</code> und <code>body</code>. Vollständige Typen siehe <a href="media/types.ts"><code>src/types.ts</code></a> und <a href="media/API.md"><code>docs/API.md</code></a>.</p>
+<hr>
+<a id="md:🖥️-cli-usage" class="tsd-anchor"></a><h2 class="tsd-anchor-link">🖥️ CLI Usage<a href="#md:🖥️-cli-usage" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><pre><code class="bash"><span class="hl-0">npx</span><span class="hl-1"> </span><span class="hl-2">willi-mako-client</span><span class="hl-1"> </span><span class="hl-4">--help</span>
+</code><button type="button">Copy</button></pre>
+
+<p><strong>Typische Befehle (Auszug):</strong></p>
+<pre><code class="bash"><span class="hl-3"># Login mit optionaler Token-Persistenz (JSON-Ausgabe)</span><br/><span class="hl-0">willi-mako</span><span class="hl-1"> </span><span class="hl-2">auth</span><span class="hl-1"> </span><span class="hl-2">login</span><span class="hl-1"> </span><span class="hl-4">--email</span><span class="hl-1"> </span><span class="hl-2">user@example.com</span><span class="hl-1"> </span><span class="hl-4">--password</span><span class="hl-1"> </span><span class="hl-2">secret</span><span class="hl-1"> </span><span class="hl-4">--persist</span><br/><br/><span class="hl-3"># Token direkt als Umgebungsvariable übernehmen (POSIX)</span><br/><span class="hl-0">eval</span><span class="hl-1"> </span><span class="hl-2">&quot;$(</span><span class="hl-0">willi-mako</span><span class="hl-2"> auth login </span><span class="hl-4">--email</span><span class="hl-2"> user@example.com </span><span class="hl-4">--password</span><span class="hl-2"> secret </span><span class="hl-4">--export-env</span><span class="hl-2"> </span><span class="hl-4">--no-json</span><span class="hl-2">)&quot;</span><br/><br/><span class="hl-3"># Session anlegen und Umgebungsvariable exportieren (WILLI_MAKO_SESSION_ID)</span><br/><span class="hl-0">eval</span><span class="hl-1"> </span><span class="hl-2">&quot;$(</span><span class="hl-0">willi-mako</span><span class="hl-2"> sessions create </span><span class="hl-4">--ttl</span><span class="hl-2"> </span><span class="hl-9">30</span><span class="hl-2"> </span><span class="hl-4">--export-env</span><span class="hl-2"> </span><span class="hl-4">--no-json</span><span class="hl-2">)&quot;</span><br/><br/><span class="hl-3"># Session anlegen und verwalten</span><br/><span class="hl-0">willi-mako</span><span class="hl-1"> </span><span class="hl-2">sessions</span><span class="hl-1"> </span><span class="hl-2">create</span><span class="hl-1"> </span><span class="hl-4">--ttl</span><span class="hl-1"> </span><span class="hl-9">30</span><span class="hl-1"> </span><span class="hl-4">--preferences</span><span class="hl-1"> </span><span class="hl-2">&#39;{&quot;companiesOfInterest&quot;:[&quot;DE0001&quot;]}&#39;</span><br/><span class="hl-0">willi-mako</span><span class="hl-1"> </span><span class="hl-2">sessions</span><span class="hl-1"> </span><span class="hl-2">get</span><span class="hl-1"> &lt;</span><span class="hl-2">session-i</span><span class="hl-1">d&gt;</span><br/><span class="hl-0">willi-mako</span><span class="hl-1"> </span><span class="hl-2">sessions</span><span class="hl-1"> </span><span class="hl-2">delete</span><span class="hl-1"> &lt;</span><span class="hl-2">session-i</span><span class="hl-1">d&gt;</span><br/><br/><span class="hl-3"># Chat &amp; Retrieval</span><br/><span class="hl-0">willi-mako</span><span class="hl-1"> </span><span class="hl-2">chat</span><span class="hl-1"> </span><span class="hl-2">send</span><span class="hl-1"> </span><span class="hl-4">--session</span><span class="hl-1"> &lt;</span><span class="hl-2">session-i</span><span class="hl-1">d&gt; </span><span class="hl-4">--message</span><span class="hl-1"> </span><span class="hl-2">&quot;Welche MSCONS-Anomalien liegen vor?&quot;</span><br/><span class="hl-0">willi-mako</span><span class="hl-1"> </span><span class="hl-2">retrieval</span><span class="hl-1"> </span><span class="hl-2">semantic-search</span><span class="hl-1"> </span><span class="hl-4">--session</span><span class="hl-1"> &lt;</span><span class="hl-2">session-i</span><span class="hl-1">d&gt; </span><span class="hl-4">--query</span><span class="hl-1"> </span><span class="hl-2">&quot;Flexibilitätsverordnung&quot;</span><br/><br/><span class="hl-3"># Reasoning &amp; Kontext</span><br/><span class="hl-0">willi-mako</span><span class="hl-1"> </span><span class="hl-2">reasoning</span><span class="hl-1"> </span><span class="hl-2">generate</span><span class="hl-1"> </span><span class="hl-4">--session</span><span class="hl-1"> &lt;</span><span class="hl-2">session-i</span><span class="hl-1">d&gt; </span><span class="hl-4">--query</span><span class="hl-1"> </span><span class="hl-2">&quot;Erstelle einen Maßnahmenplan&quot;</span><br/><span class="hl-0">willi-mako</span><span class="hl-1"> </span><span class="hl-2">context</span><span class="hl-1"> </span><span class="hl-2">resolve</span><span class="hl-1"> </span><span class="hl-4">--session</span><span class="hl-1"> &lt;</span><span class="hl-2">session-i</span><span class="hl-1">d&gt; </span><span class="hl-4">--query</span><span class="hl-1"> </span><span class="hl-2">&quot;Welche Datenpunkte fehlen?&quot;</span><br/><span class="hl-0">willi-mako</span><span class="hl-1"> </span><span class="hl-2">clarification</span><span class="hl-1"> </span><span class="hl-2">analyze</span><span class="hl-1"> </span><span class="hl-4">--session</span><span class="hl-1"> &lt;</span><span class="hl-2">session-i</span><span class="hl-1">d&gt; </span><span class="hl-4">--query</span><span class="hl-1"> </span><span class="hl-2">&quot;Bitte bereite den Lieferantenwechsel vor&quot;</span><br/><br/><span class="hl-3"># Tooling &amp; Artefakte</span><br/><span class="hl-0">willi-mako</span><span class="hl-1"> </span><span class="hl-2">tools</span><span class="hl-1"> </span><span class="hl-2">run-node-script</span><span class="hl-1"> </span><span class="hl-4">--session</span><span class="hl-1"> &lt;</span><span class="hl-2">session-i</span><span class="hl-1">d&gt; </span><span class="hl-4">--source</span><span class="hl-1"> </span><span class="hl-2">&#39;console.log(&quot;ok&quot;)&#39;</span><br/><span class="hl-0">willi-mako</span><span class="hl-1"> </span><span class="hl-2">tools</span><span class="hl-1"> </span><span class="hl-2">job</span><span class="hl-1"> &lt;</span><span class="hl-2">job-i</span><span class="hl-1">d&gt;</span><br/><span class="hl-0">cat</span><span class="hl-1"> </span><span class="hl-2">compliance.json</span><span class="hl-1"> | </span><span class="hl-0">willi-mako</span><span class="hl-1"> </span><span class="hl-2">artifacts</span><span class="hl-1"> </span><span class="hl-2">create</span><span class="hl-1"> </span><span class="hl-4">--session</span><span class="hl-1"> &lt;</span><span class="hl-2">session-i</span><span class="hl-1">d&gt; </span><span class="hl-4">--type</span><span class="hl-1"> </span><span class="hl-2">compliance-report</span><span class="hl-1"> </span><span class="hl-4">--mime</span><span class="hl-1"> </span><span class="hl-2">application/json</span><br/><br/><span class="hl-3"># Document Management</span><br/><span class="hl-0">willi-mako</span><span class="hl-1"> </span><span class="hl-2">documents</span><span class="hl-1"> </span><span class="hl-2">upload</span><span class="hl-1"> </span><span class="hl-2">./compliance-guide.pdf</span><span class="hl-1"> </span><span class="hl-4">--title</span><span class="hl-1"> </span><span class="hl-2">&quot;Compliance Guide&quot;</span><span class="hl-1"> </span><span class="hl-4">--ai-context</span><br/><span class="hl-0">willi-mako</span><span class="hl-1"> </span><span class="hl-2">documents</span><span class="hl-1"> </span><span class="hl-2">list</span><span class="hl-1"> </span><span class="hl-4">--search</span><span class="hl-1"> </span><span class="hl-2">&quot;compliance&quot;</span><span class="hl-1"> </span><span class="hl-4">--processed</span><br/><span class="hl-0">willi-mako</span><span class="hl-1"> </span><span class="hl-2">documents</span><span class="hl-1"> </span><span class="hl-2">get</span><span class="hl-1"> &lt;</span><span class="hl-2">document-i</span><span class="hl-1">d&gt;</span><br/><span class="hl-0">willi-mako</span><span class="hl-1"> </span><span class="hl-2">documents</span><span class="hl-1"> </span><span class="hl-2">update</span><span class="hl-1"> &lt;</span><span class="hl-2">document-i</span><span class="hl-1">d&gt; </span><span class="hl-4">--title</span><span class="hl-1"> </span><span class="hl-2">&quot;Updated Title&quot;</span><span class="hl-1"> </span><span class="hl-4">--ai-context</span><span class="hl-1"> </span><span class="hl-4">true</span><br/><span class="hl-0">willi-mako</span><span class="hl-1"> </span><span class="hl-2">documents</span><span class="hl-1"> </span><span class="hl-2">download</span><span class="hl-1"> &lt;</span><span class="hl-2">document-i</span><span class="hl-1">d&gt; </span><span class="hl-2">./downloaded.pdf</span><br/><span class="hl-0">willi-mako</span><span class="hl-1"> </span><span class="hl-2">documents</span><span class="hl-1"> </span><span class="hl-2">reprocess</span><span class="hl-1"> &lt;</span><span class="hl-2">document-i</span><span class="hl-1">d&gt;</span><br/><span class="hl-0">willi-mako</span><span class="hl-1"> </span><span class="hl-2">documents</span><span class="hl-1"> </span><span class="hl-2">delete</span><span class="hl-1"> &lt;</span><span class="hl-2">document-i</span><span class="hl-1">d&gt; </span><span class="hl-4">--confirm</span>
+</code><button type="button">Copy</button></pre>
+
+<a id="md:beispiel-komplettes-cli-skript" class="tsd-anchor"></a><h3 class="tsd-anchor-link">Beispiel: Komplettes CLI-Skript<a href="#md:beispiel-komplettes-cli-skript" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><p>Das folgende Bash-Skript zeigt einen End-to-End-Flow – Login, Session anlegen und eine Frage an die Chat-API stellen. Die Antworten werden mit <code>jq</code> extrahiert, um nur die relevanten Teile weiterzugeben:</p>
+<pre><code class="bash"><span class="hl-3">#!/usr/bin/env bash</span><br/><span class="hl-0">set</span><span class="hl-1"> </span><span class="hl-4">-euo</span><span class="hl-1"> </span><span class="hl-2">pipefail</span><br/><br/><span class="hl-3"># Zugangsdaten aus der Umgebung beziehen</span><br/><span class="hl-0">:</span><span class="hl-1"> </span><span class="hl-2">&quot;${</span><span class="hl-5">WILLI_MAKO_EMAIL</span><span class="hl-1">:?</span><span class="hl-5">Bitte</span><span class="hl-2"> </span><span class="hl-5">WILLI_MAKO_EMAIL</span><span class="hl-2"> </span><span class="hl-5">setzen</span><span class="hl-2">}&quot;</span><br/><span class="hl-0">:</span><span class="hl-1"> </span><span class="hl-2">&quot;${</span><span class="hl-5">WILLI_MAKO_PASSWORD</span><span class="hl-1">:?</span><span class="hl-5">Bitte</span><span class="hl-2"> </span><span class="hl-5">WILLI_MAKO_PASSWORD</span><span class="hl-2"> </span><span class="hl-5">setzen</span><span class="hl-2">}&quot;</span><br/><br/><span class="hl-3"># 1) Login durchführen und Token als Umgebungsvariable exportieren</span><br/><span class="hl-0">eval</span><span class="hl-1"> </span><span class="hl-2">&quot;$(</span><span class="hl-0">willi-mako</span><span class="hl-2"> auth login </span><span class="hl-10">\</span><br/><span class="hl-2">   </span><span class="hl-4">--email</span><span class="hl-2"> &quot;</span><span class="hl-5">$WILLI_MAKO_EMAIL</span><span class="hl-2">&quot; </span><span class="hl-10">\</span><br/><span class="hl-2">   </span><span class="hl-4">--password</span><span class="hl-2"> &quot;</span><span class="hl-5">$WILLI_MAKO_PASSWORD</span><span class="hl-2">&quot; </span><span class="hl-10">\</span><br/><span class="hl-2">   </span><span class="hl-4">--export-env</span><span class="hl-2"> </span><span class="hl-10">\</span><br/><span class="hl-2">   </span><span class="hl-4">--no-json</span><span class="hl-2">)&quot;</span><br/><br/><span class="hl-3"># 2) Session erstellen, Rückgabe merken und Session-ID exportieren</span><br/><span class="hl-5">SESSION_PAYLOAD</span><span class="hl-1">=</span><span class="hl-2">&quot;$(</span><span class="hl-0">willi-mako</span><span class="hl-2"> sessions create </span><span class="hl-10">\</span><br/><span class="hl-2">   </span><span class="hl-4">--ttl</span><span class="hl-2"> </span><span class="hl-9">60</span><span class="hl-2"> </span><span class="hl-10">\</span><br/><span class="hl-2">   </span><span class="hl-4">--export-env</span><span class="hl-2">)&quot;</span><br/><br/><span class="hl-3"># Optional: Session-ID aus dem JSON ziehen</span><br/><span class="hl-5">SESSION_ID</span><span class="hl-1">=</span><span class="hl-2">&quot;$(</span><span class="hl-0">echo</span><span class="hl-2"> &quot;</span><span class="hl-5">$SESSION_PAYLOAD</span><span class="hl-2">&quot; </span><span class="hl-1">|</span><span class="hl-2"> </span><span class="hl-0">jq</span><span class="hl-2"> </span><span class="hl-4">-r</span><span class="hl-2"> &#39;.data.sessionId&#39;)&quot;</span><br/><span class="hl-0">echo</span><span class="hl-1"> </span><span class="hl-2">&quot;Session angelegt: </span><span class="hl-5">$SESSION_ID</span><span class="hl-2">&quot;</span><br/><br/><span class="hl-3"># 3) Frage an die Plattform stellen</span><br/><span class="hl-5">CHAT_RESPONSE</span><span class="hl-1">=</span><span class="hl-2">&quot;$(</span><span class="hl-0">willi-mako</span><span class="hl-2"> chat send </span><span class="hl-10">\</span><br/><span class="hl-2">   </span><span class="hl-4">--session</span><span class="hl-2"> &quot;</span><span class="hl-5">$SESSION_ID</span><span class="hl-2">&quot; </span><span class="hl-10">\</span><br/><span class="hl-2">   </span><span class="hl-4">--message</span><span class="hl-2"> &quot;Beschreibe die Nutzung einer MSCONS&quot;)&quot;</span><br/><br/><span class="hl-3"># Mit jq die eigentliche Antwort extrahieren</span><br/><span class="hl-5">ANSWER</span><span class="hl-1">=</span><span class="hl-2">&quot;$(</span><span class="hl-0">echo</span><span class="hl-2"> &quot;</span><span class="hl-5">$CHAT_RESPONSE</span><span class="hl-2">&quot; </span><span class="hl-1">|</span><span class="hl-2"> </span><span class="hl-0">jq</span><span class="hl-2"> </span><span class="hl-4">-r</span><span class="hl-2"> &#39;.data.response // .data&#39;)&quot;</span><br/><br/><span class="hl-0">echo</span><br/><span class="hl-0">echo</span><span class="hl-1"> </span><span class="hl-2">&quot;Antwort der Willi-Mako Plattform:&quot;</span><br/><span class="hl-0">echo</span><span class="hl-1"> </span><span class="hl-2">&quot;</span><span class="hl-5">$ANSWER</span><span class="hl-2">&quot;</span>
+</code><button type="button">Copy</button></pre>
+
+<blockquote>
+<p>💡 Tipps</p>
+<ul>
+<li><code>--no-json</code> sorgt dafür, dass beim Login nur der Export-Befehl ausgegeben wird – ideal für <code>eval</code>.</li>
+<li>Für andere Shells lässt sich über <code>--shell</code> die passende Export-Syntax erzeugen (z. B. <code>--shell powershell</code>).</li>
+<li>Beim Aufräumen (<code>willi-mako sessions delete …</code>) wird <code>WILLI_MAKO_SESSION_ID</code> automatisch aus der Umgebung entfernt.</li>
+</ul>
+</blockquote>
+<a id="md:reasoning-beispiel-mit-gleicher-session" class="tsd-anchor"></a><h4 class="tsd-anchor-link">Reasoning-Beispiel mit gleicher Session<a href="#md:reasoning-beispiel-mit-gleicher-session" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h4><p>Nachdem die Session aktiv ist, kann das Reasoning-API direkt genutzt werden. Auch hier lässt sich die Antwort mit <code>jq</code> herausfiltern:</p>
+<pre><code class="bash"><span class="hl-5">REASONING_RESPONSE</span><span class="hl-1">=</span><span class="hl-2">&quot;$(</span><span class="hl-0">willi-mako</span><span class="hl-2"> reasoning generate </span><span class="hl-10">\</span><br/><span class="hl-2">   </span><span class="hl-4">--session</span><span class="hl-2"> &quot;</span><span class="hl-5">$SESSION_ID</span><span class="hl-2">&quot; </span><span class="hl-10">\</span><br/><span class="hl-2">   </span><span class="hl-4">--query</span><span class="hl-2"> &quot;Was ist eine MSCONS?&quot;)&quot;</span><br/><br/><span class="hl-5">REASONING_ANSWER</span><span class="hl-1">=</span><span class="hl-2">&quot;$(</span><span class="hl-0">echo</span><span class="hl-2"> &quot;</span><span class="hl-5">$REASONING_RESPONSE</span><span class="hl-2">&quot; </span><span class="hl-1">|</span><span class="hl-2"> </span><span class="hl-0">jq</span><span class="hl-2"> </span><span class="hl-4">-r</span><span class="hl-2"> &#39;.data.response // .data&#39;)&quot;</span><br/><br/><span class="hl-0">echo</span><br/><span class="hl-0">echo</span><span class="hl-1"> </span><span class="hl-2">&quot;Reasoning-Ausgabe:&quot;</span><br/><span class="hl-0">echo</span><span class="hl-1"> </span><span class="hl-2">&quot;</span><span class="hl-5">$REASONING_ANSWER</span><span class="hl-2">&quot;</span>
+</code><button type="button">Copy</button></pre>
+
+<a id="md:powershell-workflow" class="tsd-anchor"></a><h5 class="tsd-anchor-link">PowerShell-Workflow<a href="#md:powershell-workflow" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h5><pre><code class="powershell">$ErrorActionPreference = 'Stop'
+
+# Zugangsdaten aus der Umgebung lesen
+if (-not $env:WILLI_MAKO_EMAIL -or -not $env:WILLI_MAKO_PASSWORD) {
+   throw 'Bitte WILLI_MAKO_EMAIL und WILLI_MAKO_PASSWORD setzen.'
+}
+
+# Login: Export-Befehl generieren und direkt ausführen
+Invoke-Expression (willi-mako auth login \
+   --email $env:WILLI_MAKO_EMAIL \
+   --password $env:WILLI_MAKO_PASSWORD \
+   --export-env \
+   --shell powershell \
+   --no-json)
+
+# Session erstellen und Session-ID speichern
+$sessionJson = willi-mako sessions create --ttl 60 | ConvertFrom-Json
+$env:WILLI_MAKO_SESSION_ID = $sessionJson.data.sessionId
+Write-Host "Session angelegt: $($env:WILLI_MAKO_SESSION_ID)"
+
+# Chat-Frage stellen
+$chat = willi-mako chat send \
+   --session $env:WILLI_MAKO_SESSION_ID \
+   --message "Beschreibe die Nutzung einer MSCONS"
+$chatAnswer = ($chat | ConvertFrom-Json).data.response
+Write-Host "Antwort:"; Write-Host $chatAnswer
+
+# Reasoning anstoßen
+$reasoning = willi-mako reasoning generate \
+   --session $env:WILLI_MAKO_SESSION_ID \
+   --query "Was ist eine MSCONS?"
+$reasoningAnswer = ($reasoning | ConvertFrom-Json).data.response
+Write-Host "Reasoning-Ausgabe:"; Write-Host $reasoningAnswer
+</code><button type="button">Copy</button></pre>
+
+<a id="md:cmd-workflow-windows-command-prompt" class="tsd-anchor"></a><h5 class="tsd-anchor-link">CMD-Workflow (Windows Command Prompt)<a href="#md:cmd-workflow-windows-command-prompt" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h5><pre><code class="bat">@echo off
+setlocal enabledelayedexpansion
+
+if "%WILLI_MAKO_EMAIL%"=="" (
+   echo Bitte WILLI_MAKO_EMAIL setzen
+   exit /b 1
+)
+
+if "%WILLI_MAKO_PASSWORD%"=="" (
+   echo Bitte WILLI_MAKO_PASSWORD setzen
+   exit /b 1
+)
+
+rem Login-Export ausführen
+for /f "usebackq delims=" %%E in (`willi-mako auth login --email %WILLI_MAKO_EMAIL% --password %WILLI_MAKO_PASSWORD% --export-env --shell cmd --no-json`) do %%E
+
+rem Session erstellen und Export übernehmen
+for /f "usebackq delims=" %%E in (`willi-mako sessions create --ttl 60 --export-env --shell cmd --no-json`) do %%E
+echo Session angelegt: %WILLI_MAKO_SESSION_ID%
+
+rem Chat ausführen und Antwort mit jq.exe extrahieren
+willi-mako chat send --session %WILLI_MAKO_SESSION_ID% --message "Beschreibe die Nutzung einer MSCONS" ^
+   | jq.exe -r ".data.response // .data"
+
+rem Reasoning-Query stellen
+willi-mako reasoning generate --session %WILLI_MAKO_SESSION_ID% --query "Was ist eine MSCONS?" ^
+   | jq.exe -r ".data.response // .data"
+
+endlocal
+</code><button type="button">Copy</button></pre>
+
+<blockquote>
+<p>ℹ️ Für den CMD-Workflow wird <code>jq.exe</code> im <code>PATH</code> erwartet. Alternativ kann die JSON-Verarbeitung mit Bordmitteln oder PowerShell erfolgen (<code>powershell -Command ...</code>).</p>
+</blockquote>
+<a id="md:tooling-assistent-skript-generierung-auf-zuruf" class="tsd-anchor"></a><h3 class="tsd-anchor-link">Tooling-Assistent: Skript-Generierung auf Zuruf<a href="#md:tooling-assistent-skript-generierung-auf-zuruf" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><p>Mit <code>willi-mako tools generate-script</code> sprichst du den deterministischen Skriptgenerator der API an. Die CLI stößt einen asynchronen Job an, pollt den Fortschritt (<code>collecting-context</code>, <code>prompting</code>, <code>drafting</code>, …) und streamt Status-Updates sofort ins Terminal. Sessions werden bei Bedarf automatisch erzeugt; das Ergebnis kann direkt auf der Konsole erscheinen, in eine Datei geschrieben oder als Artefakt gespeichert werden. Nach Abschluss blendet die CLI erneut zusammengefasste Job-Informationen und etwaige Validierungswarnungen ein.</p>
+<pre><code class="bash"><span class="hl-3"># Skript generieren und lokal als Datei ablegen</span><br/><span class="hl-0">willi-mako</span><span class="hl-1"> </span><span class="hl-2">tools</span><span class="hl-1"> </span><span class="hl-2">generate-script</span><span class="hl-1"> </span><span class="hl-10">\</span><br/><span class="hl-1">   </span><span class="hl-4">--query</span><span class="hl-1"> </span><span class="hl-2">&quot;Erstelle mir ein Tool, das MSCONS-Nachrichten in CSV konvertiert&quot;</span><span class="hl-1"> </span><span class="hl-10">\</span><br/><span class="hl-1">   </span><span class="hl-4">--output</span><span class="hl-1"> </span><span class="hl-2">mscons-to-csv.js</span><br/><br/><span class="hl-3"># Optional: Artefakt in Willi-Mako persistieren</span><br/><span class="hl-0">willi-mako</span><span class="hl-1"> </span><span class="hl-2">tools</span><span class="hl-1"> </span><span class="hl-2">generate-script</span><span class="hl-1"> </span><span class="hl-10">\</span><br/><span class="hl-1">   </span><span class="hl-4">--query</span><span class="hl-1"> </span><span class="hl-2">&quot;Generiere ein Prüftool für UTILMD und liefere JSON-Ausgabe&quot;</span><span class="hl-1"> </span><span class="hl-10">\</span><br/><span class="hl-1">   </span><span class="hl-4">--artifact</span><span class="hl-1"> </span><span class="hl-4">--artifact-name</span><span class="hl-1"> </span><span class="hl-2">utilmd-validator.js</span><br/><br/><span class="hl-3"># Zusätzliche Referenzen einbinden (max. 4 Anhänge, &lt;= 60k Zeichen je Datei)</span><br/><span class="hl-0">willi-mako</span><span class="hl-1"> </span><span class="hl-2">tools</span><span class="hl-1"> </span><span class="hl-2">generate-script</span><span class="hl-1"> </span><span class="hl-10">\</span><br/><span class="hl-1">   </span><span class="hl-4">--query</span><span class="hl-1"> </span><span class="hl-2">&quot;Erstelle ein Abrechnungstool für MSCONS mit ausführlichen Plausibilitätschecks&quot;</span><span class="hl-1"> </span><span class="hl-10">\</span><br/><span class="hl-1">   </span><span class="hl-4">--attachment</span><span class="hl-1"> </span><span class="hl-2">&quot;./docs/mscons-checkliste.md|text/markdown|MSCONS Prüfhinweise&quot;</span><span class="hl-1"> </span><span class="hl-10">\</span><br/><span class="hl-1">   </span><span class="hl-4">--attachment</span><span class="hl-1"> </span><span class="hl-2">&#39;{&quot;path&quot;:&quot;./samples/mscons-probe.csv&quot;,&quot;mimeType&quot;:&quot;text/csv&quot;,&quot;description&quot;:&quot;Realdaten Q1 2024&quot;,&quot;weight&quot;:0.4}&#39;</span>
+</code><button type="button">Copy</button></pre>
+
+<blockquote>
+<p>📎 Mit <code>--attachment</code> (mehrfach wiederholbar) fütterst du den Generator mit zusätzlichen Textdateien – beispielsweise bestehender ETL-Logik, Mapping-Tabellen oder Prozessbeschreibungen. Akzeptiert werden Dateipfade (<code>path|mimeType|Beschreibung|Gewicht</code>) oder JSON-Objekte (<code>{&quot;path&quot;:&quot;...&quot;,&quot;description&quot;:&quot;...&quot;,&quot;weight&quot;:0.5}</code>). Pro Job sind max. vier Anhänge mit jeweils ≤ 60 000 Zeichen (kombiniert ≤ 160 000 Zeichen) erlaubt. Gewichte zwischen 0 und 1 priorisieren besonders relevante Quellen.
+💡 Über <code>--input-mode</code> (<code>file</code>, <code>stdin</code>, <code>environment</code>) und <code>--output-format</code> (<code>csv</code>, <code>json</code>, <code>text</code>) steuerst du, wie die generierten Skripte Ein- und Ausgabe handhaben sollen. Mit <code>--json</code> erhältst du die Antwort inklusive Skript als strukturiertes JSON.
+🤖 Sobald die Umgebungsvariable <code>GEMINI_API_KEY</code> gesetzt ist, verfeinert die CLI die Nutzeranforderung automatisch mit dem Modell <code>gemini-2.5-pro</code>, ergänzt eine Validierungs-Checkliste und protokolliert das Ergebnis (sowie mögliche Fehler) im Terminal. Das Verhalten lässt sich ohne zusätzliche Flags nutzen und greift auch in der SDK-Hilfsfunktion <code>generateToolScript</code>.</p>
+</blockquote>
+<blockquote>
+<p>ℹ️  JSON-Antworten enthalten neben dem beschriebenen Skript jetzt auch das vollständige Job-Objekt (<code>data.job</code>) inklusive <code>status</code>, <code>progress</code>, <code>attempts</code> und <code>warnings</code>. Beispiel:</p>
+<pre><code class="json"><span class="hl-1">{</span><br/><span class="hl-1">  </span><span class="hl-12">&quot;data&quot;</span><span class="hl-1">: {</span><br/><span class="hl-1">    </span><span class="hl-12">&quot;code&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;...&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-12">&quot;suggestedFileName&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;mscons-to-csv.js&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-12">&quot;job&quot;</span><span class="hl-1">: {</span><br/><span class="hl-1">      </span><span class="hl-12">&quot;id&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;job_123&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">      </span><span class="hl-12">&quot;status&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;succeeded&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">      </span><span class="hl-12">&quot;progress&quot;</span><span class="hl-1">: { </span><span class="hl-12">&quot;stage&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;prompting&quot;</span><span class="hl-1">, </span><span class="hl-12">&quot;message&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;Verarbeite Kontext&quot;</span><span class="hl-1"> },</span><br/><span class="hl-1">      </span><span class="hl-12">&quot;attempts&quot;</span><span class="hl-1">: </span><span class="hl-9">1</span><span class="hl-1">,</span><br/><span class="hl-1">      </span><span class="hl-12">&quot;warnings&quot;</span><span class="hl-1">: []</span><br/><span class="hl-1">    }</span><br/><span class="hl-1">  }</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+</blockquote>
+<a id="md:lokale-tests-wie-nach-einem-publish" class="tsd-anchor"></a><h3 class="tsd-anchor-link">Lokale Tests wie nach einem Publish<a href="#md:lokale-tests-wie-nach-einem-publish" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><p>Um die npm-Veröffentlichung lokal zu simulieren, kannst du das Repository paketieren und global installieren:</p>
+<pre><code class="bash"><span class="hl-0">./scripts/local-pack-install.sh</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Das Skript führt Tests und Build aus, erstellt per <code>npm pack</code> das Release-Tarball und installiert es anschließend mit <code>npm install -g</code>. So bekommst du exakt das Artefakt, das später über <code>npm publish</code> ausgeliefert würde – ganz ohne manuelles Packen oder Linken.</p>
+<a id="md:tooling-beispiel-mscons-→-csv-converter" class="tsd-anchor"></a><h3 class="tsd-anchor-link">Tooling-Beispiel: MSCONS → CSV Converter<a href="#md:tooling-beispiel-mscons-→-csv-converter" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><p>Mit <code>willi-mako tools run-node-script</code> lassen sich maßgeschneiderte Tools als Sandbox-Jobs ausführen. Das folgende Beispiel erstellt einen Konverter, der eine MSCONS-Nachricht in CSV transformiert und die Messlokation (MeLo) als Dateinamen verwendet.</p>
+<pre><code class="bash"><span class="hl-3"># 1) Node.js-Skript definieren (Multi-Line-String)</span><br/><span class="hl-5">MSCONS2CSV_SCRIPT</span><span class="hl-1">=$(</span><span class="hl-0">cat</span><span class="hl-1"> &lt;&lt;</span><span class="hl-1">&#39;EOF&#39;</span><br/><span class="hl-2">const mscons = `UNH+1+MSCONS:D:96A:UN:1.2&#39;</span><br/><span class="hl-2">BGM+E01+20240315-4711&#39;</span><br/><span class="hl-2">DTM+137:202403150000:203&#39;</span><br/><span class="hl-2">IDE+24+DE0123456789012345678901234567890&#39;</span><br/><span class="hl-2">LOC+172+DE1234567890&#39;</span><br/><span class="hl-2">MEA+AAE+KWH::60E223:15.78&#39;</span><br/><span class="hl-2">MEA+AAE+KWH::60E224:16.12&#39;</span><br/><span class="hl-2">UNT+7+1&#39;`;</span><br/><br/><span class="hl-2">const segments = mscons</span><br/><span class="hl-2">   .split(&quot;&#39;&quot;)</span><br/><span class="hl-2">   .map((segment) =&gt; segment.trim())</span><br/><span class="hl-2">   .filter(Boolean);</span><br/><br/><span class="hl-2">const melo = segments</span><br/><span class="hl-2">   .find((segment) =&gt; segment.startsWith(&#39;LOC+172+&#39;))</span><br/><span class="hl-2">   ?.split(&#39;+&#39;)[2]</span><br/><span class="hl-2">   ?.replace(/[^A-Z0-9_-]/gi, &#39;&#39;)</span><br/><span class="hl-2">   ?? &#39;mscons&#39;;</span><br/><br/><span class="hl-2">const measurements = segments</span><br/><span class="hl-2">   .filter((segment) =&gt; segment.startsWith(&#39;MEA+&#39;))</span><br/><span class="hl-2">   .map((segment) =&gt; {</span><br/><span class="hl-2">      const [, , qualifier, value] = segment.split(&#39;+&#39;);</span><br/><span class="hl-2">      const [quantity, unit] = (qualifier ?? &#39;&#39;).split(&#39;::&#39;);</span><br/><span class="hl-2">      const numeric = value?.split(&#39;:&#39;)[2] ?? &#39;&#39;;</span><br/><span class="hl-2">      return { quantity: quantity ?? &#39;KWH&#39;, value: numeric ?? &#39;0&#39;, unit: unit ?? &#39;&#39; };</span><br/><span class="hl-2">   });</span><br/><br/><span class="hl-2">const csv = [&#39;quantity;value;unit&#39;, ...measurements.map((row) =&gt; `${row.quantity};${row.value};${row.unit}`)].join(&#39;\n&#39;);</span><br/><br/><span class="hl-2">console.log(</span><br/><span class="hl-2">   JSON.stringify(</span><br/><span class="hl-2">      {</span><br/><span class="hl-2">         fileName: `${melo}-readings.csv`,</span><br/><span class="hl-2">         rows: measurements.length,</span><br/><span class="hl-2">         csv</span><br/><span class="hl-2">      },</span><br/><span class="hl-2">      null,</span><br/><span class="hl-2">      2</span><br/><span class="hl-2">   )</span><br/><span class="hl-2">);</span><br/><span class="hl-1">EOF</span><br/><span class="hl-1">)</span><br/><br/><span class="hl-3"># 2) Job in der Sandbox anlegen (aktive Session vorausgesetzt)</span><br/><span class="hl-5">JOB_INFO</span><span class="hl-1">=$(</span><span class="hl-0">willi-mako</span><span class="hl-1"> </span><span class="hl-2">tools</span><span class="hl-1"> </span><span class="hl-2">run-node-script</span><span class="hl-1"> </span><span class="hl-10">\</span><br/><span class="hl-1">   </span><span class="hl-4">--session</span><span class="hl-1"> </span><span class="hl-2">&quot;</span><span class="hl-5">$SESSION_ID</span><span class="hl-2">&quot;</span><span class="hl-1"> </span><span class="hl-10">\</span><br/><span class="hl-1">   </span><span class="hl-4">--source</span><span class="hl-1"> </span><span class="hl-2">&quot;</span><span class="hl-5">$MSCONS2CSV_SCRIPT</span><span class="hl-2">&quot;</span><span class="hl-1"> </span><span class="hl-10">\</span><br/><span class="hl-1">   </span><span class="hl-4">--timeout</span><span class="hl-1"> </span><span class="hl-9">5000</span><span class="hl-1"> </span><span class="hl-10">\</span><br/><span class="hl-1">   </span><span class="hl-4">--metadata</span><span class="hl-1"> </span><span class="hl-2">&#39;{&quot;toolName&quot;:&quot;MSCONS2CSV&quot;}&#39;</span><span class="hl-1">)</span><br/><br/><span class="hl-5">JOB_ID</span><span class="hl-1">=$(</span><span class="hl-0">echo</span><span class="hl-1"> </span><span class="hl-2">&quot;</span><span class="hl-5">$JOB_INFO</span><span class="hl-2">&quot;</span><span class="hl-1"> | </span><span class="hl-0">jq</span><span class="hl-1"> </span><span class="hl-4">-r</span><span class="hl-1"> </span><span class="hl-2">&#39;.data.job.id&#39;</span><span class="hl-1">)</span><br/><span class="hl-0">echo</span><span class="hl-1"> </span><span class="hl-2">&quot;Tool-Job gestartet: </span><span class="hl-5">$JOB_ID</span><span class="hl-2">&quot;</span><br/><br/><span class="hl-3"># 3) Ergebnis abfragen und CSV speichern</span><br/><span class="hl-5">JOB_RESULT</span><span class="hl-1">=$(</span><span class="hl-0">willi-mako</span><span class="hl-1"> </span><span class="hl-2">tools</span><span class="hl-1"> </span><span class="hl-2">job</span><span class="hl-1"> </span><span class="hl-2">&quot;</span><span class="hl-5">$JOB_ID</span><span class="hl-2">&quot;</span><span class="hl-1"> | </span><span class="hl-0">jq</span><span class="hl-1"> </span><span class="hl-4">-r</span><span class="hl-1"> </span><span class="hl-2">&#39;.data.job.result.stdout&#39;</span><span class="hl-1">)</span><br/><span class="hl-5">CSV_FILE</span><span class="hl-1">=$(</span><span class="hl-0">echo</span><span class="hl-1"> </span><span class="hl-2">&quot;</span><span class="hl-5">$JOB_RESULT</span><span class="hl-2">&quot;</span><span class="hl-1"> | </span><span class="hl-0">jq</span><span class="hl-1"> </span><span class="hl-4">-r</span><span class="hl-1"> </span><span class="hl-2">&#39;.fileName&#39;</span><span class="hl-1">)</span><br/><br/><span class="hl-0">echo</span><span class="hl-1"> </span><span class="hl-2">&quot;</span><span class="hl-5">$JOB_RESULT</span><span class="hl-2">&quot;</span><span class="hl-1"> | </span><span class="hl-0">jq</span><span class="hl-1"> </span><span class="hl-4">-r</span><span class="hl-1"> </span><span class="hl-2">&#39;.csv&#39;</span><span class="hl-1"> &gt; </span><span class="hl-2">&quot;</span><span class="hl-5">$CSV_FILE</span><span class="hl-2">&quot;</span><br/><br/><span class="hl-0">echo</span><span class="hl-1"> </span><span class="hl-2">&quot;CSV-Datei erzeugt: </span><span class="hl-5">$CSV_FILE</span><span class="hl-2">&quot;</span>
+</code><button type="button">Copy</button></pre>
+
+<blockquote>
+<p>🧰 Hinweise</p>
+<ul>
+<li>Das Skript schreibt ein JSON-Objekt auf <code>stdout</code>, das sich mit <code>jq</code> weiterverarbeiten lässt (z. B. zum Speichern der CSV oder für Artefakt-Uploads).</li>
+<li>Über <code>--metadata</code> können Tool-spezifische Informationen mitgegeben werden, die bei <code>willi-mako tools job</code> erneut auftauchen.</li>
+<li>Für reale Szenarien lässt sich die MSCONS-Payload dynamisch befüllen, etwa aus Artefakten oder vorherigen API-Schritten.</li>
+</ul>
+</blockquote>
+<a id="md:powershell-variante" class="tsd-anchor"></a><h4 class="tsd-anchor-link">PowerShell-Variante<a href="#md:powershell-variante" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h4><pre><code class="powershell">$ErrorActionPreference = 'Stop'
+
+if (-not $env:WILLI_MAKO_SESSION_ID) {
+   throw 'Bitte zuerst eine Session erstellen (siehe Login/Session-Beispiele oben).'
+}
+
+$script = @'
+const mscons = `UNH+1+MSCONS:D:96A:UN:1.2'
+BGM+E01+20240315-4711'
+DTM+137:202403150000:203'
+IDE+24+DE0123456789012345678901234567890'
+LOC+172+DE1234567890'
+MEA+AAE+KWH::60E223:15.78'
+MEA+AAE+KWH::60E224:16.12'
+UNT+7+1'`;
+
+const segments = mscons
+   .split("'")
+   .map((segment) => segment.trim())
+   .filter(Boolean);
+
+const melo = segments
+   .find((segment) => segment.startsWith('LOC+172+'))
+   ?.split('+')[2]
+   ?.replace(/[^A-Z0-9_-]/gi, '')
+   ?? 'mscons';
+
+const measurements = segments
+   .filter((segment) => segment.startsWith('MEA+'))
+   .map((segment) => {
+      const [, , qualifier, value] = segment.split('+');
+      const [quantity, unit] = (qualifier ?? '').split('::');
+      const numeric = value?.split(':')[2] ?? '';
+      return { quantity: quantity ?? 'KWH', value: numeric ?? '0', unit: unit ?? '' };
+   });
+
+const csv = ['quantity;value;unit', ...measurements.map((row) => `${row.quantity};${row.value};${row.unit}`)].join('\n');
+
+console.log(
+   JSON.stringify(
+      {
+         fileName: `${melo}-readings.csv`,
+         rows: measurements.length,
+         csv
+      },
+      null,
+      2
+   )
+);
+'@
+
+$job = willi-mako tools run-node-script `
+   --session $env:WILLI_MAKO_SESSION_ID `
+   --source $script `
+   --timeout 5000 `
+   --metadata '{"toolName":"MSCONS2CSV"}' | ConvertFrom-Json
+
+$jobId = $job.data.job.id
+Write-Host "Tool-Job gestartet: $jobId"
+
+$result = willi-mako tools job $jobId | ConvertFrom-Json
+$payload = $result.data.job.result.stdout | ConvertFrom-Json
+
+$payload.csv | Out-File -FilePath $payload.fileName -Encoding utf8
+Write-Host "CSV-Datei erzeugt:" $payload.fileName
+</code><button type="button">Copy</button></pre>
+
+<a id="md:cmd-variante" class="tsd-anchor"></a><h4 class="tsd-anchor-link">CMD-Variante<a href="#md:cmd-variante" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h4><pre><code class="bat">@echo off
+setlocal enabledelayedexpansion
+
+if "%WILLI_MAKO_SESSION_ID%"=="" (
+   echo Bitte zuerst eine Session erstellen (siehe oben)
+   exit /b 1
+)
+
+set "MSCONS_SCRIPT=const mscons = `UNH+1+MSCONS:D:96A:UN:1.2'
+BGM+E01+20240315-4711'
+DTM+137:202403150000:203'
+IDE+24+DE0123456789012345678901234567890'
+LOC+172+DE1234567890'
+MEA+AAE+KWH::60E223:15.78'
+MEA+AAE+KWH::60E224:16.12'
+UNT+7+1'`;
+
+const segments = mscons
+   .split("'")
+   .map((segment) => segment.trim())
+   .filter(Boolean);
+
+const melo = segments
+   .find((segment) => segment.startsWith('LOC+172+'))
+   ?.split('+')[2]
+   ?.replace(/[^A-Z0-9_-]/gi, '')
+   ?? 'mscons';
+
+const measurements = segments
+   .filter((segment) => segment.startsWith('MEA+'))
+   .map((segment) => {
+      const [, , qualifier, value] = segment.split('+');
+      const [quantity, unit] = (qualifier ?? '').split('::');
+      const numeric = value?.split(':')[2] ?? '';
+      return { quantity: quantity ?? 'KWH', value: numeric ?? '0', unit: unit ?? '' };
+   });
+
+const csv = ['quantity;value;unit', ...measurements.map((row) => `${row.quantity};${row.value};${row.unit}`)].join('\n');
+
+console.log(
+   JSON.stringify(
+      {
+         fileName: `${melo}-readings.csv`,
+         rows: measurements.length,
+         csv
+      },
+      null,
+      2
+   )
+);"
+
+for /f "usebackq delims=" %%E in (`willi-mako tools run-node-script --session %WILLI_MAKO_SESSION_ID% --source "%MSCONS_SCRIPT%" --timeout 5000 --metadata "{\"toolName\":\"MSCONS2CSV\"}"`) do set "JOB_JSON=%%E"
+
+for /f "tokens=*" %%J in ('echo %JOB_JSON% ^| jq.exe -r ".data.job.id"') do set "JOB_ID=%%J"
+echo Tool-Job gestartet: %JOB_ID%
+
+for /f "usebackq delims=" %%R in (`willi-mako tools job %JOB_ID% ^| jq.exe -r ".data.job.result.stdout"`) do set "JOB_RESULT=%%R"
+
+for /f "tokens=*" %%F in ('echo %JOB_RESULT% ^| jq.exe -r ".fileName"') do set "CSV_FILE=%%F"
+echo %JOB_RESULT% ^| jq.exe -r ".csv" > "%CSV_FILE%"
+
+echo CSV-Datei erzeugt: %CSV_FILE%
+
+endlocal
+</code><button type="button">Copy</button></pre>
+
+<blockquote>
+<p>ℹ️ Für Windows empfiehlt sich <code>jq.exe</code> im <code>PATH</code>. Alternativ kann die JSON-Weiterverarbeitung auch über <code>powershell -Command</code> erfolgen.</p>
+</blockquote>
+<a id="md:artefakte-erstellen--abrufen" class="tsd-anchor"></a><h3 class="tsd-anchor-link">Artefakte erstellen &amp; abrufen<a href="#md:artefakte-erstellen--abrufen" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><p>Artefakte sind strukturierte Dateien (z. B. Reports, CSVs, EDIFACT-Audits), die einer Session zugeordnet werden. Die CLI unterstützt das Anlegen und Abfragen direkt.</p>
+<pre><code class="bash"><span class="hl-3"># Beispiel-Report erzeugen</span><br/><span class="hl-0">cat</span><span class="hl-1"> &lt;&lt;</span><span class="hl-1">&#39;EOF&#39;</span><span class="hl-1"> &gt; </span><span class="hl-2">audit-report.json</span><br/><span class="hl-2">{</span><br/><span class="hl-2">   &quot;type&quot;: &quot;MSCONS&quot;,</span><br/><span class="hl-2">   &quot;status&quot;: &quot;ok&quot;,</span><br/><span class="hl-2">   &quot;checkedAt&quot;: &quot;$(date --iso-8601=seconds)&quot;,</span><br/><span class="hl-2">   &quot;remarks&quot;: [&quot;Alle Werte im Toleranzbereich&quot;, &quot;Kein Erneuerungsbedarf&quot;]</span><br/><span class="hl-2">}</span><br/><span class="hl-1">EOF</span><br/><br/><span class="hl-3"># Artefakt erstellen (Inline-Upload)</span><br/><span class="hl-5">ARTIFACT_RESPONSE</span><span class="hl-1">=$(</span><span class="hl-0">willi-mako</span><span class="hl-1"> </span><span class="hl-2">artifacts</span><span class="hl-1"> </span><span class="hl-2">create</span><span class="hl-1"> </span><span class="hl-10">\</span><br/><span class="hl-1">   </span><span class="hl-4">--session</span><span class="hl-1"> </span><span class="hl-2">&quot;</span><span class="hl-5">$SESSION_ID</span><span class="hl-2">&quot;</span><span class="hl-1"> </span><span class="hl-10">\</span><br/><span class="hl-1">   </span><span class="hl-4">--type</span><span class="hl-1"> </span><span class="hl-2">mscons-audit</span><span class="hl-1"> </span><span class="hl-10">\</span><br/><span class="hl-1">   </span><span class="hl-4">--name</span><span class="hl-1"> </span><span class="hl-2">&quot;audit-report.json&quot;</span><span class="hl-1"> </span><span class="hl-10">\</span><br/><span class="hl-1">   </span><span class="hl-4">--mime</span><span class="hl-1"> </span><span class="hl-2">application/json</span><span class="hl-1"> </span><span class="hl-10">\</span><br/><span class="hl-1">   </span><span class="hl-4">--encoding</span><span class="hl-1"> </span><span class="hl-2">utf8</span><span class="hl-1"> </span><span class="hl-10">\</span><br/><span class="hl-1">   </span><span class="hl-4">--description</span><span class="hl-1"> </span><span class="hl-2">&quot;MSCONS Audit Report&quot;</span><span class="hl-1"> </span><span class="hl-10">\</span><br/><span class="hl-1">   </span><span class="hl-4">--tags</span><span class="hl-1"> </span><span class="hl-2">&quot;mscons,audit&quot;</span><span class="hl-1"> </span><span class="hl-10">\</span><br/><span class="hl-1">   </span><span class="hl-4">--metadata</span><span class="hl-1"> </span><span class="hl-2">&#39;{&quot;source&quot;:&quot;cli-example&quot;}&#39;</span><span class="hl-1"> </span><span class="hl-10">\</span><br/><span class="hl-1">   </span><span class="hl-4">--content</span><span class="hl-1"> </span><span class="hl-2">&quot;$(</span><span class="hl-0">cat</span><span class="hl-2"> audit-report.json)&quot;</span><span class="hl-1">)</span><br/><br/><span class="hl-5">ARTIFACT_ID</span><span class="hl-1">=$(</span><span class="hl-0">echo</span><span class="hl-1"> </span><span class="hl-2">&quot;</span><span class="hl-5">$ARTIFACT_RESPONSE</span><span class="hl-2">&quot;</span><span class="hl-1"> | </span><span class="hl-0">jq</span><span class="hl-1"> </span><span class="hl-4">-r</span><span class="hl-1"> </span><span class="hl-2">&#39;.data.artifact.id&#39;</span><span class="hl-1">)</span><br/><span class="hl-0">echo</span><span class="hl-1"> </span><span class="hl-2">&quot;Artefakt angelegt: </span><span class="hl-5">$ARTIFACT_ID</span><span class="hl-2">&quot;</span><br/><br/><span class="hl-3"># Inhalte abrufen (inline payload)</span><br/><span class="hl-0">willi-mako</span><span class="hl-1"> </span><span class="hl-2">artifacts</span><span class="hl-1"> </span><span class="hl-2">get</span><span class="hl-1"> </span><span class="hl-4">--session</span><span class="hl-1"> </span><span class="hl-2">&quot;</span><span class="hl-5">$SESSION_ID</span><span class="hl-2">&quot;</span><span class="hl-1"> </span><span class="hl-4">--artifact</span><span class="hl-1"> </span><span class="hl-2">&quot;</span><span class="hl-5">$ARTIFACT_ID</span><span class="hl-2">&quot;</span><span class="hl-1"> </span><span class="hl-10">\</span><br/><span class="hl-1">   | </span><span class="hl-0">jq</span><span class="hl-1"> </span><span class="hl-4">-r</span><span class="hl-1"> </span><span class="hl-2">&#39;.data.artifact.storage.content&#39;</span><span class="hl-1"> &gt; </span><span class="hl-2">downloaded-report.json</span><br/><br/><span class="hl-0">echo</span><span class="hl-1"> </span><span class="hl-2">&quot;Report gespeichert unter downloaded-report.json&quot;</span>
+</code><button type="button">Copy</button></pre>
+
+<blockquote>
+<p>📂 Standardmäßig werden Artefakte inline abgelegt. Für größere Dateien lassen sich Upload-URLs nutzen (siehe API-Dokumentation).</p>
+</blockquote>
+<a id="md:powershell-variante-1" class="tsd-anchor"></a><h4 class="tsd-anchor-link">PowerShell-Variante<a href="#md:powershell-variante-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h4><pre><code class="powershell">$report = @'
+{
+   "type": "MSCONS",
+   "status": "ok",
+   "checkedAt": "{0}",
+   "remarks": ["Alle Werte im Toleranzbereich", "Kein Erneuerungsbedarf"]
+}
+'@ -f (Get-Date -Format o)
+
+$artifact = willi-mako artifacts create `
+   --session $env:WILLI_MAKO_SESSION_ID `
+   --type mscons-audit `
+   --name audit-report.json `
+   --mime application/json `
+   --encoding utf8 `
+   --description "MSCONS Audit Report" `
+   --tags "mscons,audit" `
+   --metadata '{"source":"cli-example"}' `
+   --content $report | ConvertFrom-Json
+
+$artifactId = $artifact.data.artifact.id
+Write-Host "Artefakt angelegt:" $artifactId
+
+$download = willi-mako artifacts get `
+   --session $env:WILLI_MAKO_SESSION_ID `
+   --artifact $artifactId | ConvertFrom-Json
+
+$download.data.artifact.storage.content | Out-File -FilePath downloaded-report.json -Encoding utf8
+Write-Host "Report gespeichert: downloaded-report.json"
+</code><button type="button">Copy</button></pre>
+
+<a id="md:cmd-variante-1" class="tsd-anchor"></a><h4 class="tsd-anchor-link">CMD-Variante<a href="#md:cmd-variante-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h4><pre><code class="bat">@echo off
+setlocal enabledelayedexpansion
+
+set "REPORT={"type":"MSCONS","status":"ok","checkedAt":"%date% %time%","remarks":["Alle Werte im Toleranzbereich","Kein Erneuerungsbedarf"]}"
+
+for /f "usebackq delims=" %%R in (`willi-mako artifacts create --session %WILLI_MAKO_SESSION_ID% --type mscons-audit --name audit-report.json --mime application/json --encoding utf8 --description "MSCONS Audit Report" --tags "mscons,audit" --metadata "{\"source\":\"cli-example\"}" --content "%REPORT%"`) do set "ARTIFACT_JSON=%%R"
+
+for /f "tokens=*" %%A in ('echo %ARTIFACT_JSON% ^| jq.exe -r ".data.artifact.id"') do set "ARTIFACT_ID=%%A"
+echo Artefakt angelegt: %ARTIFACT_ID%
+
+willi-mako artifacts get --session %WILLI_MAKO_SESSION_ID% --artifact %ARTIFACT_ID% ^
+   | jq.exe -r ".data.artifact.storage.content" > downloaded-report.json
+
+echo Report gespeichert: downloaded-report.json
+
+endlocal
+</code><button type="button">Copy</button></pre>
+
+<blockquote>
+<p>ℹ️ Für produktive Szenarien empfiehlt sich, Artefakte nach dem Download zu verifizieren und ggf. via <code>artifacts delete</code> wieder zu entfernen.</p>
+</blockquote>
+<p>Über <code>--base-url</code> und <code>--token</code> lassen sich Zielsystem bzw. Credentials überschreiben.</p>
+<hr>
+<a id="md:🧪-examples" class="tsd-anchor"></a><h2 class="tsd-anchor-link">🧪 Examples<a href="#md:🧪-examples" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><p>Im Ordner <a href="./examples"><code>examples/</code></a> befinden sich ausführbare Szenarien:</p>
+<ul>
+<li><code>utilmd-audit.ts</code> – Stammdaten-Validierung.</li>
+<li><code>mscons-clearing.ts</code> – Plausibilitätsprüfung von Zählwerten.</li>
+<li><code>orders-incident-report.ts</code> – Klärfallanalyse.</li>
+<li><code>pricat-price-sync.ts</code> – Preislistenabgleich.</li>
+<li><code>invoic-archive.ts</code> – Rechnungsarchivierung mit Metadaten.</li>
+<li><code>web-dashboard.ts</code> – Low-code Webfrontend (dieses README).</li>
+</ul>
+<p>Starten Sie Beispiele mit:</p>
+<pre><code class="bash"><span class="hl-0">node</span><span class="hl-1"> </span><span class="hl-4">--loader</span><span class="hl-1"> </span><span class="hl-2">ts-node/esm</span><span class="hl-1"> </span><span class="hl-2">examples/utilmd-audit.ts</span>
+</code><button type="button">Copy</button></pre>
+
+<hr>
+<a id="md:📖-documentation" class="tsd-anchor"></a><h2 class="tsd-anchor-link">📖 Documentation<a href="#md:📖-documentation" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><ul>
+<li><a href="media/API.md"><code>docs/API.md</code></a> – Endpunkte &amp; Typen.</li>
+<li><a href="media/EXAMPLES.md"><code>docs/EXAMPLES.md</code></a> – Vertiefende Workflows.</li>
+<li><a href="media/TROUBLESHOOTING.md"><code>docs/TROUBLESHOOTING.md</code></a> – Fehlersuche.</li>
+<li><a href="media/ROADMAP.md"><code>docs/ROADMAP.md</code></a> – Geplante Erweiterungen.</li>
+<li><a href="media/INTEGRATIONS.md"><code>docs/INTEGRATIONS.md</code></a> – Docker, Web UI, Power BI, n8n.</li>
+</ul>
+<hr>
+<a id="md:🛠️-development" class="tsd-anchor"></a><h2 class="tsd-anchor-link">🛠️ Development<a href="#md:🛠️-development" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><pre><code class="bash"><span class="hl-0">git</span><span class="hl-1"> </span><span class="hl-2">clone</span><span class="hl-1"> </span><span class="hl-2">https://github.com/energychain/willi-mako-client.git</span><br/><span class="hl-0">cd</span><span class="hl-1"> </span><span class="hl-2">willi-mako-client</span><br/><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">install</span><br/><br/><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-2">build</span><span class="hl-1">   </span><span class="hl-3"># TypeScript → dist/</span><br/><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-2">lint</span><span class="hl-1">    </span><span class="hl-3"># Typprüfung</span><br/><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">test</span><span class="hl-1">        </span><span class="hl-3"># Vitest Suite</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Projektstruktur:</p>
+<pre><code><span class="hl-5">willi</span><span class="hl-1">-</span><span class="hl-5">mako</span><span class="hl-1">-</span><span class="hl-5">client</span><span class="hl-1">/</span><br/><span class="hl-1">├── </span><span class="hl-5">src</span><span class="hl-1">/              # </span><span class="hl-5">TypeScript</span><span class="hl-1">-</span><span class="hl-5">Quellcode</span><br/><span class="hl-1">├── </span><span class="hl-5">schemas</span><span class="hl-1">/          # </span><span class="hl-5">Gebündelte</span><span class="hl-1"> </span><span class="hl-5">OpenAPI</span><span class="hl-1">-</span><span class="hl-5">Dokumente</span><br/><span class="hl-1">├── </span><span class="hl-5">examples</span><span class="hl-1">/         # </span><span class="hl-5">Beispielskripte</span><span class="hl-1"> &amp; </span><span class="hl-5">Demos</span><br/><span class="hl-1">├── </span><span class="hl-5">docs</span><span class="hl-1">/             # </span><span class="hl-5">Zusatzdokumentation</span><br/><span class="hl-1">├── </span><span class="hl-5">tests</span><span class="hl-1">/            # </span><span class="hl-5">Vitest</span><span class="hl-1"> </span><span class="hl-5">Tests</span><br/><span class="hl-1">├── .</span><span class="hl-5">github</span><span class="hl-1">/          # </span><span class="hl-5">GitHub</span><span class="hl-1"> </span><span class="hl-5">Actions</span><span class="hl-1"> </span><span class="hl-5">Workflows</span><br/><span class="hl-1">│   ├── </span><span class="hl-5">workflows</span><span class="hl-1">/    # </span><span class="hl-7">CI</span><span class="hl-1">/</span><span class="hl-7">CD</span><span class="hl-1"> </span><span class="hl-5">Pipelines</span><br/><span class="hl-1">│   └── </span><span class="hl-5">dependabot</span><span class="hl-1">.</span><span class="hl-5">yml</span><br/><span class="hl-1">└── </span><span class="hl-5">dist</span><span class="hl-1">/             # </span><span class="hl-5">Build</span><span class="hl-1">-</span><span class="hl-0">Ausgabe</span><span class="hl-1"> (</span><span class="hl-5">gitignored</span><span class="hl-1">)</span>
+</code><button>Copy</button></pre>
+
+<blockquote>
+<p>Siehe <a href="media/CONTRIBUTING.md"><code>CONTRIBUTING.md</code></a> für Coding-Guidelines, Branch-Strategie und Review-Checklisten.</p>
+</blockquote>
+<a id="md:cicd-pipeline" class="tsd-anchor"></a><h3 class="tsd-anchor-link">CI/CD Pipeline<a href="#md:cicd-pipeline" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><p>Das Projekt nutzt eine vollautomatische CI/CD-Pipeline mit GitHub Actions:</p>
+<p>✅ <strong>Automatische Tests</strong> auf Node.js 18, 20, 22
+✅ <strong>Code Coverage</strong> Reports (Codecov)
+✅ <strong>Security Scanning</strong> (npm audit, CodeQL, Snyk)
+✅ <strong>Dependency Updates</strong> (Dependabot mit Auto-Merge)
+✅ <strong>Automatisches npm Publishing</strong> bei Git-Tags
+✅ <strong>Cloud IDE Prebuilds</strong> (Codespaces, Gitpod)</p>
+<p><strong>Workflows:</strong></p>
+<ul>
+<li><code>ci.yml</code> – Linting, Tests, Coverage, Security</li>
+<li><code>release.yml</code> – npm Publishing bei Git-Tags</li>
+<li><code>codeql.yml</code> – Security Scanning</li>
+<li><code>prebuilds.yml</code> – Cloud IDE Optimierung</li>
+<li><code>auto-merge-dependabot.yml</code> – Automatische Dependency Updates</li>
+<li><code>stale.yml</code> – Issue/PR Management</li>
+</ul>
+<p>📖 <strong>Vollständige Dokumentation:</strong> <a href="media/CI_CD.md"><code>docs/CI_CD.md</code></a></p>
+<p><strong>Quick Start für Contributors:</strong></p>
+<pre><code class="bash"><span class="hl-3"># Feature Branch erstellen</span><br/><span class="hl-0">git</span><span class="hl-1"> </span><span class="hl-2">checkout</span><span class="hl-1"> </span><span class="hl-4">-b</span><span class="hl-1"> </span><span class="hl-2">feature/neue-funktion</span><br/><br/><span class="hl-3"># Entwickeln &amp; Commiten</span><br/><span class="hl-0">git</span><span class="hl-1"> </span><span class="hl-2">commit</span><span class="hl-1"> </span><span class="hl-4">-m</span><span class="hl-1"> </span><span class="hl-2">&quot;feat: neue Funktion&quot;</span><br/><br/><span class="hl-3"># PR erstellen (CI läuft automatisch)</span><br/><span class="hl-0">gh</span><span class="hl-1"> </span><span class="hl-2">pr</span><span class="hl-1"> </span><span class="hl-2">create</span><span class="hl-1"> </span><span class="hl-4">--base</span><span class="hl-1"> </span><span class="hl-2">develop</span><br/><br/><span class="hl-3"># Nach Merge: Automatisches Testing &amp; Deployment</span>
+</code><button type="button">Copy</button></pre>
+
+<hr>
+<a id="md:🔌-integrations-docker-power-bi-n8n" class="tsd-anchor"></a><h2 class="tsd-anchor-link">🔌 Integrations (Docker, Power BI, n8n)<a href="#md:🔌-integrations-docker-power-bi-n8n" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><p>Der neue Leitfaden <a href="media/INTEGRATIONS.md"><code>docs/INTEGRATIONS.md</code></a> beschreibt Schritt für Schritt:</p>
+<ul>
+<li>Docker-Workspaces &amp; Compose-Setups für isoliertes CLI- oder Skript-Hosting.</li>
+<li>Aufbau des Lightweight Web Dashboards (Proxy, Auth, Branding).</li>
+<li>Direct Queries aus <strong>Microsoft Power BI</strong> (REST-Connector, Parameter, Token-Verwaltung).</li>
+<li><strong>n8n Workflows</strong> (HTTP Request Node, Credentials, Node-Scripting mit Willi-Mako).</li>
+</ul>
+<hr>
+<a id="md:🌍-community" class="tsd-anchor"></a><h2 class="tsd-anchor-link">🌍 Community<a href="#md:🌍-community" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><p><strong>Join the Willi-Mako Community!</strong> We're building the standard for energy market communication in Germany—together.</p>
+<a id="md:💬-get-involved" class="tsd-anchor"></a><h3 class="tsd-anchor-link">💬 Get Involved<a href="#md:💬-get-involved" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><ul>
+<li><strong><a href="https://github.com/energychain/willi-mako-client/discussions" target="_blank" class="external">Discussions</a></strong> – Ask questions, share use cases, get help</li>
+<li><strong><a href="media/USE_CASE_GALLERY.md">Use Case Gallery</a></strong> – See real-world implementations</li>
+<li><strong><a href="media/CERTIFICATION.md">Certification Program</a></strong> – Get officially certified</li>
+<li><strong><a href="media/SPONSORSHIP.md">Sponsorship</a></strong> – Support the project &amp; influence roadmap</li>
+</ul>
+<a id="md:🏆-recognition" class="tsd-anchor"></a><h3 class="tsd-anchor-link">🏆 Recognition<a href="#md:🏆-recognition" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+<p><strong>Contribute and get recognized!</strong> See <a href="media/COMMUNITY.md">COMMUNITY.md</a> for details.</p>
+<a id="md:💚-become-a-sponsor" class="tsd-anchor"></a><h3 class="tsd-anchor-link">💚 Become a Sponsor<a href="#md:💚-become-a-sponsor" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><p><strong>Support open energy infrastructure:</strong></p>
+<p><a href="https://github.com/sponsors/energychain" target="_blank" class="external"><img src="https://img.shields.io/badge/Sponsor-GitHub%20Sponsors-pink?logo=github" alt="GitHub Sponsors"></a></p>
+<ul>
+<li>🥉 <strong>Bronze</strong> (€500/month) – Logo on README</li>
+<li>🥈 <strong>Silver</strong> (€2,000/month) – Roadmap influence</li>
+<li>🥇 <strong>Gold</strong> (€5,000/month) – Strategic partnership</li>
+<li>💎 <strong>Platinum</strong> (€10,000+/month) – Steering committee</li>
+</ul>
+<p><a href="media/SPONSORSHIP.md">Learn more →</a></p>
+<hr>
+<a id="md:🤝-contributing" class="tsd-anchor"></a><h2 class="tsd-anchor-link">🤝 Contributing<a href="#md:🤝-contributing" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><p>Wir freuen uns über Beiträge aus der Energie-Community!</p>
+<p><strong>Quick Links:</strong></p>
+<ul>
+<li>👋 <a href="https://github.com/energychain/willi-mako-client/issues?q=is%3Aissue+is%3Aopen+label%3A%22good-first-issue%22" target="_blank" class="external">Good First Issues</a></li>
+<li>📖 <a href="media/CONTRIBUTING.md">Contributing Guide</a></li>
+<li>💬 <a href="media/COMMUNITY.md">Community Guidelines</a></li>
+<li>📜 <a href="media/CODE_OF_CONDUCT.md">Code of Conduct</a></li>
+</ul>
+<p><strong>How to contribute:</strong></p>
+<ol>
+<li><strong>Report bugs</strong> – <a href="https://github.com/energychain/willi-mako-client/issues/new?template=bug_report.md" target="_blank" class="external">Create an issue</a></li>
+<li><strong>Request features</strong> – <a href="https://github.com/energychain/willi-mako-client/discussions/new?category=ideas" target="_blank" class="external">Start a discussion</a></li>
+<li><strong>Improve docs</strong> – <a href="https://github.com/energychain/willi-mako-client/issues?q=is%3Aissue+is%3Aopen+label%3Adocumentation" target="_blank" class="external">Documentation issues</a></li>
+<li><strong>Submit code</strong> – Fork, branch, code, test, PR!</li>
+<li><strong>Share use cases</strong> – <a href="https://github.com/energychain/willi-mako-client/discussions/new?category=use-cases" target="_blank" class="external">Submit your story</a></li>
+</ol>
+<p><strong>Contribution types recognized:</strong></p>
+<ul>
+<li>💻 Code</li>
+<li>📖 Documentation</li>
+<li>🐛 Bug reports</li>
+<li>🤔 Ideas &amp; Planning</li>
+<li>🔌 Integration examples</li>
+<li>🎯 Use cases</li>
+<li>⚖️ Compliance expertise</li>
+<li>⚡ Energy sector knowledge</li>
+</ul>
+<hr>
+<a id="md:💬-support" class="tsd-anchor"></a><h2 class="tsd-anchor-link">💬 Support<a href="#md:💬-support" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><p><strong>Need help?</strong></p>
+<ul>
+<li>� <strong><a href="https://github.com/energychain/willi-mako-client/discussions" target="_blank" class="external">GitHub Discussions</a></strong> – Community support</li>
+<li>🐛 <strong><a href="https://github.com/energychain/willi-mako-client/issues/new?template=bug_report.md" target="_blank" class="external">Bug Reports</a></strong> – Report issues</li>
+<li>💡 <strong><a href="https://github.com/energychain/willi-mako-client/discussions/new?category=ideas" target="_blank" class="external">Feature Requests</a></strong> – Suggest improvements</li>
+<li>� <strong><a href="https://github.com/energychain/willi-mako-client/discussions/new?category=integration-help" target="_blank" class="external">Integration Help</a></strong> – Technical questions</li>
+<li>⚖️ <strong><a href="https://github.com/energychain/willi-mako-client/discussions/new?category=compliance" target="_blank" class="external">Compliance Questions</a></strong> – Regulatory guidance</li>
+</ul>
+<p><strong>Commercial support:</strong></p>
+<ul>
+<li>� <strong>Email</strong>: <a href="mailto:dev@stromdao.com">dev@stromdao.com</a></li>
+<li>🏢 <strong>Partnership</strong>: <a href="https://github.com/energychain/willi-mako-client/issues/new?template=partnership.md" target="_blank" class="external">Submit inquiry</a></li>
+<li>🌐 <strong>Website</strong>: <a href="https://stromhaltig.de" target="_blank" class="external">stromhaltig.de</a></li>
+</ul>
+<p><strong>When reporting issues, include:</strong></p>
+<ul>
+<li>SDK version: <code>npm ls willi-mako-client</code></li>
+<li>Node version: <code>node -v</code></li>
+<li>Relevant logs or error messages</li>
+</ul>
+<hr>
+<a id="md:📄-license" class="tsd-anchor"></a><h2 class="tsd-anchor-link">📄 License<a href="#md:📄-license" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><p>Dieses Projekt steht unter der <a href="media/LICENSE">MIT License</a>.</p>
+<pre><code><span class="hl-0">Copyright</span><span class="hl-1"> (</span><span class="hl-5">c</span><span class="hl-1">) </span><span class="hl-9">2025</span><span class="hl-1"> </span><span class="hl-7">STROMDAO</span><span class="hl-1"> </span><span class="hl-5">GmbH</span>
+</code><button>Copy</button></pre>
+
+<p>Frei nutzbar in Open-Source- und kommerziellen Projekten. Beiträge werden, sofern nicht anders angegeben, ebenfalls unter MIT veröffentlicht.</p>
+<hr>
+<div align="center">
+<p><strong>Made with 💚 by <a href="https://stromdao.de" target="_blank" class="external">STROMDAO</a> and the <a href="media/COMMUNITY.md">Willi-Mako Community</a></strong></p>
+<p><a href="https://github.com/energychain/willi-mako-client" target="_blank" class="external">⭐ Star us on GitHub</a> • <a href="https://github.com/sponsors/energychain" target="_blank" class="external">💚 Become a Sponsor</a> • <a href="media/COMMUNITY.md">🤝 Join the Community</a></p>
+</div>
+<hr>
+<div align="center">
+<p>Maintained with ⚡ by the STROMDAO community.</p>
+</div></div></div><div class="col-sidebar"><div class="page-menu"><div class="tsd-navigation settings"><details class="tsd-accordion"><summary class="tsd-accordion-summary"><h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><use href="assets/icons.svg#icon-chevronDown"></use></svg>Settings</h3></summary><div class="tsd-accordion-details"><div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span><ul id="tsd-filter-options"><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li></ul></div><div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div><details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><use href="assets/icons.svg#icon-chevronDown"></use></svg>On This Page</h3></summary><div class="tsd-accordion-details"><a href="#md:🔌-willi-mako-client-sdk"><span>🔌 <wbr/>Willi-<wbr/>Mako <wbr/>Client SDK</span></a><ul><li><a href="#md:📚-table-of-contents"><span>📚 <wbr/>Table of <wbr/>Contents</span></a></li><li><a href="#md:🌍-about-the-project"><span>🌍 <wbr/>About the <wbr/>Project</span></a></li><li><a href="#md:✨-key-features"><span>✨ <wbr/>Key <wbr/>Features</span></a></li><li><a href="#md:📦-installation"><span>📦 <wbr/>Installation</span></a></li><li><a href="#md:🚀-quick-start"><span>🚀 <wbr/>Quick <wbr/>Start</span></a></li><li><ul><li><a href="#md:local-sdk-quickstart"><span>Local SDK <wbr/>Quickstart</span></a></li><li><a href="#md:docker-quickstart"><span>Docker <wbr/>Quickstart</span></a></li><li><a href="#md:mcp-server-quickstart"><span>MCP <wbr/>Server <wbr/>Quickstart</span></a></li><li><a href="#md:lightweight-web-ui-quickstart"><span>Lightweight <wbr/>Web UI <wbr/>Quickstart</span></a></li></ul></li><li><a href="#md:☁️-cloud-ide-quickstarts"><span>☁️ <wbr/>Cloud IDE <wbr/>Quickstarts</span></a></li><li><ul><li><a href="#md:github-codespaces-⭐-empfohlen"><span>Git<wbr/>Hub <wbr/>Codespaces (⭐ <wbr/>Empfohlen)</span></a></li><li><a href="#md:gitpod"><span>Gitpod</span></a></li><li><a href="#md:stackblitz-web-dashboard-only"><span>Stack<wbr/>Blitz (<wbr/>Web-<wbr/>Dashboard only)</span></a></li><li><a href="#md:🆚-vergleich-cloud-ides"><span>🆚 <wbr/>Vergleich <wbr/>Cloud-<wbr/>IDEs</span></a></li></ul></li><li><a href="#md:🧩-core-use-cases"><span>🧩 <wbr/>Core <wbr/>Use <wbr/>Cases</span></a></li><li><a href="#md:🧭-api-overview"><span>🧭 API <wbr/>Overview</span></a></li><li><a href="#md:🖥️-cli-usage"><span>🖥️ CLI <wbr/>Usage</span></a></li><li><ul><li><a href="#md:beispiel-komplettes-cli-skript"><span>Beispiel: <wbr/>Komplettes CLI-<wbr/>Skript</span></a></li><li><ul><li><a href="#md:reasoning-beispiel-mit-gleicher-session"><span>Reasoning-<wbr/>Beispiel mit gleicher <wbr/>Session</span></a></li><li><ul><li><a href="#md:powershell-workflow"><span>Power<wbr/>Shell-<wbr/>Workflow</span></a></li><li><a href="#md:cmd-workflow-windows-command-prompt"><span>CMD-<wbr/>Workflow (<wbr/>Windows <wbr/>Command <wbr/>Prompt)</span></a></li></ul></li></ul></li><li><a href="#md:tooling-assistent-skript-generierung-auf-zuruf"><span>Tooling-<wbr/>Assistent: <wbr/>Skript-<wbr/>Generierung auf <wbr/>Zuruf</span></a></li><li><a href="#md:lokale-tests-wie-nach-einem-publish"><span>Lokale <wbr/>Tests wie nach einem <wbr/>Publish</span></a></li><li><a href="#md:tooling-beispiel-mscons-→-csv-converter"><span>Tooling-<wbr/>Beispiel: MSCONS → CSV <wbr/>Converter</span></a></li><li><ul><li><a href="#md:powershell-variante"><span>Power<wbr/>Shell-<wbr/>Variante</span></a></li><li><a href="#md:cmd-variante"><span>CMD-<wbr/>Variante</span></a></li></ul></li><li><a href="#md:artefakte-erstellen--abrufen"><span>Artefakte erstellen &amp; abrufen</span></a></li><li><ul><li><a href="#md:powershell-variante-1"><span>Power<wbr/>Shell-<wbr/>Variante</span></a></li><li><a href="#md:cmd-variante-1"><span>CMD-<wbr/>Variante</span></a></li></ul></li></ul></li><li><a href="#md:🧪-examples"><span>🧪 <wbr/>Examples</span></a></li><li><a href="#md:📖-documentation"><span>📖 <wbr/>Documentation</span></a></li><li><a href="#md:🛠️-development"><span>🛠️ <wbr/>Development</span></a></li><li><ul><li><a href="#md:cicd-pipeline"><span>CI/CD <wbr/>Pipeline</span></a></li></ul></li><li><a href="#md:🔌-integrations-docker-power-bi-n8n"><span>🔌 <wbr/>Integrations (<wbr/>Docker, <wbr/>Power BI, n8n)</span></a></li><li><a href="#md:🌍-community"><span>🌍 <wbr/>Community</span></a></li><li><ul><li><a href="#md:💬-get-involved"><span>💬 <wbr/>Get <wbr/>Involved</span></a></li><li><a href="#md:🏆-recognition"><span>🏆 <wbr/>Recognition</span></a></li><li><a href="#md:💚-become-a-sponsor"><span>💚 <wbr/>Become a <wbr/>Sponsor</span></a></li></ul></li><li><a href="#md:🤝-contributing"><span>🤝 <wbr/>Contributing</span></a></li><li><a href="#md:💬-support"><span>💬 <wbr/>Support</span></a></li><li><a href="#md:📄-license"><span>📄 <wbr/>License</span></a></li></ul></div></details></div><div class="site-menu"><nav class="tsd-navigation"><a href="modules.html" class="current"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="assets/icons.svg#icon-1"></use></svg><span>Willi-Mako Client SDK - v0.8.1</span></a><ul class="tsd-small-nested-navigation" id="tsd-nav-container" data-base="."><li>Loading...</li></ul></nav></div></div></div><footer><p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer><div class="overlay"></div></body></html>

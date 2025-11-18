@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540">
+  <style>
+    .title { font: 700 28px 'Segoe UI', sans-serif; fill: #14213d; }
+    .subtitle { font: 500 18px 'Segoe UI', sans-serif; fill: #1f2937; }
+    .box { fill: #e5f4ff; stroke: #0470d8; stroke-width: 2; rx: 12; }
+    .box-alt { fill: #fdf2f8; stroke: #db2777; stroke-width: 2; rx: 12; }
+    .label { font: 600 18px 'Segoe UI', sans-serif; fill: #0f172a; }
+    .bullet { font: 400 14px 'Segoe UI', sans-serif; fill: #334155; }
+    .arrow { fill: none; stroke: #475569; stroke-width: 2.4; marker-end: url(#arrowhead); }
+    .note { font: 400 14px 'Segoe UI', sans-serif; fill: #6b7280; }
+  </style>
+  <defs>
+    <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="8" refY="4" orient="auto" fill="#475569">
+      <polygon points="0 0, 8 4, 0 8" />
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="960" height="540" fill="#f8fafc" rx="24" />
+  <text class="title" x="60" y="70">Willi-Mako Client – Architekturüberblick</text>
+  <text class="subtitle" x="60" y="102">SDK, CLI, MCP-Server und Integrationen greifen modular auf das API v2 zu.</text>
+
+  <rect class="box" x="80" y="140" width="220" height="120" />
+  <text class="label" x="95" y="172">TypeScript SDK</text>
+  <text class="bullet" x="95" y="198">• Typisierte API-Calls</text>
+  <text class="bullet" x="95" y="220">• Retry & Error Handling</text>
+  <text class="bullet" x="95" y="242">• Artifact & Job Helpers</text>
+
+  <rect class="box" x="80" y="300" width="220" height="120" />
+  <text class="label" x="95" y="332">CLI</text>
+  <text class="bullet" x="95" y="358">• `willi-mako` commands</text>
+  <text class="bullet" x="95" y="380">• CI/CD Automationen</text>
+  <text class="bullet" x="95" y="402">• Offline OpenAPI</text>
+
+  <rect class="box" x="370" y="140" width="220" height="120" />
+  <text class="label" x="385" y="172">MCP Server</text>
+  <text class="bullet" x="385" y="198">• Streamable HTTP</text>
+  <text class="bullet" x="385" y="220">• Tools & Resources</text>
+  <text class="bullet" x="385" y="242">• LLM Automatisierung</text>
+
+  <rect class="box" x="370" y="300" width="220" height="120" />
+  <text class="label" x="385" y="332">Web Dashboard</text>
+  <text class="bullet" x="385" y="358">• Lightweight UI</text>
+  <text class="bullet" x="385" y="380">• Sandbox Jobs</text>
+  <text class="bullet" x="385" y="402">• Artefaktvorschläge</text>
+
+  <rect class="box" x="660" y="220" width="240" height="140" />
+  <text class="label" x="675" y="252">Willi-Mako API v2</text>
+  <text class="bullet" x="675" y="278">• Tools Endpoint</text>
+  <text class="bullet" x="675" y="300">• Artefact Store</text>
+  <text class="bullet" x="675" y="322">• Audit-Protokolle</text>
+  <text class="bullet" x="675" y="344">• Schema Bundles</text>
+
+  <rect class="box-alt" x="660" y="392" width="240" height="110" />
+  <text class="label" x="675" y="422">Energieprozesse</text>
+  <text class="bullet" x="675" y="448">• UTILMD, MSCONS, ORDERS</text>
+  <text class="bullet" x="675" y="470">• PRICAT, INVOIC</text>
+
+  <path class="arrow" d="M300 200 L360 200" />
+  <path class="arrow" d="M300 360 L360 360" />
+  <path class="arrow" d="M590 200 L650 260" />
+  <path class="arrow" d="M590 360 L650 300" />
+  <path class="arrow" d="M780 360 L780 392" />
+  <path class="arrow" d="M910 304 L910 392" marker-end="" />
+  <path class="arrow" d="M910 392 L910 304" marker-end="" />
+
+  <text class="note" x="80" y="450">Alle Komponenten authentifizieren via `WILLI_MAKO_TOKEN` und nutzen gemeinsame Typdefinitionen.</text>
+  <text class="note" x="80" y="475">Integrationen (Docker, Power BI, n8n) orchestrieren denselben API-Zugriff über SDK oder CLI.</text>
+</svg>
