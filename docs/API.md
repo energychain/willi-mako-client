@@ -513,6 +513,8 @@ These models track edi@energy metadata such as encoding (`utf8`, `base64`), tags
 
 | SDK Version | API Compatibility | Notes |
 |-------------|-------------------|-------|
-| 0.1.x       | API v2            | Initial public release of official client |
+| 0.8.x       | API v2 (0.8.0)    | Erweiterte Wissensabdeckung: wissenschaftliche Studien, BNetzA, BDEW, VKU |
+| 0.7.x       | API v2            | EDIFACT Analyzer, Market Partner Search, Document Management |
+| 0.1.x-0.6.x | API v2            | Initial releases with core functionality |
 
 Check the [CHANGELOG](../CHANGELOG.md) for migration notes when upgrading.

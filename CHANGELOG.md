@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) as soon as we reach a stable `1.0.0` release.
 
+## [0.8.0] - 2025-11-18
+
+### Changed
+- **🔬 API v0.8.0 Kompatibilität**: Client aktualisiert auf API Version 0.8.0
+  - Aktualisierte OpenAPI-Spezifikation von `https://stromhaltig.de/api/v2/openapi.json`
+  - Erweiterte Positionierung: Von Marktkommunikation zu ganzheitlicher Energiewirtschafts-Expertise
+
+### Added
+- **📚 Erweiterte Wissensabdeckung**: Combined-Search und willi-netz Collection umfassen nun deutlich mehr Inhalte:
+  - Wissenschaftliche Studien zur Energiewirtschaft
+  - BNetzA-Regulierung und Monitoringberichte
+  - BDEW-Veröffentlichungen und Leitfäden
+  - VKU-Publikationen
+  - Weitere relevante Wissensquellen aus der Energiewirtschaft
+- **📖 Verbesserte Dokumentation**:
+  - Aktualisierte Beschreibung der Plattform-Positionierung in README
+  - Erwähnung der erweiterten Wissensabdeckung in Key Features
+  - Auflistung aller unterstützten Themenbereiche (Marktkommunikation, Regulierung, Netzbetrieb, Wissenschaft)
+
 ## [0.7.4] - 2025-11-16
 
 ### Added

@@ -58,7 +58,14 @@
 
 ## 🌍 About the Project
 
-**Willi-Mako** ist die Wissens- und Automatisierungsplattform für Marktkommunikation (*MaKo*) der deutschen Energiewirtschaft. Sie unterstützt Marktrollen wie **Lieferanten**, **Netzbetreiber** und **Messstellenbetreiber** bei Aufgaben rund um edi@energy-Standards, regulatorische Prüfungen und KI-gestützte Workflows.
+**Willi-Mako** ist die Wissens- und Automatisierungsplattform für Marktkommunikation (*MaKo*) und ganzheitliche Energiewirtschafts-Expertise. Ab Version 0.8.0 erweitert die Plattform ihre Positionierung von reiner Marktkommunikation zu umfassender Energiewirtschafts-Kompetenz, die neben EDIFACT-Standards nun auch wissenschaftliche Studien, regulatorische Veröffentlichungen (BNetzA, BDEW, VKU) und Asset Management für Netzbetreiber abdeckt.
+
+Sie unterstützt Marktrollen wie **Lieferanten**, **Netzbetreiber** und **Messstellenbetreiber** bei Aufgaben rund um:
+
+- 📊 **Marktkommunikation**: edi@energy-Standards (UTILMD, MSCONS, ORDERS, PRICAT, INVOIC), GPKE, WiM, GeLi Gas
+- ⚖️ **Regulierung**: EnWG, StromNEV, ARegV, §14a EnWG, BNetzA-Festlegungen und Monitoringberichte
+- 🔌 **Netzbetrieb**: TAB (Technische Anschlussbedingungen), VDE-FNN, SAIDI/SAIFI, Asset Management (ISO 55000)
+- 📚 **Wissenschaft**: Studien, Tagungsbände und Veröffentlichungen zu Energiewirtschaftsthemen
 
 Mit dem SDK erhalten Sie:
 
@@ -77,13 +84,14 @@ Mit dem SDK erhalten Sie:
 - 🔐 **Flexible Auth** – Login-Helper mit optionaler Tokenpersistenz oder direkte Verwendung von Service Tokens.
 - 🧱 **Session Lifecycle APIs** – Sessions anlegen, inspizieren, bereinigen und dabei Präferenzen/Kontexte steuern.
 - 🧠 **Conversational Stack** – Chat, semantische Suche, Reasoning, Kontextauflösung und Klarstellungsanalyse aus einer Hand.
-- 🛠️ **Tooling Sandbox** – sichere Node.js-Ausführung für ETL, Validierung, KI-Skripte.
+- � **Erweiterte Wissensabdeckung (v0.8.0)** – Combined-Search und willi-netz Collection umfassen nun wissenschaftliche Studien, BNetzA-Regulierung, BDEW-, VKU- und andere Veröffentlichungen für ganzheitliche Energiewirtschafts-Expertise.
+- �🛠️ **Tooling Sandbox** – sichere Node.js-Ausführung für ETL, Validierung, KI-Skripte.
 - 🗂️ **Artifact Storage** – persistente Protokolle, Audit-Trails und EDIFACT-Snapshots.
-- � **Document Management** – Hochladen, Verwalten und Durchsuchen von PDFs, DOCX, TXT und MD-Dateien in der Knowledge Base mit automatischer Textextraktion und AI-Kontext-Steuerung.
+- 📄 **Document Management** – Hochladen, Verwalten und Durchsuchen von PDFs, DOCX, TXT und MD-Dateien in der Knowledge Base mit automatischer Textextraktion und AI-Kontext-Steuerung.
 - 📦 **OpenAPI Bundle** – `schemas/openapi.json` für offline Analysen.
 - 🖥️ **CLI & MCP** – vollständige Befehlsgruppen (`auth`, `sessions`, `chat`, `retrieval`, `edifact`, `market-partners`, …) plus MCP-Server für KI-Agenten.
-- 🔍 **EDIFACT Message Analyzer (v0.7.0)** – Analyse, Validierung, Erklärung, Modifikation und Chat für EDIFACT-Nachrichten (UTILMD, MSCONS, ORDERS, etc.).
-- 🔎 **Market Partners Search (v0.7.1)** – Öffentliche Suche nach Marktpartnern über BDEW/EIC-Codes, Firmennamen oder Städten mit detaillierten Kontakt- und Software-Informationen.
+- 🔍 **EDIFACT Message Analyzer** – Analyse, Validierung, Erklärung, Modifikation und Chat für EDIFACT-Nachrichten (UTILMD, MSCONS, ORDERS, etc.).
+- 🔎 **Market Partners Search** – Öffentliche Suche nach Marktpartnern über BDEW/EIC-Codes, Firmennamen oder Städten mit detaillierten Kontakt- und Software-Informationen.
 - 🧪 **Vitest Testsuite** – Vertrauen in Stabilität und Regressionen.
 - 🛡️ **Compliance Fokus** – automatisierbare Prüfungen für UTILMD, MSCONS, ORDERS, PRICAT, INVOIC.
 
