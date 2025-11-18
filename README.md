@@ -23,7 +23,7 @@
 
 </div>
 
-> **Kurzüberblick (DE):** Willi-Mako digitalisiert die Marktkommunikation der Energiewirtschaft. Das SDK stellt geprüfte Prozesse rund um UTILMD, MSCONS, ORDERS, PRICAT, INVOIC und weitere Formate für ETL-Pipelines, Compliance-Automatisierung und KI-gestützte Workflows bereit.
+> **Kurzüberblick (DE):** Willi-Mako ist die KI-gestützte Wissensplattform für die deutsche Energiewirtschaft. Das SDK vereint Marktkommunikation (EDIFACT, UTILMD, MSCONS), Regulierung (BNetzA, EnWG, §14a EnWG), Netzbetrieb (TAB, SAIDI/SAIFI) und wissenschaftliche Studien für ganzheitliche ETL-Pipelines, Compliance-Automatisierung und KI-gestützte Workflows.
 
 ---
 
