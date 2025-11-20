@@ -26,17 +26,20 @@ Erreichen von **maximaler Sichtbarkeit** für willi-mako-client in der TypeScrip
   ```
 - **Nächste Schritte**: Workflow manuell triggern oder bei nächstem Release
 
-### 🔄 3. JSR (JavaScript Registry)
-- **Status**: 🔄 Konfiguration vorbereitet (`jsr.json`)
-- **URL**: `https://jsr.io/@energychain/willi-mako-client` (nach Publish)
+### ✅ 3. JSR (JavaScript Registry)
+- **Status**: ✅ Live seit 18.11.2025
+- **URL**: https://jsr.io/@energychain/willi-mako-client
 - **Vorteile**: Moderne Registry für Deno/Node, TypeScript-first, automatische Docs
 - **Installation**:
   ```bash
+  # Deno
+  deno add @energychain/willi-mako-client
+
+  # Node.js/npm
   npx jsr add @energychain/willi-mako-client
-  ```
-- **Nächste Schritte**:
-  ```bash
-  npx jsr publish
+
+  # Bun
+  bunx jsr add @energychain/willi-mako-client
   ```
 
 ### ✅ 4. CDN-basierte Registries (automatisch)
@@ -74,13 +77,10 @@ Erreichen von **maximaler Sichtbarkeit** für willi-mako-client in der TypeScrip
 
 ### B. Manuelle Registrierung erforderlich
 
-6. **OpenBase** 📝
-   - URL: https://openbase.com
-   - Schritte:
-     1. Konto anlegen mit GitHub
-     2. Package claimen: https://openbase.com/js/willi-mako-client
-     3. Beschreibung optimieren
-     4. Tutorials/Guides hinzufügen
+6. **~~OpenBase~~** ❌ (Service nicht mehr verfügbar)
+   - ~~URL: https://openbase.com~~
+   - Status: Website scheint offline/eingestellt zu sein (Stand Nov 2025)
+   - Alternative: Fokus auf andere Discovery-Plattformen
 
 7. **Best of JS** 📝
    - URL: https://bestofjs.org/

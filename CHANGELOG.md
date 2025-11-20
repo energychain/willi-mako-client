@@ -4,6 +4,40 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) as soon as we reach a stable `1.0.0` release.
 
+## [0.8.2] - 2025-11-20
+
+### Fixed
+- **🐛 Error Message Extraction**: Fixed `[object Object]` error messages in WilliMakoClient
+  - Properly extracts error messages from nested error objects: `{ error: { message: "..." } }`
+  - Also handles simple string errors: `{ error: "..." }` and direct messages: `{ message: "..." }`
+  - Applied to both `request()` and `downloadDocument()` methods
+  - **This was the root cause of the `[object Object]` display in Claude and pm2 logs**
+- **🐛 MCP Server Error Handling**: Improved error handling and logging in MCP server
+  - Fixed `[object Object]` error display in Claude Web by properly converting `WilliMakoError` to `McpError`
+  - Enhanced error logging to show detailed API error information including status codes and error bodies
+  - Better serialization of error objects for debugging in pm2 logs
+
+### Added
+- **💡 Helpful Token Error Messages**: When authentication fails (403/401), the MCP server now provides detailed guidance
+  - Automatically detects invalid/expired token errors
+  - Provides 4 different options to obtain a fresh token:
+    1. Use `willi-mako-login` tool within MCP
+    2. Set `WILLI_MAKO_TOKEN` environment variable
+    3. Use token-in-path format: `https://mcp.stromhaltig.de/<token>/mcp`
+    4. Use npx: `npx willi-mako-client auth login -e <email> -p <password>`
+  - Error messages are shown directly in Claude/Inspector for easy troubleshooting
+- **📖 Documentation**: Updated `docs/MCP_SERVICE.md` with token troubleshooting guide
+  - Added dedicated section on handling expired/invalid tokens
+  - Documented all four token renewal options with examples
+
+## [0.8.1] - 2025-11-18
+
+### Added
+- **⚙️ Automatisiertes TypeDoc Deployment**: Die GitHub-Pages-Pipeline wird jetzt automatisch ausgelöst, sobald ein Versions-Commit (Änderungen in `package.json`, `package-lock.json`, `jsr.json`, `schemas/openapi.json` oder `CHANGELOG.md`) auf `main` landet. Dadurch wird die `docs-api/` Ausgabe unmittelbar nach jedem Release auf `gh-pages` deployed.
+
+### Fixed
+- **🧪 Marktpartner Suchtests**: Das Limit-Verhalten spiegelt nun die API-Realität wider (Limits > 20 werden serverseitig gekappt statt mit Fehler abzubrechen).
+
 ## [0.8.0] - 2025-11-18
 
 ### Changed

@@ -76,6 +76,124 @@ export async function startMcpServer(options: McpServerOptions = {}): Promise<Mc
   const transportState = new Map<string, TransportSessionState>();
   const basicTokenCache = new Map<string, { token: string; expiresAt?: number }>();
 
+  type ToolHandlerInput<T> = T & Record<string, unknown>;
+
+  type LoginToolInput = ToolHandlerInput<{
+    email: string;
+    password: string;
+    persistToken?: boolean;
+  }>;
+
+  type CreateSessionToolInput = ToolHandlerInput<{
+    ttlMinutes?: number;
+    preferences?: CreateSessionRequest['preferences'];
+    contextSettings?: CreateSessionRequest['contextSettings'];
+  }>;
+
+  type SessionIdentifierInput = ToolHandlerInput<{ sessionId: string }>;
+
+  type ChatToolInput = ToolHandlerInput<{
+    sessionId?: string;
+    message: string;
+    contextSettings?: Record<string, unknown>;
+    timelineId?: string;
+  }>;
+
+  type SemanticSearchToolInput = ToolHandlerInput<{
+    sessionId?: string;
+    query: string;
+    options?: SemanticSearchRequest['options'];
+  }>;
+
+  type ReasoningGenerateToolInput = ToolHandlerInput<{
+    sessionId?: string;
+    query: string;
+    messages?: ReasoningGenerateRequest['messages'];
+    contextSettingsOverride?: ReasoningGenerateRequest['contextSettingsOverride'];
+    preferencesOverride?: ReasoningGenerateRequest['preferencesOverride'];
+    overridePipeline?: ReasoningGenerateRequest['overridePipeline'];
+    useDetailedIntentAnalysis?: ReasoningGenerateRequest['useDetailedIntentAnalysis'];
+  }>;
+
+  type ResolveContextToolInput = ToolHandlerInput<{
+    sessionId?: string;
+    query: string;
+    messages?: ContextResolveRequest['messages'];
+    contextSettingsOverride?: ContextResolveRequest['contextSettingsOverride'];
+  }>;
+
+  type ClarificationAnalyzeToolInput = ToolHandlerInput<{
+    sessionId?: string;
+    query: string;
+    includeEnhancedQuery?: boolean;
+  }>;
+
+  type CreateNodeScriptToolInput = ToolHandlerInput<{
+    sessionId?: string;
+    source: string;
+    timeoutMs?: number;
+    metadata?: Record<string, string>;
+    tags?: string[];
+  }>;
+
+  type GetToolJobInput = ToolHandlerInput<{
+    jobId: string;
+    includeLogs?: boolean;
+  }>;
+
+  type CreateArtifactToolInput = ToolHandlerInput<{
+    sessionId?: string;
+    type: string;
+    name: string;
+    mimeType: string;
+    encoding: 'utf8' | 'base64';
+    content: string;
+    description?: string;
+    tags?: string[];
+    metadata?: Record<string, unknown>;
+    version?: string;
+  }>;
+
+  type ListDocumentsToolInput = ToolHandlerInput<{
+    page?: number;
+    limit?: number;
+    search?: string;
+    processed?: boolean;
+  }>;
+
+  type DocumentIdentifierInput = ToolHandlerInput<{ documentId: string }>;
+
+  type UpdateDocumentToolInput = ToolHandlerInput<{
+    documentId: string;
+    title?: string;
+    description?: string;
+    tags?: string[];
+    is_ai_context_enabled?: boolean;
+  }>;
+
+  type ToggleAiContextToolInput = ToolHandlerInput<{
+    documentId: string;
+    enabled: boolean;
+  }>;
+
+  type MessageOnlyInput = ToolHandlerInput<{ message: string }>;
+
+  type ChatEdifactToolInput = ToolHandlerInput<{
+    message: string;
+    currentEdifactMessage: string;
+    chatHistory?: Array<{ role: 'user' | 'assistant'; content: string }>;
+  }>;
+
+  type ModifyEdifactToolInput = ToolHandlerInput<{
+    instruction: string;
+    currentMessage: string;
+  }>;
+
+  type MarketPartnerSearchInput = ToolHandlerInput<{
+    q: string;
+    limit?: number;
+  }>;
+
   const parseExpiresAt = (value?: string): number | undefined => {
     if (!value) {
       return undefined;
@@ -342,7 +460,80 @@ Resources:
           return result;
         } catch (error) {
           const duration = Date.now() - startedAt;
-          const message = error instanceof Error ? error.message : String(error);
+          let message: string;
+
+          if (error instanceof WilliMakoError) {
+            // Special handling for Willi-Mako API errors
+            const details =
+              typeof error.body === 'object' && error.body !== null
+                ? JSON.stringify(error.body)
+                : String(error.body);
+            message = `${error.message} (status: ${error.status}) - ${details}`;
+            emitLog(`❌ [${invocationId}] ${toolName} failed after ${duration}ms – ${message}`);
+
+            // Check for authentication/token errors (403 or 401)
+            if (error.status === 403 || error.status === 401) {
+              const isTokenExpired =
+                error.message.toLowerCase().includes('token') ||
+                error.message.toLowerCase().includes('expired') ||
+                error.message.toLowerCase().includes('invalid');
+
+              if (isTokenExpired) {
+                const helpMessage = `Authentication failed: ${error.message}
+
+🔑 Your token appears to be invalid or expired. To fix this:
+
+1. **Get a new token via willi-mako-login tool:**
+   Call the "willi-mako-login" tool with your email and password:
+   {
+     "email": "your-email@example.com",
+     "password": "your-password",
+     "persistToken": true
+   }
+
+2. **Or set WILLI_MAKO_TOKEN environment variable:**
+   Run: willi-mako auth login
+   Then use the token in subsequent requests.
+
+3. **Or use the token-in-path format:**
+   https://mcp.stromhaltig.de/<your-token>/mcp
+
+4. **Or use npx to get a new token:**
+   npx willi-mako-client auth login -e <youremail> -p <yourpassword>
+   Copy the token and use it in your requests.`;
+
+                throw new McpError(ErrorCode.InvalidRequest, helpMessage, error.body);
+              }
+            }
+
+            // Convert to MCP error for proper client handling
+            throw new McpError(
+              ErrorCode.InternalError,
+              `Willi-Mako API error (${error.status}): ${error.message}`,
+              error.body
+            );
+          } else if (error instanceof Error) {
+            message = error.message;
+          } else if (typeof error === 'object' && error !== null) {
+            // Better handling for error objects (e.g., API errors, Axios errors)
+            const errorObj = error as Record<string, unknown>;
+            const parts: string[] = [];
+
+            if (errorObj.message && typeof errorObj.message === 'string') {
+              parts.push(errorObj.message);
+            }
+            if (errorObj.code && typeof errorObj.code === 'string') {
+              parts.push(`[${errorObj.code}]`);
+            }
+            if (errorObj.status && typeof errorObj.status === 'number') {
+              parts.push(`(status: ${errorObj.status})`);
+            }
+
+            message = parts.length > 0 ? parts.join(' ') : JSON.stringify(error);
+          } else {
+            message = String(error);
+          }
+
           emitLog(`❌ [${invocationId}] ${toolName} failed after ${duration}ms – ${message}`);
           throw error;
         }
@@ -363,7 +554,8 @@ Resources:
             .describe('Persist the token on the MCP server (defaults to true).')
         }
       },
-      async ({ email, password, persistToken = true }, extra?: RequestContext) => {
+      async (input: Record<string, unknown>, extra?: RequestContext) => {
+        const { email, password, persistToken = true } = input as LoginToolInput;
         const authClient = new WilliMakoClient({ baseUrl, token: null });
         const response = await authClient.login({ email, password }, { persistToken });
 
@@ -410,8 +602,9 @@ Resources:
             .describe('Initial context configuration used by the assistant.')
         }
       },
-      async ({ ttlMinutes, preferences, contextSettings }, extra?: RequestContext) =>
+      async (input: Record<string, unknown>, extra?: RequestContext) =>
         withClient(extra, async (clientInstance, transportSessionId) => {
+          const { ttlMinutes, preferences, contextSettings } = input as CreateSessionToolInput;
           const payload: CreateSessionRequest = {};
           if (typeof ttlMinutes === 'number') {
             payload.ttlMinutes = ttlMinutes;
@@ -441,8 +634,9 @@ Resources:
           sessionId: z.string().describe('Session identifier (UUID).')
         }
       },
-      async ({ sessionId }, extra?: RequestContext) =>
+      async (input: Record<string, unknown>, extra?: RequestContext) =>
         withClient(extra, async (clientInstance) => {
+          const { sessionId } = input as SessionIdentifierInput;
           const response = await clientInstance.getSession(sessionId);
           return respond(response);
         })
@@ -457,8 +651,9 @@ Resources:
           sessionId: z.string().describe('Session identifier (UUID).')
         }
       },
-      async ({ sessionId }, extra?: RequestContext) =>
+      async (input: Record<string, unknown>, extra?: RequestContext) =>
         withClient(extra, async (clientInstance, transportSessionId) => {
+          const { sessionId } = input as SessionIdentifierInput;
           await clientInstance.deleteSession(sessionId);
           if (transportSessionId) {
             const state = transportState.get(transportSessionId);
@@ -492,8 +687,9 @@ Resources:
             .describe('Optional timeline identifier to link events.')
         }
       },
-      async ({ sessionId, message, contextSettings, timelineId }, extra?: RequestContext) =>
+      async (input: Record<string, unknown>, extra?: RequestContext) =>
         withClient(extra, async (clientInstance, transportSessionId) => {
+          const { sessionId, message, contextSettings, timelineId } = input as ChatToolInput;
           const activeSessionId = await ensureSessionId(
             clientInstance,
             transportSessionId,
@@ -529,8 +725,9 @@ Resources:
             .describe('Optional retrieval options (limit, alpha, outlineScoping, excludeVisual).')
         }
       },
-      async ({ sessionId, query, options }, extra?: RequestContext) =>
+      async (input: Record<string, unknown>, extra?: RequestContext) =>
         withClient(extra, async (clientInstance, transportSessionId) => {
+          const { sessionId, query, options } = input as SemanticSearchToolInput;
           const activeSessionId = await ensureSessionId(
             clientInstance,
             transportSessionId,
@@ -566,8 +763,9 @@ Resources:
             .describe('Optional retrieval options (limit, alpha, outlineScoping, excludeVisual).')
         }
       },
-      async ({ sessionId, query, options }, extra?: RequestContext) =>
+      async (input: Record<string, unknown>, extra?: RequestContext) =>
         withClient(extra, async (clientInstance, transportSessionId) => {
+          const { sessionId, query, options } = input as SemanticSearchToolInput;
           const activeSessionId = await ensureSessionId(
             clientInstance,
             transportSessionId,
@@ -603,8 +801,9 @@ Resources:
             .describe('Optional timeline identifier to link events.')
         }
       },
-      async ({ sessionId, message, contextSettings, timelineId }, extra?: RequestContext) =>
+      async (input: Record<string, unknown>, extra?: RequestContext) =>
         withClient(extra, async (clientInstance, transportSessionId) => {
+          const { sessionId, message, contextSettings, timelineId } = input as ChatToolInput;
           const activeSessionId = await ensureSessionId(
             clientInstance,
             transportSessionId,
@@ -641,8 +840,9 @@ Resources:
             .describe('Optional retrieval options (limit, alpha, outlineScoping, excludeVisual).')
         }
       },
-      async ({ sessionId, query, options }, extra?: RequestContext) =>
+      async (input: Record<string, unknown>, extra?: RequestContext) =>
         withClient(extra, async (clientInstance, transportSessionId) => {
+          const { sessionId, query, options } = input as SemanticSearchToolInput;
           const activeSessionId = await ensureSessionId(
             clientInstance,
             transportSessionId,
@@ -678,8 +878,9 @@ Resources:
             .describe('Optional timeline identifier to link events.')
         }
       },
-      async ({ sessionId, message, contextSettings, timelineId }, extra?: RequestContext) =>
+      async (input: Record<string, unknown>, extra?: RequestContext) =>
         withClient(extra, async (clientInstance, transportSessionId) => {
+          const { sessionId, message, contextSettings, timelineId } = input as ChatToolInput;
           const activeSessionId = await ensureSessionId(
             clientInstance,
             transportSessionId,
@@ -732,19 +933,17 @@ Resources:
             .describe('Enable detailed intent analysis for the request.')
         }
       },
-      async (
-        {
-          sessionId,
-          query,
-          messages,
-          contextSettingsOverride,
-          preferencesOverride,
-          overridePipeline,
-          useDetailedIntentAnalysis
-        },
-        extra?: RequestContext
-      ) =>
+      async (input: Record<string, unknown>, extra?: RequestContext) =>
         withClient(extra, async (clientInstance, transportSessionId) => {
+          const {
+            sessionId,
+            query,
+            messages,
+            contextSettingsOverride,
+            preferencesOverride,
+            overridePipeline,
+            useDetailedIntentAnalysis
+          } = input as ReasoningGenerateToolInput;
           const activeSessionId = await ensureSessionId(
             clientInstance,
             transportSessionId,
@@ -787,8 +986,10 @@ Resources:
             .describe('Optional context override for this resolution.')
         }
       },
-      async ({ sessionId, query, messages, contextSettingsOverride }, extra?: RequestContext) =>
+      async (input: Record<string, unknown>, extra?: RequestContext) =>
         withClient(extra, async (clientInstance, transportSessionId) => {
+          const { sessionId, query, messages, contextSettingsOverride } =
+            input as ResolveContextToolInput;
           const activeSessionId = await ensureSessionId(
             clientInstance,
             transportSessionId,
@@ -819,8 +1020,9 @@ Resources:
             .describe('Request an enhanced query suggestion to disambiguate the request.')
         }
       },
-      async ({ sessionId, query, includeEnhancedQuery }, extra?: RequestContext) =>
+      async (input: Record<string, unknown>, extra?: RequestContext) =>
         withClient(extra, async (clientInstance, transportSessionId) => {
+          const { sessionId, query, includeEnhancedQuery } = input as ClarificationAnalyzeToolInput;
           const activeSessionId = await ensureSessionId(
             clientInstance,
             transportSessionId,
@@ -865,8 +1067,10 @@ Resources:
             .describe('Optional tags for discovery. This will be merged into metadata.tags field.')
         }
       },
-      async ({ sessionId, source, timeoutMs, metadata, tags }, extra?: RequestContext) =>
+      async (input: Record<string, unknown>, extra?: RequestContext) =>
         withClient(extra, async (clientInstance, transportSessionId) => {
+          const { sessionId, source, timeoutMs, metadata, tags } =
+            input as CreateNodeScriptToolInput;
           const activeSessionId = await ensureSessionId(
             clientInstance,
             transportSessionId,
@@ -881,18 +1085,7 @@ Resources:
           };
 
           const response = await clientInstance.createNodeScriptJob(payload);
-          return {
-            content: [
-              {
-                type: 'text',
-                text: JSON.stringify(response.data, null, 2)
-              }
-            ],
-            structuredContent: {
-              sessionId: activeSessionId,
-              data: response.data
-            }
-          };
+          return respond({ sessionId: activeSessionId, data: response.data });
         })
     );
 
@@ -909,21 +1102,14 @@ Resources:
             .describe('Whether to include stdout/stderr in the response (defaults to true).')
         }
       },
-      async ({ jobId, includeLogs = true }, extra?: RequestContext) =>
+      async (input: Record<string, unknown>, extra?: RequestContext) =>
         withClient(extra, async (clientInstance) => {
+          const { jobId, includeLogs = true } = input as GetToolJobInput;
           const response = await clientInstance.getToolJob(jobId);
           const data = includeLogs
             ? response.data
             : { ...response.data, job: { ...response.data.job, result: undefined } };
-          return {
-            content: [
-              {
-                type: 'text',
-                text: JSON.stringify(data, null, 2)
-              }
-            ],
-            structuredContent: data
-          };
+          return respond(data);
         })
     );
 
@@ -953,22 +1139,20 @@ Resources:
           version: z.string().optional().describe('Semantic version identifier if applicable.')
         }
       },
-      async (
-        {
-          sessionId,
-          type,
-          name,
-          mimeType,
-          encoding,
-          content,
-          description,
-          tags,
-          metadata,
-          version
-        },
-        extra?: RequestContext
-      ) =>
+      async (input: Record<string, unknown>, extra?: RequestContext) =>
         withClient(extra, async (clientInstance, transportSessionId) => {
+          const {
+            sessionId,
+            type,
+            name,
+            mimeType,
+            encoding,
+            content,
+            description,
+            tags,
+            metadata,
+            version
+          } = input as CreateArtifactToolInput;
           const activeSessionId = await ensureSessionId(
             clientInstance,
             transportSessionId,
@@ -986,19 +1170,7 @@ Resources:
             metadata,
             version
           });
-
-          return {
-            content: [
-              {
-                type: 'text',
-                text: JSON.stringify(response.data, null, 2)
-              }
-            ],
-            structuredContent: {
-              sessionId: activeSessionId,
-              data: response.data
-            }
-          };
+          return respond({ sessionId: activeSessionId, data: response.data });
         })
     );
 
@@ -1015,23 +1187,16 @@ Resources:
           processed: z.boolean().describe('Filter by processing status').optional()
         }
       },
-      async ({ page, limit, search, processed }, extra?: RequestContext) =>
+      async (input: Record<string, unknown>, extra?: RequestContext) =>
         withClient(extra, async (clientInstance) => {
+          const { page, limit, search, processed } = input as ListDocumentsToolInput;
           const response = await clientInstance.listDocuments({
             page,
             limit,
             search,
             processed
           });
-          return {
-            content: [
-              {
-                type: 'text',
-                text: JSON.stringify(response.data, null, 2)
-              }
-            ],
-            structuredContent: response.data
-          };
+          return respond(response.data);
         })
     );
 
@@ -1044,18 +1209,11 @@ Resources:
           documentId: z.string().describe('Unique document identifier')
         }
       },
-      async ({ documentId }, extra?: RequestContext) =>
+      async (input: Record<string, unknown>, extra?: RequestContext) =>
         withClient(extra, async (clientInstance) => {
+          const { documentId } = input as DocumentIdentifierInput;
           const response = await clientInstance.getDocument(documentId);
-          return {
-            content: [
-              {
-                type: 'text',
-                text: JSON.stringify(response.data, null, 2)
-              }
-            ],
-            structuredContent: response.data as unknown as Record<string, unknown>
-          };
+          return respond(response.data as unknown as Record<string, unknown>);
         })
     );
 
@@ -1076,26 +1234,17 @@ Resources:
             .describe('Whether to enable/disable AI context')
         }
       },
-      async (
-        { documentId, title, description, tags, is_ai_context_enabled },
-        extra?: RequestContext
-      ) =>
+      async (input: Record<string, unknown>, extra?: RequestContext) =>
         withClient(extra, async (clientInstance) => {
+          const { documentId, title, description, tags, is_ai_context_enabled } =
+            input as UpdateDocumentToolInput;
           const response = await clientInstance.updateDocument(documentId, {
             title,
             description,
             tags,
             is_ai_context_enabled
           });
-          return {
-            content: [
-              {
-                type: 'text',
-                text: JSON.stringify(response.data, null, 2)
-              }
-            ],
-            structuredContent: response.data as unknown as Record<string, unknown>
-          };
+          return respond(response.data as unknown as Record<string, unknown>);
         })
     );
 
@@ -1108,21 +1257,11 @@ Resources:
           documentId: z.string().describe('Unique document identifier')
         }
       },
-      async ({ documentId }, extra?: RequestContext) =>
+      async (input: Record<string, unknown>, extra?: RequestContext) =>
         withClient(extra, async (clientInstance) => {
+          const { documentId } = input as DocumentIdentifierInput;
           await clientInstance.deleteDocument(documentId);
-          return {
-            content: [
-              {
-                type: 'text',
-                text: JSON.stringify({ success: true, message: 'Document deleted' }, null, 2)
-              }
-            ],
-            structuredContent: {
-              success: true,
-              message: 'Document deleted'
-            }
-          };
+          return respond({ success: true, message: 'Document deleted' });
         })
     );
 
@@ -1136,18 +1275,11 @@ Resources:
           documentId: z.string().describe('Unique document identifier')
         }
       },
-      async ({ documentId }, extra?: RequestContext) =>
+      async (input: Record<string, unknown>, extra?: RequestContext) =>
         withClient(extra, async (clientInstance) => {
+          const { documentId } = input as DocumentIdentifierInput;
           const response = await clientInstance.reprocessDocument(documentId);
-          return {
-            content: [
-              {
-                type: 'text',
-                text: JSON.stringify(response.data, null, 2)
-              }
-            ],
-            structuredContent: response.data
-          };
+          return respond(response.data);
         })
     );
 
@@ -1162,18 +1294,11 @@ Resources:
           enabled: z.boolean().describe('Whether to enable or disable AI context')
         }
       },
-      async ({ documentId, enabled }, extra?: RequestContext) =>
+      async (input: Record<string, unknown>, extra?: RequestContext) =>
         withClient(extra, async (clientInstance) => {
+          const { documentId, enabled } = input as ToggleAiContextToolInput;
           const response = await clientInstance.toggleAiContext(documentId, enabled);
-          return {
-            content: [
-              {
-                type: 'text',
-                text: JSON.stringify(response.data, null, 2)
-              }
-            ],
-            structuredContent: response.data as unknown as Record<string, unknown>
-          };
+          return respond(response.data as unknown as Record<string, unknown>);
         })
     );
 
@@ -1191,13 +1316,14 @@ Resources:
           message: z.string().describe('The EDIFACT message to analyze')
         }
       },
-      async ({ message }, extra?: RequestContext) =>
+      async (input: Record<string, unknown>, extra?: RequestContext) =>
         withClient(extra, async (clientInstance) => {
+          const { message } = input as MessageOnlyInput;
           const response = await clientInstance.analyzeEdifactMessage({ message });
           return {
             content: [
               {
-                type: 'text',
+                type: 'text' as const,
                 text: `Format: ${response.data.format}\nSummary: ${response.data.summary}\n\nSegments: ${response.data.structuredData.segments.length}\n\n${JSON.stringify(response.data, null, 2)}`
               }
             ],
@@ -1226,8 +1352,9 @@ Resources:
             .describe('Previous chat history for context')
         }
       },
-      async ({ message, currentEdifactMessage, chatHistory }, extra?: RequestContext) =>
+      async (input: Record<string, unknown>, extra?: RequestContext) =>
         withClient(extra, async (clientInstance) => {
+          const { message, currentEdifactMessage, chatHistory } = input as ChatEdifactToolInput;
           const response = await clientInstance.chatAboutEdifactMessage({
             message,
             currentEdifactMessage,
@@ -1236,7 +1363,7 @@ Resources:
           return {
             content: [
               {
-                type: 'text',
+                type: 'text' as const,
                 text: response.data.response
               }
             ],
@@ -1255,13 +1382,14 @@ Resources:
           message: z.string().describe('The EDIFACT message to explain')
         }
       },
-      async ({ message }, extra?: RequestContext) =>
+      async (input: Record<string, unknown>, extra?: RequestContext) =>
         withClient(extra, async (clientInstance) => {
+          const { message } = input as MessageOnlyInput;
           const response = await clientInstance.explainEdifactMessage({ message });
           return {
             content: [
               {
-                type: 'text',
+                type: 'text' as const,
                 text: response.data.explanation
               }
             ],
@@ -1280,14 +1408,15 @@ Resources:
           message: z.string().describe('The EDIFACT message to validate')
         }
       },
-      async ({ message }, extra?: RequestContext) =>
+      async (input: Record<string, unknown>, extra?: RequestContext) =>
         withClient(extra, async (clientInstance) => {
+          const { message } = input as MessageOnlyInput;
           const response = await clientInstance.validateEdifactMessage({ message });
           const summary = `Valid: ${response.data.isValid ? 'Yes' : 'No'}\nMessage Type: ${response.data.messageType || 'Unknown'}\nSegments: ${response.data.segmentCount || 0}\nErrors: ${response.data.errors.length}\nWarnings: ${response.data.warnings.length}`;
           return {
             content: [
               {
-                type: 'text',
+                type: 'text' as const,
                 text: `${summary}\n\n${JSON.stringify(response.data, null, 2)}`
               }
             ],
@@ -1309,8 +1438,9 @@ Resources:
           currentMessage: z.string().describe('The current EDIFACT message to modify')
         }
       },
-      async ({ instruction, currentMessage }, extra?: RequestContext) =>
+      async (input: Record<string, unknown>, extra?: RequestContext) =>
         withClient(extra, async (clientInstance) => {
+          const { instruction, currentMessage } = input as ModifyEdifactToolInput;
           const response = await clientInstance.modifyEdifactMessage({
             instruction,
             currentMessage
@@ -1318,7 +1448,7 @@ Resources:
           return {
             content: [
               {
-                type: 'text',
+                type: 'text' as const,
                 text: `Modified message:\n\n${response.data.modifiedMessage}\n\nValid: ${response.data.isValid ? 'Yes' : 'No'}`
               }
             ],
@@ -1345,8 +1475,9 @@ Resources:
             .describe('Maximum number of results (1-20, default: 10)')
         }
       },
-      async ({ q, limit }, extra?: RequestContext) =>
+      async (input: Record<string, unknown>, extra?: RequestContext) =>
         withClient(extra, async (clientInstance) => {
+          const { q, limit } = input as MarketPartnerSearchInput;
           const response = await clientInstance.searchMarketPartners({
             q,
             limit
@@ -1398,7 +1529,7 @@ Resources:
           return {
             content: [
               {
-                type: 'text',
+                type: 'text' as const,
                 text: summaryText
               }
             ],

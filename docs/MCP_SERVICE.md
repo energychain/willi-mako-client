@@ -246,6 +246,42 @@ Replace `<YOUR_TOKEN>` with a freshly issued JWT or configure VS Code to send an
 - **Session reset:** Disconnecting an MCP transport clears in-memory session state. Re-run `willi-mako-create-session` after reconnecting.
 - **PM2 shim:** If you see `ERR_REQUIRE_ESM`, upgrade to `willi-mako-client@0.3.4` or newer, which ships the CommonJS wrapper.
 
+### Expired or Invalid Token Errors
+
+If you encounter authentication errors (HTTP 403 or 401) with messages like "Invalid token" or "Token expired", the MCP server provides helpful guidance directly in the error response. You have several options to obtain a fresh token:
+
+**Option 1: Use the `willi-mako-login` tool within MCP**
+```json
+{
+  "email": "your-email@example.com",
+  "password": "your-password",
+  "persistToken": true
+}
+```
+The token will be stored for the current MCP session and used automatically for subsequent tool calls.
+
+**Option 2: Set the WILLI_MAKO_TOKEN environment variable**
+```bash
+willi-mako auth login
+# Copy the token and set it as WILLI_MAKO_TOKEN
+export WILLI_MAKO_TOKEN="your-new-token"
+```
+Restart the MCP server to pick up the new token.
+
+**Option 3: Use the token-in-path format**
+```
+https://mcp.stromhaltig.de/<your-fresh-token>/mcp
+```
+This is convenient for quick tests or browser-based MCP clients.
+
+**Option 4: Use npx to get a new token**
+```bash
+npx willi-mako-client auth login -e <youremail> -p <yourpassword>
+```
+Copy the token from the output and use it in your Authorization header or URL.
+
+The MCP server automatically detects token-related errors and includes these instructions in the error message, making it easy to resolve authentication issues without consulting documentation.
+
 For additional debugging tips, refer to [`docs/TROUBLESHOOTING.md`](./TROUBLESHOOTING.md).
 
 ---

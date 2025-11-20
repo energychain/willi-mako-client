@@ -97,12 +97,12 @@ git push origin v0.8.0
 
 ### 3. **Documentation Pipeline** (`.github/workflows/docs.yml`)
 
-**Trigger:** Push zu `main`, PRs
+**Trigger:** Push zu `main` sobald Versions-Dateien (`package*.json`, `jsr.json`, `schemas/openapi.json`, `CHANGELOG.md`) geändert werden – also automatisch bei jedem Release-Commit. Zusätzlich manuell via `workflow_dispatch`.
 
 **Prozess:**
-- Generiert TypeDoc-Dokumentation
-- Deployed zu GitHub Pages (optional)
-- Validiert Markdown-Links
+- Generiert TypeDoc-Dokumentation (`npm run docs` ⇒ `docs-api/`)
+- Paketiert Artefakt und deployed es mit `actions/deploy-pages` auf GitHub Pages (`gh-pages` Branch)
+- Läuft gekoppelt mit Versions-Bumps, sodass API-Doku und npm-Version stets synchron bleiben
 
 ---
 

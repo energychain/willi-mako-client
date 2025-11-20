@@ -955,8 +955,28 @@ export class WilliMakoClient {
     if (!response.ok) {
       const text = await response.text();
       const body = text.length ? parseJsonSafe(text) : undefined;
-      const message = (body as { error?: string })?.error ?? response.statusText;
-      throw new WilliMakoError(message || 'Download failed', response.status, body);
+
+      // Extract error message from various possible response structures
+      let message: string;
+      const bodyObj = body as Record<string, unknown> | undefined;
+
+      if (bodyObj?.error) {
+        if (typeof bodyObj.error === 'string') {
+          message = bodyObj.error;
+        } else if (typeof bodyObj.error === 'object' && bodyObj.error !== null) {
+          const errorObj = bodyObj.error as Record<string, unknown>;
+          message =
+            typeof errorObj.message === 'string' ? errorObj.message : JSON.stringify(bodyObj.error);
+        } else {
+          message = String(bodyObj.error);
+        }
+      } else if (typeof bodyObj?.message === 'string') {
+        message = bodyObj.message;
+      } else {
+        message = response.statusText || 'Download failed';
+      }
+
+      throw new WilliMakoError(message, response.status, body);
     }
 
     return response.arrayBuffer();
@@ -1307,8 +1327,30 @@ export class WilliMakoClient {
     const body = text.length ? parseJsonSafe(text) : undefined;
 
     if (!response.ok) {
-      const message = (body as { error?: string })?.error ?? response.statusText;
-      throw new WilliMakoError(message || 'Request failed', response.status, body);
+      // Extract error message from various possible response structures
+      let message: string;
+      const bodyObj = body as Record<string, unknown> | undefined;
+
+      if (bodyObj?.error) {
+        if (typeof bodyObj.error === 'string') {
+          // Simple string error: { error: "message" }
+          message = bodyObj.error;
+        } else if (typeof bodyObj.error === 'object' && bodyObj.error !== null) {
+          // Nested error object: { error: { message: "..." } }
+          const errorObj = bodyObj.error as Record<string, unknown>;
+          message =
+            typeof errorObj.message === 'string' ? errorObj.message : JSON.stringify(bodyObj.error);
+        } else {
+          message = String(bodyObj.error);
+        }
+      } else if (typeof bodyObj?.message === 'string') {
+        // Direct message: { message: "..." }
+        message = bodyObj.message;
+      } else {
+        message = response.statusText || 'Request failed';
+      }
+
+      throw new WilliMakoError(message, response.status, body);
     }
 
     return body as T;
