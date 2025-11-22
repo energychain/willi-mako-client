@@ -1248,7 +1248,7 @@ export class WilliMakoClient {
    * Searches for market partners using BDEW/EIC codes, company names, cities, etc.
    * This is a public endpoint that does not require authentication.
    *
-   * @param query - Search parameters including the search term and optional limit
+   * @param query - Search parameters including the search term, optional limit, and optional role filter
    * @returns Search results containing market partner information
    *
    * @example
@@ -1257,6 +1257,13 @@ export class WilliMakoClient {
    * const results = await client.searchMarketPartners({
    *   q: 'Stadtwerke München',
    *   limit: 5
+   * });
+   *
+   * // Search for distribution network operators (VNB)
+   * const vnbResults = await client.searchMarketPartners({
+   *   q: 'Stadtwerke',
+   *   role: 'VNB',
+   *   limit: 20
    * });
    *
    * for (const partner of results.data.results) {
@@ -1279,12 +1286,18 @@ export class WilliMakoClient {
   public async searchMarketPartners(
     query: MarketPartnerSearchQuery
   ): Promise<MarketPartnerSearchResponse> {
-    const params = new URLSearchParams({
-      q: query.q
-    });
+    const params = new URLSearchParams();
+
+    if (query.q !== undefined) {
+      params.set('q', query.q);
+    }
 
     if (query.limit !== undefined) {
       params.set('limit', query.limit.toString());
+    }
+
+    if (query.role !== undefined) {
+      params.set('role', query.role);
     }
 
     return this.request<MarketPartnerSearchResponse>(

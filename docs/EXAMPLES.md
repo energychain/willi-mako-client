@@ -224,11 +224,23 @@ willi-mako tools generate-script \
   --attachment "./docs/mscons-bilanzierung.md|text/markdown|Bilanzierungsleitfaden" \
   --attachment '{"path":"./data/profilwerte.csv","mimeType":"text/csv","description":"Profilwerte Q1","weight":0.3}'
 
-# Search for market partners (v0.7.1) - public endpoint, no auth required
+# Search for market partners (v0.9.0) - public endpoint, no auth required
 willi-mako market-partners search --query "Stadtwerke München" --limit 5
 
 # Search by BDEW code
 willi-mako market-partners search --query "9900123456789"
+
+# Filter by market role (distribution network operators)
+willi-mako market-partners search --query "Stadtwerke" --role VNB --limit 20
+
+# Export all distribution network operators as CSV
+willi-mako market-partners search --query "Netz" --role VNB --csv > vnb-liste.csv
+
+# Filter by suppliers (Lieferanten)
+willi-mako market-partners search --query "Energie" --role LF --limit 20
+
+# Filter by metering point operators
+willi-mako market-partners search --query "Mess" --role MSB --limit 20
 
 # Get detailed JSON output for further processing
 willi-mako market-partners search --query "Berlin" --json | jq '.data.results[] | {name: .companyName, code: .code, contacts: .contacts | length}'

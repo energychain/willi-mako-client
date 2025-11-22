@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { WilliMakoClient } from '../src/index.js';
 
-describe('Market Partners Search (v0.7.1)', () => {
+describe('Market Partners Search (v0.9.0)', () => {
   let client: WilliMakoClient;
 
   beforeAll(() => {
@@ -128,7 +128,7 @@ describe('Market Partners Search (v0.7.1)', () => {
       });
 
       expect(response.success).toBe(true);
-      expect(response.data.results.length).toBeLessThanOrEqual(10); // Default limit
+      expect(response.data.results.length).toBeLessThanOrEqual(50); // Default limit with query (v0.9.1)
     });
 
     it('should handle special characters in search query', async () => {
@@ -141,22 +141,72 @@ describe('Market Partners Search (v0.7.1)', () => {
       expect(response.data).toBeDefined();
     });
 
-    it('should clamp limit values that exceed the maximum', async () => {
+    it('should support high limit values up to 2000', async () => {
       const response = await client.searchMarketPartners({
-        q: 'test',
-        limit: 25 // Backend caps at 20
+        q: 'Stadtwerke',
+        limit: 100
       });
 
       expect(response.success).toBe(true);
-      expect(response.data.results.length).toBeLessThanOrEqual(20);
+      expect(response.data.results.length).toBeLessThanOrEqual(100);
     });
 
-    it('should return error for empty query', async () => {
-      await expect(
-        client.searchMarketPartners({
-          q: ''
-        })
-      ).rejects.toThrow();
+    it('should allow search without query when using role filter', async () => {
+      const response = await client.searchMarketPartners({
+        role: 'VNB',
+        limit: 20
+      });
+
+      expect(response.success).toBe(true);
+      expect(response.data.results).toBeDefined();
+      expect(response.data.results.length).toBeGreaterThan(0);
+    });
+
+    it('should filter by market role VNB (distribution network operators)', async () => {
+      const response = await client.searchMarketPartners({
+        q: 'Stadtwerke',
+        role: 'VNB',
+        limit: 10
+      });
+
+      expect(response.success).toBe(true);
+      expect(response.data).toBeDefined();
+      expect(response.data.results).toBeInstanceOf(Array);
+    });
+
+    it('should filter by market role LF (suppliers)', async () => {
+      const response = await client.searchMarketPartners({
+        q: 'Energie',
+        role: 'LF',
+        limit: 10
+      });
+
+      expect(response.success).toBe(true);
+      expect(response.data).toBeDefined();
+      expect(response.data.results).toBeInstanceOf(Array);
+    });
+
+    it('should filter by market role MSB (metering point operators)', async () => {
+      const response = await client.searchMarketPartners({
+        q: 'Mess',
+        role: 'MSB',
+        limit: 10
+      });
+
+      expect(response.success).toBe(true);
+      expect(response.data).toBeDefined();
+      expect(response.data.results).toBeInstanceOf(Array);
+    });
+
+    it('should support German role names like VERTEILNETZBETREIBER', async () => {
+      const response = await client.searchMarketPartners({
+        q: 'Netz',
+        role: 'VERTEILNETZBETREIBER',
+        limit: 5
+      });
+
+      expect(response.success).toBe(true);
+      expect(response.data).toBeDefined();
     });
   });
 

@@ -4,6 +4,49 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) as soon as we reach a stable `1.0.0` release.
 
+## [0.9.1] - 2025-11-22
+
+### Added
+- **🔍 Enhanced Market Partner Search (API v0.9.1)**:
+  - **Optional Query Parameter**: The `q` parameter is now optional when using role filters, enabling complete exports of all market partners by role
+  - **Increased Limits**: Maximum limit raised from 20 to 2000 results per request
+  - **Smart Defaults**:
+    - 50 results when using search query
+    - 500 results for pure filter-based searches (no query)
+  - **CSV Export**: New `--csv` flag for CLI to export market partner lists as CSV
+  - **Complete VNB List**: Can now export all 913+ distribution network operators in Germany
+
+- **🎯 Market Role Filtering**:
+  - New `role` parameter for filtering by market role:
+    - `VNB` - Verteilnetzbetreiber (Distribution Network Operators)
+    - `LF` - Lieferant (Suppliers)
+    - `MSB` - Messstellenbetreiber (Metering Point Operators)
+    - `UNB`/`ÜNB` - Übertragungsnetzbetreiber (Transmission Network Operators)
+  - German long-form role names also supported
+  - Implemented in SDK, CLI, and MCP server
+
+- **🛠️ MCP Server Enhancement**:
+  - New tool `willi-mako.search-market-partners` with full role filtering support
+  - Public endpoint, no authentication required
+
+### Changed
+- **📊 Market Partner Search Interface**:
+  - `MarketPartnerSearchQuery.q` is now optional (previously required)
+  - `MarketPartnerSearchQuery.limit` increased to 1-2000 (previously 1-20)
+  - Updated TypeScript types and documentation
+
+### Examples
+```bash
+# Export all distribution network operators in Germany
+willi-mako market-partners search --role VNB --limit 2000 --csv > vnb.csv
+
+# Search for specific suppliers
+willi-mako market-partners search -q "Stadtwerke" --role LF --limit 100
+
+# Get all metering point operators without search filter
+willi-mako market-partners search --role MSB --csv > msb.csv
+```
+
 ## [0.8.2] - 2025-11-20
 
 ### Fixed

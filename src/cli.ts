@@ -1465,75 +1465,118 @@ const marketPartners = program
 marketPartners
   .command('search')
   .description('Search for market partners by code, company name, or city')
-  .requiredOption('-q, --query <query>', 'Search term (code, company name, city, etc.)')
-  .option('-l, --limit <limit>', 'Maximum number of results (1-20)', '10')
+  .option(
+    '-q, --query <query>',
+    'Search term (code, company name, city, etc.) - optional when using --role'
+  )
+  .option(
+    '-l, --limit <limit>',
+    'Maximum number of results (1-2000). Default: 50 with query, 500 for filter-only'
+  )
+  .option(
+    '-r, --role <role>',
+    'Filter by market role (VNB, LF, MSB, UNB, ÜNB, LIEFERANT, VERTEILNETZBETREIBER, MESSSTELLENBETREIBER, ÜBERTRAGUNGSNETZBETREIBER)'
+  )
+  .option('--csv', 'Export results as CSV')
   .option('--json', 'Output JSON response', true)
-  .action(async (options: { query: string; limit?: string; json?: boolean }) => {
-    const client = await createClient({ requireToken: false }); // Public endpoint
+  .action(
+    async (options: {
+      query?: string;
+      limit?: string;
+      role?: string;
+      csv?: boolean;
+      json?: boolean;
+    }) => {
+      const client = await createClient({ requireToken: false }); // Public endpoint
 
-    const limit = options.limit ? parseInt(options.limit, 10) : 10;
+      let limit: number | undefined;
+      if (options.limit) {
+        limit = parseInt(options.limit, 10);
+        if (isNaN(limit) || limit < 1 || limit > 2000) {
+          throw new Error('Limit must be a number between 1 and 2000');
+        }
+      }
 
-    if (isNaN(limit) || limit < 1 || limit > 20) {
-      throw new Error('Limit must be a number between 1 and 20');
-    }
+      const response = await client.searchMarketPartners({
+        q: options.query,
+        limit,
+        role: options.role as any
+      });
 
-    const response = await client.searchMarketPartners({
-      q: options.query,
-      limit
-    });
-
-    if (options.json !== false) {
-      outputJson(response);
-    } else {
-      console.log(`\n🔍 Market Partner Search Results (${response.data.count})\n`);
-      console.log(`Query: "${response.data.query}"\n`);
-
-      if (response.data.results.length === 0) {
-        console.log('No results found.');
-      } else {
+      if (options.csv) {
+        // CSV export
+        console.log(
+          'Code,CodeType,CompanyName,Source,ValidFrom,ValidTo,City,PostCode,Email,ContactSheetUrl'
+        );
         for (const partner of response.data.results) {
-          console.log(`📊 ${partner.companyName}`);
-          console.log(`   Code: ${partner.code} (${partner.codeType})`);
-          console.log(`   Source: ${partner.source}`);
+          const contact = partner.contacts?.[0];
+          const row = [
+            partner.code || '',
+            partner.codeType || '',
+            `"${(partner.companyName || '').replace(/"/g, '""')}"`,
+            partner.source || '',
+            partner.validFrom || '',
+            partner.validTo || '',
+            contact?.City ? `"${contact.City.replace(/"/g, '""')}"` : '',
+            contact?.PostCode || '',
+            contact?.CodeContactEmail || '',
+            partner.contactSheetUrl || ''
+          ].join(',');
+          console.log(row);
+        }
+      } else if (options.json !== false) {
+        outputJson(response);
+      } else {
+        console.log(`\n🔍 Market Partner Search Results (${response.data.count})\n`);
+        console.log(`Query: "${response.data.query}"\n`);
 
-          if (partner.validFrom || partner.validTo) {
-            const validity = [];
-            if (partner.validFrom) validity.push(`from ${partner.validFrom}`);
-            if (partner.validTo) validity.push(`to ${partner.validTo}`);
-            console.log(`   Valid: ${validity.join(' ')}`);
-          }
+        if (response.data.results.length === 0) {
+          console.log('No results found.');
+        } else {
+          for (const partner of response.data.results) {
+            console.log(`📊 ${partner.companyName}`);
+            console.log(`   Code: ${partner.code} (${partner.codeType})`);
+            console.log(`   Source: ${partner.source}`);
 
-          if (partner.bdewCodes && partner.bdewCodes.length > 0) {
-            console.log(`   BDEW Codes: ${partner.bdewCodes.join(', ')}`);
-          }
-
-          if (partner.contacts && partner.contacts.length > 0) {
-            console.log(`   Contacts: ${partner.contacts.length} available`);
-            const firstContact = partner.contacts[0];
-            if (firstContact.City) {
-              console.log(`   Location: ${firstContact.PostCode || ''} ${firstContact.City}`);
+            if (partner.validFrom || partner.validTo) {
+              const validity = [];
+              if (partner.validFrom) validity.push(`from ${partner.validFrom}`);
+              if (partner.validTo) validity.push(`to ${partner.validTo}`);
+              console.log(`   Valid: ${validity.join(' ')}`);
             }
-            if (firstContact.CodeContactEmail) {
-              console.log(`   Email: ${firstContact.CodeContactEmail}`);
+
+            if (partner.bdewCodes && partner.bdewCodes.length > 0) {
+              console.log(`   BDEW Codes: ${partner.bdewCodes.join(', ')}`);
             }
-          }
 
-          if (partner.allSoftwareSystems && partner.allSoftwareSystems.length > 0) {
-            const systems = partner.allSoftwareSystems
-              .map((s) => `${s.name} (${s.confidence})`)
-              .join(', ');
-            console.log(`   Software: ${systems}`);
-          }
+            if (partner.contacts && partner.contacts.length > 0) {
+              console.log(`   Contacts: ${partner.contacts.length} available`);
+              const firstContact = partner.contacts[0];
+              if (firstContact.City) {
+                console.log(`   Location: ${firstContact.PostCode || ''} ${firstContact.City}`);
+              }
+              if (firstContact.CodeContactEmail) {
+                console.log(`   Email: ${firstContact.CodeContactEmail}`);
+              }
+            }
 
-          if (partner.contactSheetUrl) {
-            console.log(`   Contact Sheet: ${partner.contactSheetUrl}`);
-          }
+            if (partner.allSoftwareSystems && partner.allSoftwareSystems.length > 0) {
+              const systems = partner.allSoftwareSystems
+                .map((s) => `${s.name} (${s.confidence})`)
+                .join(', ');
+              console.log(`   Software: ${systems}`);
+            }
 
-          console.log('');
+            if (partner.contactSheetUrl) {
+              console.log(`   Contact Sheet: ${partner.contactSheetUrl}`);
+            }
+
+            console.log('');
+          }
         }
       }
     }
-  });
+  );
 
 program
   .command('whoami')

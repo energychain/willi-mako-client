@@ -1333,13 +1333,29 @@ export interface MarketPartnerSearchResult {
 }
 
 /**
+ * Market role types for filtering market partner search results.
+ */
+export type MarketRole =
+  | 'VNB'
+  | 'LF'
+  | 'MSB'
+  | 'UNB'
+  | 'ÜNB'
+  | 'LIEFERANT'
+  | 'VERTEILNETZBETREIBER'
+  | 'MESSSTELLENBETREIBER'
+  | 'ÜBERTRAGUNGSNETZBETREIBER';
+
+/**
  * Query parameters for market partner search.
  */
 export interface MarketPartnerSearchQuery {
-  /** Search term (code, company name, city, etc.) */
-  q: string;
-  /** Maximum number of results (1-20, default: 10) */
+  /** Search term (code, company name, city, etc.) - optional when using role filter */
+  q?: string;
+  /** Maximum number of results (1-2000). Default: 50 with query, 500 for pure filter search */
   limit?: number;
+  /** Filter by market role (e.g. "VNB" for distribution network operators, "LF" for suppliers, "MSB" for metering point operators, "UNB" for transmission network operators) */
+  role?: MarketRole;
 }
 
 /**

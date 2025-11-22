@@ -39,6 +39,7 @@ Tools:
 - willi-mako.create-node-script – Execute ETL/validation logic in the managed Node sandbox
 - willi-mako.get-tool-job – Poll job status and receive stdout/stderr
 - willi-mako.create-artifact – Persist compliance results or EDI snapshots
+- willi-mako.search-market-partners – Search for market partners using BDEW/EIC codes
 
 Capabilities:
 - Deep coverage of German energy-market processes and market roles (GPKE, WiM, GeLi Gas, Mehr-/Mindermengen, Lieferantenwechsel, …).
@@ -475,6 +476,49 @@ server.registerTool(
       ],
       structuredContent: response.data
     };
+  }
+);
+
+server.registerTool(
+  'willi-mako.search-market-partners',
+  {
+    title: 'Search for market partners',
+    description:
+      'Search for market partners using BDEW/EIC codes, company names, cities, etc. Public endpoint without authentication requirement. Returns detailed information including contacts and software systems.',
+    inputSchema: {
+      q: z.string().min(1).describe('Search term (code, company name, city, etc.)'),
+      limit: z
+        .number()
+        .int()
+        .min(1)
+        .max(20)
+        .optional()
+        .describe('Maximum number of results (1-20, default: 10)'),
+      role: z
+        .enum([
+          'VNB',
+          'LF',
+          'MSB',
+          'UNB',
+          'ÜNB',
+          'LIEFERANT',
+          'VERTEILNETZBETREIBER',
+          'MESSSTELLENBETREIBER',
+          'ÜBERTRAGUNGSNETZBETREIBER'
+        ])
+        .optional()
+        .describe(
+          'Filter by market role (e.g. "VNB" for distribution network operators, "LF" for suppliers, "MSB" for metering point operators, "UNB" for transmission network operators)'
+        )
+    }
+  },
+  async ({ q, limit, role }) => {
+    const response = await client.searchMarketPartners({
+      q,
+      limit,
+      role
+    });
+    return respond(response);
   }
 );
 

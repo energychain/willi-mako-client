@@ -412,14 +412,36 @@ console.log('Answer:', response.data.response);
 
 Returns `EdifactChatResponse` with the AI assistant's contextual answer.
 
-### `searchMarketPartners(query)` *(v0.7.1)*
+### `searchMarketPartners(query)` *(v0.9.1)*
 
 Searches for market partners using BDEW/EIC codes, company names, cities, etc. This is a **public endpoint** that does not require authentication.
 
+**New in v0.9.1:** Optional query parameter, increased limits (up to 2000), and smart defaults.
+
 ```typescript
+// Basic search
 const results = await client.searchMarketPartners({
   q: 'Stadtwerke München',
-  limit: 10
+  limit: 50
+});
+
+// Export all distribution network operators (no search query needed!)
+const allVNBs = await client.searchMarketPartners({
+  role: 'VNB',
+  limit: 2000
+});
+
+// Filter by market role with search term
+const vnbResults = await client.searchMarketPartners({
+  q: 'Stadtwerke',
+  role: 'VNB',
+  limit: 100
+});
+
+// Get all suppliers without search restriction
+const allSuppliers = await client.searchMarketPartners({
+  role: 'LF',
+  limit: 1000
 });
 
 for (const partner of results.data.results) {
@@ -442,8 +464,20 @@ for (const partner of results.data.results) {
 ```
 
 **Parameters:**
-- `query.q` – Search term (code, company name, city, etc.)
-- `query.limit` – Maximum number of results (1-20, default: 10)
+- `query.q` – (Optional) Search term (code, company name, city, etc.). Can be omitted when using role filter
+- `query.limit` – Maximum number of results (1-2000). Defaults: 50 with query, 500 for filter-only searches
+- `query.role` – Filter by market role (optional):
+  - `'VNB'` – Verteilnetzbetreiber (distribution network operators)
+  - `'LF'` – Lieferant (suppliers)
+  - `'MSB'` – Messstellenbetreiber (metering point operators)
+  - `'UNB'` or `'ÜNB'` – Übertragungsnetzbetreiber (transmission network operators)
+  - Also accepts German long forms: `'VERTEILNETZBETREIBER'`, `'LIEFERANT'`, `'MESSSTELLENBETREIBER'`, `'ÜBERTRAGUNGSNETZBETREIBER'`
+
+**Use Cases:**
+- Export complete lists of all market partners by role (e.g., all 913+ VNBs in Germany)
+- Filter large datasets by market role
+- Build market analysis tools and dashboards
+- Generate compliance reports
 
 Returns `MarketPartnerSearchResponse` with an array of matching market partners including contact information, BDEW codes, software systems, and contact sheet URLs.
 

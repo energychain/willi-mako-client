@@ -84,14 +84,14 @@ Mit dem SDK erhalten Sie:
 - 🔐 **Flexible Auth** – Login-Helper mit optionaler Tokenpersistenz oder direkte Verwendung von Service Tokens.
 - 🧱 **Session Lifecycle APIs** – Sessions anlegen, inspizieren, bereinigen und dabei Präferenzen/Kontexte steuern.
 - 🧠 **Conversational Stack** – Chat, semantische Suche, Reasoning, Kontextauflösung und Klarstellungsanalyse aus einer Hand.
-- � **Erweiterte Wissensabdeckung (v0.8.0)** – Combined-Search und willi-netz Collection umfassen nun wissenschaftliche Studien, BNetzA-Regulierung, BDEW-, VKU- und andere Veröffentlichungen für ganzheitliche Energiewirtschafts-Expertise.
-- �🛠️ **Tooling Sandbox** – sichere Node.js-Ausführung für ETL, Validierung, KI-Skripte.
+- 📚 **Erweiterte Wissensabdeckung (v0.8.0)** – Combined-Search und willi-netz Collection umfassen nun wissenschaftliche Studien, BNetzA-Regulierung, BDEW-, VKU- und andere Veröffentlichungen für ganzheitliche Energiewirtschafts-Expertise.
+- 🛠️ **Tooling Sandbox** – sichere Node.js-Ausführung für ETL, Validierung, KI-Skripte.
 - 🗂️ **Artifact Storage** – persistente Protokolle, Audit-Trails und EDIFACT-Snapshots.
 - 📄 **Document Management** – Hochladen, Verwalten und Durchsuchen von PDFs, DOCX, TXT und MD-Dateien in der Knowledge Base mit automatischer Textextraktion und AI-Kontext-Steuerung.
 - 📦 **OpenAPI Bundle** – `schemas/openapi.json` für offline Analysen.
 - 🖥️ **CLI & MCP** – vollständige Befehlsgruppen (`auth`, `sessions`, `chat`, `retrieval`, `edifact`, `market-partners`, …) plus MCP-Server für KI-Agenten.
 - 🔍 **EDIFACT Message Analyzer** – Analyse, Validierung, Erklärung, Modifikation und Chat für EDIFACT-Nachrichten (UTILMD, MSCONS, ORDERS, etc.).
-- 🔎 **Market Partners Search** – Öffentliche Suche nach Marktpartnern über BDEW/EIC-Codes, Firmennamen oder Städten mit detaillierten Kontakt- und Software-Informationen.
+- 🔎 **Market Partners Search (v0.9.1)** – Öffentliche Suche nach Marktpartnern über BDEW/EIC-Codes, Firmennamen oder Städten mit Marktrollenfilter (VNB, LF, MSB), CSV-Export und bis zu 2000 Ergebnissen. Exportiere alle 913+ Verteilnetzbetreiber Deutschlands mit einem Befehl!
 - 🧪 **Vitest Testsuite** – Vertrauen in Stabilität und Regressionen.
 - 🛡️ **Compliance Fokus** – automatisierbare Prüfungen für UTILMD, MSCONS, ORDERS, PRICAT, INVOIC.
 
@@ -314,6 +314,9 @@ Wähle deine bevorzugte Cloud-IDE:
    # Marktpartner suchen (kein Login!)
    willi-mako market-partners search -q "Netze BW"
 
+   # Alle Verteilnetzbetreiber als CSV exportieren
+   willi-mako market-partners search -q "Stadtwerke" --role VNB --csv > vnb-liste.csv
+
    # EDIFACT analysieren
    npm run example:edifact-analyze
 
@@ -352,7 +355,12 @@ Wähle deine bevorzugte Cloud-IDE:
 
 3. **Testen**:
    ```bash
+   # Marktpartner suchen (kein Login!)
    willi-mako market-partners search -q "Netze BW"
+
+   # Alle Verteilnetzbetreiber als CSV
+   willi-mako market-partners search -q "Stadtwerke" --role VNB --csv > vnb.csv
+
    npm run example:utilmd
    ```
 
