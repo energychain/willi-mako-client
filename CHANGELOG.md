@@ -4,6 +4,109 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) as soon as we reach a stable `1.0.0` release.
 
+## [0.9.2] - 2025-11-24
+
+### Added
+- **🗄️ Structured Data Integration (API v0.9.2)**:
+  - **New Data Providers**: Integration of multiple data providers beyond market partner search
+    - MaStR (Marktstammdatenregister) installations query
+    - Energy market prices
+    - Grid production data
+    - Green energy forecasts
+  - **Dual-Mode Queries**:
+    - Explicit capability mode with specific parameters
+    - Natural language mode with automatic intent resolution
+  - **Intent Resolution**: AI-powered query analysis to detect user intent and extract parameters
+  - **Provider Management**: List providers, check health status, and view available capabilities
+
+- **🔧 SDK Enhancements**:
+  - New `WilliMakoClient` methods:
+    - `structuredDataQuery()` - Query data providers (dual-mode)
+    - `resolveIntent()` - Analyze natural language queries without execution (dry-run)
+    - `getProviders()` - List all registered data providers with capabilities
+    - `getProvidersHealth()` - Check health status of all providers
+  - New TypeScript types:
+    - `StructuredDataQueryRequest` (union type for explicit/NL queries)
+    - `StructuredDataQueryResponse` with metadata and intent resolution
+    - `ResolveIntentRequest/Response` for intent analysis
+    - `GetProvidersResponse/GetProvidersHealthResponse`
+    - `StructuredDataCapability` enum type
+
+- **💻 CLI Commands**:
+  - New `data` command group with subcommands:
+    - `willi-mako data query` - Execute structured data queries
+      - Support for both `--capability` with `--parameters` and natural `--query`
+      - Options: `--timeout`, `--bypass-cache`
+    - `willi-mako data resolve-intent` - Analyze natural language queries
+    - `willi-mako data providers` - List registered data providers
+    - `willi-mako data health` - Check provider health status
+  - Rich console output with icons, formatting, and structured data display
+
+- **🔌 MCP Server Tools**:
+  - New tools for Model Context Protocol integration:
+    - `willi-mako-structured-data-query` - Query data providers via MCP
+    - `willi-mako-resolve-intent` - Intent analysis via MCP
+    - `willi-mako-get-providers` - List providers via MCP
+    - `willi-mako-get-providers-health` - Health check via MCP
+  - Full support for both query modes in MCP environment
+  - Structured responses with summary text and structured data
+
+- **📚 Examples & Documentation**:
+  - New example file: `examples/structured-data-query.ts`
+    - Demonstrates explicit capability queries
+    - Shows natural language query usage
+    - Examples for intent resolution and provider management
+    - Integration examples with market partner search
+  - Added example script: `npm run example:structured-data`
+  - Updated documentation with new API capabilities
+
+### Changed
+- **📊 Enhanced Chat Integration**: Chat functions now have access to structured data providers
+  - Automatic enrichment with real-time data from MaStR, energy prices, etc.
+  - Intent resolution integrated into chat flow for better context
+- **🔍 Improved API Coverage**: OpenAPI schema updated to v0.9.2 with all new endpoints
+
+### Examples
+```bash
+# Natural language query via CLI
+willi-mako data query --query "Wie viele Solaranlagen gibt es in Bayern?"
+
+# Explicit capability query
+willi-mako data query \
+  --capability mastr-installations-query \
+  --parameters '{"type":"solar","bundesland":"Bayern","limit":100}'
+
+# Test intent detection
+willi-mako data resolve-intent --query "Zeige mir die aktuellen Strompreise"
+
+# List available data providers
+willi-mako data providers
+
+# Check system health
+willi-mako data health
+
+# TypeScript/JavaScript usage
+import { WilliMakoClient } from 'willi-mako-client';
+
+const client = new WilliMakoClient({ token: process.env.WILLI_MAKO_TOKEN });
+
+// Natural language query
+const result = await client.structuredDataQuery({
+  query: 'Wie viele Windkraftanlagen gibt es in Schleswig-Holstein?'
+});
+
+// Explicit capability
+const prices = await client.structuredDataQuery({
+  capability: 'energy-market-prices',
+  parameters: { market: 'spot', resolution: 'hourly' }
+});
+
+// Intent analysis
+const intent = await client.resolveIntent({
+  query: 'Zeige mir die Netzeinspeisung von erneuerbaren Energien'
+});
+```
+
 ## [0.9.1] - 2025-11-22
 
 ### Added

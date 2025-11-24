@@ -1578,6 +1578,214 @@ marketPartners
     }
   );
 
+// ==================== Structured Data Commands ====================
+
+const structuredData = program
+  .command('data')
+  .description('Query structured data from registered providers (MaStR, energy prices, etc.)');
+
+structuredData
+  .command('query')
+  .description(
+    'Execute a structured data query (dual-mode: explicit capability or natural language)'
+  )
+  .option(
+    '-c, --capability <capability>',
+    'Explicit capability (market-partner-search, mastr-installations-query, energy-market-prices, grid-production-data, green-energy-forecast)'
+  )
+  .option(
+    '-p, --parameters <json>',
+    'Parameters for explicit capability (JSON format)',
+    parseJsonOptional
+  )
+  .option('-q, --query <query>', 'Natural language query (alternative to --capability)')
+  .option('--timeout <ms>', 'Timeout in milliseconds (1000-30000)')
+  .option('--bypass-cache', 'Bypass cache', false)
+  .option('--json', 'Output JSON response', true)
+  .action(
+    async (options: {
+      capability?: string;
+      parameters?: unknown;
+      query?: string;
+      timeout?: string;
+      bypassCache?: boolean;
+      json?: boolean;
+    }) => {
+      const client = await createClient();
+
+      // Validate that either capability or query is provided
+      if (!options.capability && !options.query) {
+        throw new Error('Either --capability with --parameters or --query must be provided');
+      }
+
+      if (options.capability && options.query) {
+        throw new Error('Cannot use both --capability and --query at the same time');
+      }
+
+      let payload: any;
+
+      if (options.capability) {
+        // Explicit capability mode
+        if (!options.parameters) {
+          throw new Error('--parameters is required when using --capability');
+        }
+        payload = {
+          capability: options.capability,
+          parameters: options.parameters,
+          options: {
+            timeout: options.timeout ? parseInt(options.timeout, 10) : undefined,
+            bypassCache: options.bypassCache
+          }
+        };
+      } else {
+        // Natural language mode
+        payload = {
+          query: options.query,
+          options: {
+            timeout: options.timeout ? parseInt(options.timeout, 10) : undefined,
+            bypassCache: options.bypassCache
+          }
+        };
+      }
+
+      const response = await client.structuredDataQuery(payload);
+
+      if (options.json !== false) {
+        outputJson(response);
+      } else {
+        console.log(`\n📊 Structured Data Query Results\n`);
+        console.log(`Provider: ${response.metadata.providerId}`);
+        console.log(`Capability: ${response.metadata.capability}`);
+        console.log(`Data Source: ${response.metadata.dataSource}`);
+        console.log(`Execution Time: ${response.metadata.executionTimeMs}ms`);
+        console.log(`Cache Hit: ${response.metadata.cacheHit ? 'Yes' : 'No'}`);
+        console.log(`Retrieved At: ${response.metadata.retrievedAt}`);
+
+        if (response.metadata.intentResolution) {
+          console.log(`\n🧠 Intent Resolution:`);
+          console.log(`   Original Query: "${response.metadata.intentResolution.originalQuery}"`);
+          console.log(
+            `   Resolved Capability: ${response.metadata.intentResolution.resolvedCapability}`
+          );
+          console.log(
+            `   Confidence: ${(response.metadata.intentResolution.confidence * 100).toFixed(1)}%`
+          );
+          console.log(`   Reasoning: ${response.metadata.intentResolution.reasoning}`);
+          console.log(
+            `   Extracted Parameters:`,
+            response.metadata.intentResolution.extractedParameters
+          );
+        }
+
+        console.log(`\n📦 Data:`);
+        console.log(inspect(response.data, { depth: 5, colors: true }));
+      }
+    }
+  );
+
+structuredData
+  .command('resolve-intent')
+  .description('Analyze a natural language query without executing (dry-run for intent detection)')
+  .requiredOption('-q, --query <query>', 'Natural language query to analyze')
+  .option('--json', 'Output JSON response', true)
+  .action(async (options: { query: string; json?: boolean }) => {
+    const client = await createClient();
+
+    const response = await client.resolveIntent({
+      query: options.query
+    });
+
+    if (options.json !== false) {
+      outputJson(response);
+    } else {
+      console.log(`\n🔍 Intent Resolution Analysis\n`);
+      console.log(`Original Query: "${response.data.originalQuery}"`);
+      console.log(`\n✅ Suggested Capability: ${response.data.suggestedCapability}`);
+      console.log(`Confidence: ${(response.data.confidence * 100).toFixed(1)}%`);
+      console.log(`Reasoning: ${response.data.reasoning}`);
+      console.log(`\nSuggested Parameters:`);
+      console.log(inspect(response.data.suggestedParameters, { depth: 3, colors: true }));
+
+      console.log(
+        `\n📋 All Detected Capabilities (${response.data.detectedCapabilities.length}):\n`
+      );
+      for (const cap of response.data.detectedCapabilities) {
+        console.log(`  • ${cap.capability} (confidence: ${(cap.confidence * 100).toFixed(1)}%)`);
+        console.log(`    Parameters:`, cap.parameters);
+      }
+
+      console.log(`\n🔧 Available Capabilities (${response.data.availableCapabilities.length}):\n`);
+      for (const cap of response.data.availableCapabilities) {
+        console.log(`  • ${cap.capability} (provider: ${cap.providerId})`);
+        if (cap.examples && cap.examples.length > 0) {
+          console.log(`    Examples:`);
+          for (const example of cap.examples.slice(0, 2)) {
+            console.log(`      - "${example}"`);
+          }
+        }
+        if (cap.keywords && cap.keywords.length > 0) {
+          console.log(`    Keywords: ${cap.keywords.join(', ')}`);
+        }
+      }
+    }
+  });
+
+structuredData
+  .command('providers')
+  .description('List all registered data providers with their capabilities')
+  .option('--json', 'Output JSON response', true)
+  .action(async (options: { json?: boolean }) => {
+    const client = await createClient();
+
+    const response = await client.getProviders();
+
+    if (options.json !== false) {
+      outputJson(response);
+    } else {
+      console.log(`\n🏢 Registered Data Providers (${response.data.stats.totalProviders})\n`);
+      console.log(`Total Capabilities: ${response.data.stats.capabilities.length}`);
+      console.log(`Capabilities: ${response.data.stats.capabilities.join(', ')}\n`);
+
+      for (const provider of response.data.providers) {
+        const statusIcon = provider.healthy ? '✅' : '❌';
+        console.log(
+          `${statusIcon} ${provider.displayName} (${provider.id}) - v${provider.version}`
+        );
+        console.log(`   Description: ${provider.description}`);
+        console.log(`   Capabilities: ${provider.capabilities.join(', ')}`);
+        console.log(`   Status: ${provider.healthy ? 'healthy' : 'degraded'}`);
+        console.log('');
+      }
+    }
+  });
+
+structuredData
+  .command('health')
+  .description('Check health status of all data providers')
+  .option('--json', 'Output JSON response', true)
+  .action(async (options: { json?: boolean }) => {
+    const client = await createClient();
+
+    const response = await client.getProvidersHealth();
+
+    if (options.json !== false) {
+      outputJson(response);
+    } else {
+      const overallIcon = response.data.overall === 'healthy' ? '✅' : '⚠️';
+      console.log(`\n${overallIcon} Overall System Health: ${response.data.overall}\n`);
+
+      for (const provider of response.data.providers) {
+        const statusIcon = provider.healthy ? '✅' : '❌';
+        console.log(`${statusIcon} ${provider.providerId}`);
+        console.log(`   Last Check: ${provider.lastCheckAt}`);
+        if (provider.errorMessage) {
+          console.log(`   ❌ Error: ${provider.errorMessage}`);
+        }
+        console.log('');
+      }
+    }
+  });
+
 program
   .command('whoami')
   .description('Display the current configuration (safe to share)')

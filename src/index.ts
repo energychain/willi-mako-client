@@ -59,7 +59,13 @@ import type {
   ModifyEdifactMessageRequest,
   ModifyEdifactMessageResponse,
   MarketPartnerSearchQuery,
-  MarketPartnerSearchResponse
+  MarketPartnerSearchResponse,
+  StructuredDataQueryRequest,
+  StructuredDataQueryResponse,
+  ResolveIntentRequest,
+  ResolveIntentResponse,
+  GetProvidersResponse,
+  GetProvidersHealthResponse
 } from './types.js';
 
 const require: NodeJS.Require = createRequire(import.meta.url);
@@ -1307,6 +1313,150 @@ export class WilliMakoClient {
         skipAuth: true // Public endpoint
       }
     );
+  }
+
+  /**
+   * Executes a structured data query against registered Data Providers.
+   * Supports two modes:
+   * 1. Explicit capability with parameters
+   * 2. Natural language query with automatic intent resolution
+   *
+   * @param payload - Query request (explicit or natural language)
+   * @returns Provider-specific data and metadata
+   *
+   * @example
+   * ```typescript
+   * // Explicit capability query
+   * const explicitResult = await client.structuredDataQuery({
+   *   capability: 'market-partner-search',
+   *   parameters: {
+   *     q: 'netz',
+   *     limit: 5
+   *   }
+   * });
+   *
+   * // Natural language query
+   * const nlResult = await client.structuredDataQuery({
+   *   query: 'Wie viele Solaranlagen gibt es in Bayern?'
+   * });
+   *
+   * console.log('Provider:', nlResult.metadata.providerId);
+   * console.log('Capability:', nlResult.metadata.capability);
+   * console.log('Execution time:', nlResult.metadata.executionTimeMs, 'ms');
+   * console.log('Cache hit:', nlResult.metadata.cacheHit);
+   *
+   * if (nlResult.metadata.intentResolution) {
+   *   console.log('Original query:', nlResult.metadata.intentResolution.originalQuery);
+   *   console.log('Confidence:', nlResult.metadata.intentResolution.confidence);
+   * }
+   *
+   * console.log('Data:', nlResult.data);
+   * ```
+   */
+  public async structuredDataQuery(
+    payload: StructuredDataQueryRequest
+  ): Promise<StructuredDataQueryResponse> {
+    return this.request<StructuredDataQueryResponse>('/structured-data/query', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+  }
+
+  /**
+   * Analyzes a natural language query and shows detected capabilities without execution.
+   * Useful for testing intent detection and understanding how queries are interpreted.
+   *
+   * @param payload - Request with natural language query
+   * @returns Detected capabilities, suggested capability, and reasoning
+   *
+   * @example
+   * ```typescript
+   * const intent = await client.resolveIntent({
+   *   query: 'Wie viele Windkraftanlagen gibt es in Schleswig-Holstein?'
+   * });
+   *
+   * console.log('Original query:', intent.data.originalQuery);
+   * console.log('Suggested capability:', intent.data.suggestedCapability);
+   * console.log('Confidence:', intent.data.confidence);
+   * console.log('Reasoning:', intent.data.reasoning);
+   *
+   * console.log('\nDetected capabilities:');
+   * for (const cap of intent.data.detectedCapabilities) {
+   *   console.log(`  - ${cap.capability} (confidence: ${cap.confidence})`);
+   *   console.log(`    Parameters:`, cap.parameters);
+   * }
+   *
+   * console.log('\nAvailable capabilities:');
+   * for (const cap of intent.data.availableCapabilities) {
+   *   console.log(`  - ${cap.capability} (provider: ${cap.providerId})`);
+   *   console.log(`    Examples:`, cap.examples);
+   * }
+   * ```
+   */
+  public async resolveIntent(payload: ResolveIntentRequest): Promise<ResolveIntentResponse> {
+    return this.request<ResolveIntentResponse>('/structured-data/resolve-intent', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+  }
+
+  /**
+   * Lists all registered Data Providers with their capabilities and health status.
+   *
+   * @returns List of providers with their metadata and aggregate statistics
+   *
+   * @example
+   * ```typescript
+   * const providers = await client.getProviders();
+   *
+   * console.log(`Total providers: ${providers.data.stats.totalProviders}`);
+   * console.log(`Available capabilities: ${providers.data.stats.capabilities.join(', ')}`);
+   *
+   * for (const provider of providers.data.providers) {
+   *   console.log(`\n${provider.displayName} (${provider.id}) - v${provider.version}`);
+   *   console.log(`  Status: ${provider.healthy ? 'healthy' : 'degraded'}`);
+   *   console.log(`  Description: ${provider.description}`);
+   *   console.log(`  Capabilities: ${provider.capabilities.join(', ')}`);
+   * }
+   * ```
+   */
+  public async getProviders(): Promise<GetProvidersResponse> {
+    return this.request<GetProvidersResponse>('/structured-data/providers', {
+      method: 'GET'
+    });
+  }
+
+  /**
+   * Checks the health status of all registered Data Providers.
+   *
+   * @returns Overall health status and individual provider health information
+   *
+   * @example
+   * ```typescript
+   * const health = await client.getProvidersHealth();
+   *
+   * console.log(`Overall status: ${health.data.overall}`);
+   *
+   * for (const provider of health.data.providers) {
+   *   const status = provider.healthy ? '✓' : '✗';
+   *   console.log(`${status} ${provider.providerId}`);
+   *   console.log(`  Last check: ${provider.lastCheckAt}`);
+   *   if (provider.errorMessage) {
+   *     console.log(`  Error: ${provider.errorMessage}`);
+   *   }
+   * }
+   * ```
+   */
+  public async getProvidersHealth(): Promise<GetProvidersHealthResponse> {
+    return this.request<GetProvidersHealthResponse>('/structured-data/health', {
+      method: 'GET'
+    });
   }
 
   private resolveUrl(path: string): string {

@@ -1372,3 +1372,231 @@ export interface MarketPartnerSearchResponse {
     query: string;
   };
 }
+
+// ==================== Structured Data Types ====================
+
+/**
+ * Available capabilities for structured data queries.
+ */
+export type StructuredDataCapability =
+  | 'market-partner-search'
+  | 'mastr-installations-query'
+  | 'energy-market-prices'
+  | 'grid-production-data'
+  | 'green-energy-forecast';
+
+/**
+ * Options for structured data queries.
+ */
+export interface StructuredDataQueryOptions {
+  /** Timeout in milliseconds (1000-30000) */
+  timeout?: number;
+  /** Bypass cache */
+  bypassCache?: boolean;
+}
+
+/**
+ * Intent resolution metadata returned with natural language queries.
+ */
+export interface IntentResolution {
+  /** Original user query */
+  originalQuery: string;
+  /** Resolved capability */
+  resolvedCapability: string;
+  /** Confidence score (0-1) */
+  confidence: number;
+  /** Reasoning for capability selection */
+  reasoning: string;
+  /** Extracted parameters */
+  extractedParameters: Record<string, unknown>;
+}
+
+/**
+ * Request for structured data query using explicit capability.
+ */
+export interface StructuredDataQueryExplicitRequest {
+  /** Explicit capability ID */
+  capability: StructuredDataCapability;
+  /** Capability-specific parameters */
+  parameters: Record<string, unknown>;
+  /** Optional query options */
+  options?: StructuredDataQueryOptions;
+}
+
+/**
+ * Request for structured data query using natural language.
+ */
+export interface StructuredDataQueryNaturalLanguageRequest {
+  /** Natural language query */
+  query: string;
+  /** Optional query options */
+  options?: StructuredDataQueryOptions;
+}
+
+/**
+ * Union type for structured data query requests (dual-mode).
+ */
+export type StructuredDataQueryRequest =
+  | StructuredDataQueryExplicitRequest
+  | StructuredDataQueryNaturalLanguageRequest;
+
+/**
+ * Metadata returned with structured data query response.
+ */
+export interface StructuredDataQueryMetadata {
+  /** Provider ID used for execution */
+  providerId: string;
+  /** Capability executed */
+  capability: string;
+  /** Execution time in milliseconds */
+  executionTimeMs: number;
+  /** Whether result was served from cache */
+  cacheHit: boolean;
+  /** Data source identifier */
+  dataSource: string;
+  /** Timestamp when data was retrieved */
+  retrievedAt: string;
+  /** Intent resolution (only for natural language queries) */
+  intentResolution?: IntentResolution;
+}
+
+/**
+ * Response from structured data query endpoint.
+ */
+export interface StructuredDataQueryResponse {
+  success: boolean;
+  /** Provider-specific data */
+  data: Record<string, unknown>;
+  /** Query metadata */
+  metadata: StructuredDataQueryMetadata;
+}
+
+/**
+ * Detected capability with confidence score.
+ */
+export interface DetectedCapability {
+  /** Capability identifier */
+  capability: string;
+  /** Confidence score (0-1) */
+  confidence: number;
+  /** Extracted parameters */
+  parameters: Record<string, unknown>;
+}
+
+/**
+ * Available capability information.
+ */
+export interface AvailableCapability {
+  /** Capability identifier */
+  capability: string;
+  /** Provider ID */
+  providerId: string;
+  /** Example queries */
+  examples: string[];
+  /** Keywords for intent matching */
+  keywords?: string[];
+}
+
+/**
+ * Request for intent resolution (dry-run).
+ */
+export interface ResolveIntentRequest {
+  /** Natural language query to analyze */
+  query: string;
+}
+
+/**
+ * Response from intent resolution endpoint.
+ */
+export interface ResolveIntentResponse {
+  success: boolean;
+  data: {
+    /** Original query */
+    originalQuery: string;
+    /** All detected capabilities */
+    detectedCapabilities: DetectedCapability[];
+    /** Suggested primary capability */
+    suggestedCapability: string;
+    /** Suggested parameters */
+    suggestedParameters: Record<string, unknown>;
+    /** Confidence score */
+    confidence: number;
+    /** Reasoning for suggestion */
+    reasoning: string;
+    /** List of available capabilities */
+    availableCapabilities: AvailableCapability[];
+  };
+}
+
+/**
+ * Information about a data provider's capabilities.
+ */
+export interface DataProviderInfo {
+  /** Unique provider identifier */
+  id: string;
+  /** Display name */
+  displayName: string;
+  /** Provider description */
+  description: string;
+  /** Provider version */
+  version: string;
+  /** List of provided capabilities */
+  capabilities: string[];
+  /** Health status */
+  healthy: boolean;
+}
+
+/**
+ * Statistics about all providers.
+ */
+export interface ProvidersStats {
+  /** Total number of providers */
+  totalProviders: number;
+  /** All available capabilities across providers */
+  capabilities: string[];
+}
+
+/**
+ * Response from providers list endpoint.
+ */
+export interface GetProvidersResponse {
+  success: boolean;
+  data: {
+    /** List of all registered providers */
+    providers: DataProviderInfo[];
+    /** Aggregate statistics */
+    stats: ProvidersStats;
+  };
+}
+
+/**
+ * Health check result for a single provider.
+ */
+export interface ProviderHealthInfo {
+  /** Provider identifier */
+  providerId: string;
+  /** Health status */
+  healthy: boolean;
+  /** Last health check timestamp */
+  lastCheckAt: string;
+  /** Error message if unhealthy */
+  errorMessage?: string;
+}
+
+/**
+ * Overall health status.
+ */
+export type OverallHealthStatus = 'healthy' | 'degraded';
+
+/**
+ * Response from providers health endpoint.
+ */
+export interface GetProvidersHealthResponse {
+  success: boolean;
+  data: {
+    /** Overall system health */
+    overall: OverallHealthStatus;
+    /** Individual provider health statuses */
+    providers: ProviderHealthInfo[];
+  };
+}

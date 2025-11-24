@@ -1538,6 +1538,225 @@ Resources:
         })
     );
 
+    // ==================== Structured Data Tools (Version 0.9.2) ====================
+
+    registerTool(
+      'willi-mako-structured-data-query',
+      {
+        title: 'Query structured data',
+        description:
+          'Executes a structured data query against registered Data Providers. Supports two modes: (1) Explicit capability with parameters or (2) Natural language query with automatic intent resolution. Available capabilities include: market-partner-search, mastr-installations-query, energy-market-prices, grid-production-data, green-energy-forecast.',
+        inputSchema: {
+          capability: z
+            .enum([
+              'market-partner-search',
+              'mastr-installations-query',
+              'energy-market-prices',
+              'grid-production-data',
+              'green-energy-forecast'
+            ])
+            .optional()
+            .describe('Explicit capability ID (use with parameters)'),
+          parameters: z
+            .record(z.any())
+            .optional()
+            .describe('Capability-specific parameters (required with capability)'),
+          query: z
+            .string()
+            .optional()
+            .describe('Natural language query (alternative to capability+parameters)'),
+          options: z
+            .object({
+              timeout: z.number().int().min(1000).max(30000).optional(),
+              bypassCache: z.boolean().optional()
+            })
+            .optional()
+            .describe('Optional query options')
+        }
+      },
+      async (input: Record<string, unknown>, extra?: RequestContext) =>
+        withClient(extra, async (clientInstance) => {
+          const { capability, parameters, query, options } = input as {
+            capability?: string;
+            parameters?: Record<string, unknown>;
+            query?: string;
+            options?: { timeout?: number; bypassCache?: boolean };
+          };
+
+          // Validate input
+          if (!capability && !query) {
+            throw new Error('Either capability+parameters or query must be provided');
+          }
+          if (capability && query) {
+            throw new Error('Cannot use both capability and query at the same time');
+          }
+
+          let payload: any;
+          if (capability) {
+            if (!parameters) {
+              throw new Error('parameters is required when using capability');
+            }
+            payload = { capability, parameters, options };
+          } else {
+            payload = { query, options };
+          }
+
+          const response = await clientInstance.structuredDataQuery(payload);
+
+          let summaryText = `📊 Structured Data Query Results\n\n`;
+          summaryText += `Provider: ${response.metadata.providerId}\n`;
+          summaryText += `Capability: ${response.metadata.capability}\n`;
+          summaryText += `Data Source: ${response.metadata.dataSource}\n`;
+          summaryText += `Execution Time: ${response.metadata.executionTimeMs}ms\n`;
+          summaryText += `Cache Hit: ${response.metadata.cacheHit ? 'Yes' : 'No'}\n`;
+          summaryText += `Retrieved At: ${response.metadata.retrievedAt}\n`;
+
+          if (response.metadata.intentResolution) {
+            summaryText += `\n🧠 Intent Resolution:\n`;
+            summaryText += `   Original Query: "${response.metadata.intentResolution.originalQuery}"\n`;
+            summaryText += `   Resolved Capability: ${response.metadata.intentResolution.resolvedCapability}\n`;
+            summaryText += `   Confidence: ${(response.metadata.intentResolution.confidence * 100).toFixed(1)}%\n`;
+            summaryText += `   Reasoning: ${response.metadata.intentResolution.reasoning}\n`;
+          }
+
+          summaryText += `\n📦 Data:\n${JSON.stringify(response.data, null, 2)}`;
+
+          return {
+            content: [
+              {
+                type: 'text' as const,
+                text: summaryText
+              }
+            ],
+            structuredContent: {
+              metadata: response.metadata,
+              data: response.data
+            } as unknown as Record<string, unknown>
+          };
+        })
+    );
+
+    registerTool(
+      'willi-mako-resolve-intent',
+      {
+        title: 'Resolve intent for natural language query',
+        description:
+          'Analyzes a natural language query and shows detected capabilities without execution. Useful for testing intent detection and understanding how queries are interpreted. Returns detected capabilities, suggested capability, confidence score, and reasoning.',
+        inputSchema: {
+          query: z.string().min(1).max(1000).describe('Natural language query to analyze')
+        }
+      },
+      async (input: Record<string, unknown>, extra?: RequestContext) =>
+        withClient(extra, async (clientInstance) => {
+          const { query } = input as { query: string };
+          const response = await clientInstance.resolveIntent({ query });
+
+          let summaryText = `🔍 Intent Resolution Analysis\n\n`;
+          summaryText += `Original Query: "${response.data.originalQuery}"\n\n`;
+          summaryText += `✅ Suggested Capability: ${response.data.suggestedCapability}\n`;
+          summaryText += `Confidence: ${(response.data.confidence * 100).toFixed(1)}%\n`;
+          summaryText += `Reasoning: ${response.data.reasoning}\n\n`;
+          summaryText += `Suggested Parameters:\n${JSON.stringify(response.data.suggestedParameters, null, 2)}\n\n`;
+
+          summaryText += `📋 All Detected Capabilities (${response.data.detectedCapabilities.length}):\n`;
+          for (const cap of response.data.detectedCapabilities) {
+            summaryText += `  • ${cap.capability} (confidence: ${(cap.confidence * 100).toFixed(1)}%)\n`;
+            summaryText += `    Parameters: ${JSON.stringify(cap.parameters)}\n`;
+          }
+
+          summaryText += `\n🔧 Available Capabilities (${response.data.availableCapabilities.length}):\n`;
+          for (const cap of response.data.availableCapabilities) {
+            summaryText += `  • ${cap.capability} (provider: ${cap.providerId})\n`;
+            if (cap.examples && cap.examples.length > 0) {
+              summaryText += `    Examples: ${cap.examples.slice(0, 2).join('; ')}\n`;
+            }
+          }
+
+          return {
+            content: [
+              {
+                type: 'text' as const,
+                text: summaryText
+              }
+            ],
+            structuredContent: response.data as unknown as Record<string, unknown>
+          };
+        })
+    );
+
+    registerTool(
+      'willi-mako-get-providers',
+      {
+        title: 'List data providers',
+        description:
+          'Lists all registered Data Providers with their capabilities and health status. Returns provider metadata, capabilities, and aggregate statistics.',
+        inputSchema: {}
+      },
+      async (input: Record<string, unknown>, extra?: RequestContext) =>
+        withClient(extra, async (clientInstance) => {
+          const response = await clientInstance.getProviders();
+
+          let summaryText = `🏢 Registered Data Providers (${response.data.stats.totalProviders})\n\n`;
+          summaryText += `Total Capabilities: ${response.data.stats.capabilities.length}\n`;
+          summaryText += `Capabilities: ${response.data.stats.capabilities.join(', ')}\n\n`;
+
+          for (const provider of response.data.providers) {
+            const statusIcon = provider.healthy ? '✅' : '❌';
+            summaryText += `${statusIcon} ${provider.displayName} (${provider.id}) - v${provider.version}\n`;
+            summaryText += `   Description: ${provider.description}\n`;
+            summaryText += `   Capabilities: ${provider.capabilities.join(', ')}\n`;
+            summaryText += `   Status: ${provider.healthy ? 'healthy' : 'degraded'}\n\n`;
+          }
+
+          return {
+            content: [
+              {
+                type: 'text' as const,
+                text: summaryText
+              }
+            ],
+            structuredContent: response.data as unknown as Record<string, unknown>
+          };
+        })
+    );
+
+    registerTool(
+      'willi-mako-get-providers-health',
+      {
+        title: 'Check data providers health',
+        description:
+          'Checks the health status of all registered Data Providers. Returns overall system health status and individual provider health information with error messages if applicable.',
+        inputSchema: {}
+      },
+      async (input: Record<string, unknown>, extra?: RequestContext) =>
+        withClient(extra, async (clientInstance) => {
+          const response = await clientInstance.getProvidersHealth();
+
+          const overallIcon = response.data.overall === 'healthy' ? '✅' : '⚠️';
+          let summaryText = `${overallIcon} Overall System Health: ${response.data.overall}\n\n`;
+
+          for (const provider of response.data.providers) {
+            const statusIcon = provider.healthy ? '✅' : '❌';
+            summaryText += `${statusIcon} ${provider.providerId}\n`;
+            summaryText += `   Last Check: ${provider.lastCheckAt}\n`;
+            if (provider.errorMessage) {
+              summaryText += `   ❌ Error: ${provider.errorMessage}\n`;
+            }
+            summaryText += '\n';
+          }
+
+          return {
+            content: [
+              {
+                type: 'text' as const,
+                text: summaryText
+              }
+            ],
+            structuredContent: response.data as unknown as Record<string, unknown>
+          };
+        })
+    );
+
     server.registerResource(
       'willi-mako-openapi',
       'willi-mako://openapi',
