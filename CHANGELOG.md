@@ -4,6 +4,56 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) as soon as we reach a stable `1.0.0` release.
 
+## [0.9.3] - 2025-12-06
+
+### Added
+- **🔐 Token Format Flexibility**: Backend now supports multiple token formats
+  - Standard JWT tokens (`header.payload.signature`)
+  - Custom API tokens (e.g., `_p-xxxxx-xxxxx-xxxxx-xxxxx`)
+  - Both formats work seamlessly with the same `Authorization: Bearer` header
+  - Client automatically handles both token types without code changes
+
+- **🧪 Token Debug & Validation Tools**: Comprehensive debugging scripts for authentication
+  - `validate-token.ts` - Quick token validation (creates and deletes test session)
+  - `debug-token.ts` - Detailed endpoint testing (public vs authenticated)
+  - `test-token-extended.ts` - Extended functionality tests (sessions, search, chat)
+  - `analyze-token-format.ts` - Token structure analysis (JWT vs custom format)
+  - `test-login.ts` - Login flow testing and new token acquisition
+
+- **📚 Token Documentation**:
+  - `TOKEN_WORKING_CONFIRMATION.md` - Confirmation of custom token support
+  - `TOKEN_DEBUG_REPORT.md` - Detailed debugging analysis with resolution
+  - `TOKEN_RESOLUTION_SUMMARY.md` - Problem resolution summary
+  - `TOKEN_SCRIPTS_README.md` - Usage guide for all debug scripts
+
+### Changed
+- **🔧 Backend Compatibility**: Backend updated to accept flexible authentication
+  - No longer restricted to JWT-only tokens
+  - Improved token validation for service accounts and API keys
+  - Backward compatible with existing JWT-based authentication
+
+### Technical Details
+- Client implementation unchanged - correctly sends tokens as Bearer tokens
+- Token format detection happens server-side
+- All SDK methods work with both token formats
+- CLI commands support both formats via `--token` or `WILLI_MAKO_TOKEN` env var
+
+### Quick Start
+```bash
+# Validate any token format
+npx tsx validate-token.ts
+
+# Use custom API token
+export WILLI_MAKO_TOKEN="_p-xxxxx-xxxxx-xxxxx-xxxxx"
+npm run cli -- sessions create
+
+# Use JWT token
+export WILLI_MAKO_TOKEN="eyJhbGc..."
+npm run cli -- sessions create
+```
+
+---
+
 ## [0.9.2] - 2025-11-24
 
 ### Added
