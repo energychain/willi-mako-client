@@ -121,6 +121,8 @@ yarn add willi-mako-client
    export WILLI_MAKO_TOKEN="<dein-token>"
    ```
 
+   > **💡 Token-Flexibilität (v0.9.3+):** Das Backend akzeptiert sowohl Standard-JWT-Tokens als auch Custom-API-Tokens (z.B. `_p-xxxxx-xxxxx`). Beide Formate funktionieren nahtlos ohne Code-Änderungen. Siehe [Token-Dokumentation](#-authentication) für Details.
+
 2. **Client initialisieren und API prüfen**:
    ```typescript
    import { WilliMakoClient } from 'willi-mako-client';
@@ -423,6 +425,69 @@ https://stackblitz.com/github/energychain/willi-mako-client
 ---
 
 ## 🧭 API Overview
+
+### 🔐 Authentication
+
+Ab Version **0.9.3** unterstützt das Backend flexible Token-Formate für maximale Kompatibilität:
+
+**Unterstützte Token-Formate:**
+
+1. **Standard JWT-Tokens** (empfohlen für User-Sessions)
+   ```
+   eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0...
+   ```
+   - Erhalten via `client.login()` oder `willi-mako auth login`
+   - Enthält Metadaten und Ablaufzeit
+   - Ideal für interaktive Anwendungen
+
+2. **Custom API-Tokens** (ideal für Service-Accounts)
+   ```
+   _p-xxxxx-xxxxx-xxxxx-xxxxx
+   ```
+   - Langlebige Tokens für Automatisierung
+   - Einfache Verwaltung in CI/CD-Pipelines
+   - Keine Ablaufzeit-Logik erforderlich
+
+**Verwendung:**
+
+Beide Token-Formate werden identisch verwendet:
+
+```typescript
+// JWT-Token
+const client = new WilliMakoClient({
+  token: 'eyJhbGc...'
+});
+
+// Custom API-Token
+const client = new WilliMakoClient({
+  token: '_p-xxxxx-xxxxx-xxxxx-xxxxx'
+});
+
+// Über Umgebungsvariable (beide Formate)
+export WILLI_MAKO_TOKEN="<ihr-token>"
+const client = new WilliMakoClient(); // Verwendet automatisch die env-Variable
+```
+
+**Token-Validierung:**
+
+Nutzen Sie die mitgelieferten Debug-Skripte zur Token-Validierung:
+
+```bash
+# Schnelle Token-Validierung
+npx tsx validate-token.ts
+
+# Mit spezifischem Token
+npx tsx validate-token.ts "ihr-token-hier"
+
+# Umfassende Funktionstests
+npx tsx test-token-extended.ts
+```
+
+Weitere Informationen: [TOKEN_SCRIPTS_README.md](./TOKEN_SCRIPTS_README.md)
+
+---
+
+### API Methods
 
 | Methode | Zweck | Typische Formate | Hinweise |
 |---------|-------|------------------|----------|
