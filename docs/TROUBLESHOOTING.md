@@ -53,6 +53,49 @@ This guide lists common issues encountered when using the Willi-Mako Client SDK 
 - Check firewall/proxy settings; the SDK uses HTTPS connections to `https://stromhaltig.de`.
 - For corporate networks, provide a custom `fetch` implementation that handles proxies.
 
+### `504 Gateway Timeout` with `chat()` method
+
+**Symptom:** Long-running chat operations fail after ~90-100 seconds with 504 error.
+
+**Cause:** The synchronous `chat()` endpoint waits for complete AI processing. Cloudflare enforces a ~100-second timeout for synchronous HTTP requests.
+
+**Solution:** Use the streaming endpoint instead:
+
+#### Option 1: High-Level Helper (Recommended)
+```typescript
+const response = await client.ask(
+  'Complex question requiring extensive processing...',
+  undefined,
+  (status, progress) => console.log(`${progress}%: ${status}`)
+);
+```
+
+#### Option 2: Direct Streaming
+```typescript
+const session = await client.createSession();
+const result = await client.chatStreaming(
+  session.data.legacyChatId!,
+  { content: 'Complex question...' },
+  (event) => console.log(event.message)
+);
+```
+
+#### CLI with Streaming
+```bash
+willi-mako chat send \
+  --session $SESSION_ID \
+  --message "Complex question" \
+  --stream
+```
+
+**When this affects you:**
+- Complex reasoning tasks (> 90 seconds)
+- Blog content transformation (120-300 seconds)
+- Large EDIFACT analysis (60-120 seconds)
+- Multi-source research queries (90-180 seconds)
+
+**See also:** [Streaming Guide](./STREAMING.md) for detailed documentation.
+
 ---
 
 ## Sandbox Job Failures

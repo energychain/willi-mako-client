@@ -17,6 +17,8 @@ import type {
   SessionEnvelopeResponse,
   ChatRequest,
   ChatResponse,
+  StreamEvent,
+  StreamingChatRequest,
   SemanticSearchRequest,
   SemanticSearchResponse,
   WilliNetzSemanticSearchRequest,
@@ -360,6 +362,13 @@ export class WilliMakoClient {
 
   /**
    * Sends a conversational message to the Willi-Mako chat endpoint.
+   *
+   * ⚠️ **WARNING**: This method is synchronous and waits for complete AI processing.
+   * For long-running operations (> 90 seconds), use `chatStreaming()` instead to avoid
+   * 504 Gateway Timeout errors from Cloudflare.
+   *
+   * @see {@link chatStreaming} for streaming alternative with progress updates
+   * @see {@link ask} for high-level helper with automatic streaming
    */
   public async chat(payload: ChatRequest): Promise<ChatResponse> {
     return this.request<ChatResponse>('/chat', {
@@ -369,6 +378,168 @@ export class WilliMakoClient {
         'Content-Type': 'application/json'
       }
     });
+  }
+
+  /**
+   * Sends a message via Server-Sent Events (SSE) streaming.
+   * **Recommended for long-running AI operations (> 90 seconds)** to avoid timeouts.
+   *
+   * This method uses the `/api/chat/chats/{chatId}/messages/stream` endpoint which provides
+   * real-time progress updates and works for operations that take several minutes.
+   *
+   * @param chatId - The legacyChatId from session creation (see {@link createSession})
+   * @param payload - Message content and optional context settings
+   * @param onProgress - Optional callback for progress events (status, progress percentage)
+   * @returns Final completion event with user and assistant messages
+   *
+   * @throws {WilliMakoError} When the stream fails or returns an error event
+   *
+   * @example
+   * ```typescript
+   * const session = await client.createSession();
+   * const result = await client.chatStreaming(
+   *   session.data.legacyChatId!,
+   *   { content: 'Erkläre den GPKE-Prozess im Detail' },
+   *   (event) => {
+   *     console.log(`${event.message} (${event.progress}%)`);
+   *   }
+   * );
+   * console.log(result.data.assistantMessage.content);
+   * ```
+   */
+  public async chatStreaming(
+    chatId: string,
+    payload: StreamingChatRequest,
+    onProgress?: (event: StreamEvent) => void
+  ): Promise<StreamEvent> {
+    // Build URL: Replace /api/v2 with /api/chat for the streaming endpoint
+    const baseUrlForChat = this.baseUrl.replace(/\/api\/v2\/?$/, '/api/chat');
+    const url = `${baseUrlForChat}/chats/${encodeURIComponent(chatId)}/messages/stream`;
+
+    const response = await this.fetchImpl(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${this.token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new WilliMakoError(
+        `Streaming request failed: ${response.statusText}`,
+        response.status,
+        errorText
+      );
+    }
+
+    if (!response.body) {
+      throw new WilliMakoError('Response body is null (streaming not supported)', 500, null);
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let finalEvent: StreamEvent | null = null;
+
+    try {
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const { done, value } = await reader.read();
+
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n\n');
+
+        // Keep last incomplete line in buffer
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const event: StreamEvent = JSON.parse(line.slice(6));
+
+              // Call progress callback
+              if (onProgress) {
+                onProgress(event);
+              }
+
+              // Store final event
+              if (event.type === 'complete') {
+                finalEvent = event;
+              }
+
+              // Handle errors
+              if (event.type === 'error') {
+                throw new WilliMakoError(event.message || 'Stream error', 500, event);
+              }
+            } catch (parseError) {
+              // Silently skip unparseable events
+              if (parseError instanceof WilliMakoError) {
+                throw parseError;
+              }
+            }
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock();
+    }
+
+    if (!finalEvent) {
+      throw new WilliMakoError('Stream ended without complete event', 500, null);
+    }
+
+    return finalEvent;
+  }
+
+  /**
+   * High-level helper for streaming chat with automatic session management.
+   *
+   * This method creates a session automatically, sends the message via streaming,
+   * and returns the assistant's response. Perfect for one-off questions or scripts
+   * that don't need to maintain session state.
+   *
+   * @param question - The question or message to send
+   * @param contextSettings - Optional context settings (e.g., companiesOfInterest)
+   * @param onProgress - Optional callback for progress updates (status message, progress %)
+   * @returns The assistant's message object with content and metadata
+   *
+   * @example
+   * ```typescript
+   * const response = await client.ask(
+   *   'Erkläre GPKE im Detail',
+   *   { companiesOfInterest: ['Enerchy'] },
+   *   (status, progress) => console.log(`${status} (${progress}%)`)
+   * );
+   * console.log(response.content);
+   * ```
+   */
+  public async ask(
+    question: string,
+    contextSettings?: Record<string, unknown>,
+    onProgress?: (status: string, progress: number) => void
+  ): Promise<unknown> {
+    const session = await this.createSession();
+    const chatId = session.data.legacyChatId;
+
+    if (!chatId) {
+      throw new WilliMakoError('Session has no legacyChatId', 500, session);
+    }
+
+    const result = await this.chatStreaming(
+      chatId,
+      { content: question, contextSettings },
+      (event) => {
+        if ((event.type === 'status' || event.type === 'progress') && onProgress && event.message) {
+          onProgress(event.message, event.progress || 0);
+        }
+      }
+    );
+
+    return result.data?.assistantMessage;
   }
 
   /**

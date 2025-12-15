@@ -4,6 +4,119 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) as soon as we reach a stable `1.0.0` release.
 
+## [1.0.0] - 2025-12-15
+
+### 🎉 First Stable Release
+
+This is the first production-ready release of willi-mako-client! The SDK is now considered stable and ready for production use in energy market communication workflows.
+
+### ✨ Added - Streaming Chat (Major Feature)
+
+- **🔥 NEW: Streaming Chat Endpoint** – Avoid 504 Gateway Timeouts!
+  - `chatStreaming(chatId, payload, onProgress?)` – Send messages via Server-Sent Events (SSE) with real-time progress updates
+  - `ask(question, contextSettings?, onProgress?)` – High-level helper with automatic session management and streaming
+  - Stream events: `status`, `progress`, `complete`, `error`
+  - Works for operations taking 3-6 minutes without timeout issues
+  - Perfect for complex reasoning tasks, blog content transformation, and large EDIFACT analysis
+
+- **📊 Real-time Progress Updates**
+  - Progress callbacks with status messages and percentage (0-100%)
+  - Detailed event types for different processing stages
+  - Visual progress bars in CLI and examples
+
+- **🖥️ CLI Streaming Support**
+  - New `--stream` flag for `willi-mako chat send` command
+  - Interactive progress bar during long operations
+  - Example: `willi-mako chat send --session $ID --message "Complex question" --stream`
+
+- **📚 Comprehensive Documentation**
+  - New `docs/STREAMING.md` – Complete SSE guide with use cases and best practices
+  - Updated `docs/API.md` – Warnings on synchronous `chat()` method, new sections for streaming methods
+  - Updated `docs/TROUBLESHOOTING.md` – New section on 504 timeout issues and streaming solutions
+  - Updated `README.md` – Streaming best practices and quick start examples
+
+- **💻 Example Code**
+  - New `examples/streaming-chat.ts` – 4 comprehensive examples:
+    1. Basic streaming with progress updates
+    2. High-level `ask()` helper usage
+    3. Synchronous vs streaming comparison
+    4. Error handling patterns
+
+### 🔧 Changed
+
+- **⚠️ `chat()` Method Now with Warning**
+  - Added deprecation-style warning in docs and TSDoc
+  - Recommended only for simple questions (< 30 seconds)
+  - Documented timeout risks for long operations (> 90 seconds)
+  - Streaming alternatives prominently featured in documentation
+
+### 📖 Documentation Improvements
+
+- **Backend Architecture Insights**
+  - Added `BACKEND_STREAMING_ANALYSIS.md` – Comprehensive analysis of backend streaming implementation
+  - Documented synchronous endpoint behavior and Cloudflare timeout limits
+  - Detailed impact assessment for different use cases
+
+- **Updated Examples**
+  - All examples now mention streaming as recommended approach
+  - Added performance comparisons between synchronous and streaming methods
+
+### 🐛 Bug Fixes
+
+- Fixed potential timeout issues in long-running chat operations
+- Improved error handling for stream connection failures
+
+### 🔒 Security & Stability
+
+- Stable API surface – no breaking changes planned for 1.x
+- Production-ready error handling
+- Comprehensive test coverage for streaming functionality
+
+### 📦 TypeScript Types
+
+- New interfaces: `StreamEvent`, `StreamEventType`, `StreamingChatRequest`
+- Enhanced type safety for streaming operations
+- Updated exports in main module
+
+### 🚀 Performance
+
+- Streaming reduces perceived latency through progressive updates
+- No more wasted time waiting for synchronous responses that timeout
+- Better resource utilization for long-running operations
+
+### 📋 Migration Guide
+
+**From 0.9.x to 1.0.0:**
+
+No breaking changes! Existing code continues to work.
+
+**Recommended Updates:**
+
+```typescript
+// Before (0.9.x) – Works but may timeout on long operations
+const response = await client.chat({
+  sessionId,
+  message: 'Complex question...'
+});
+
+// After (1.0.0) – Recommended for all complex operations
+const response = await client.ask(
+  'Complex question...',
+  undefined,
+  (status, progress) => console.log(`${progress}%: ${status}`)
+);
+```
+
+**CLI:**
+```bash
+# Add --stream flag to long-running operations
+willi-mako chat send --session $ID --message "Long question" --stream
+```
+
+See [`docs/STREAMING.md`](./docs/STREAMING.md) for complete migration guide.
+
+---
+
 ## [0.9.3] - 2025-12-06
 
 ### Added

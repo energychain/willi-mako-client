@@ -125,7 +125,9 @@ Expect an empty (204) response when successful.
 
 ### `chat(payload)`
 
-Sends a conversational message to the Willi-Mako assistant.
+⚠️ **WARNING: This method uses a synchronous endpoint that waits for complete AI processing.**
+
+For long-running operations (> 90 seconds), this method may result in **504 Gateway Timeout** errors from Cloudflare. Use [`chatStreaming()`](#chatstreaming-payload-onprogress) or [`ask()`](#askquestion-contextsettings-onprogress) instead for complex queries.
 
 ```typescript
 const reply = await client.chat({
@@ -139,6 +141,105 @@ Optional fields:
 - `timelineId` – attach events to a shared timeline.
 
 Returns a `ChatResponse` with assistant reply and metadata.
+
+**Recommended for:**
+- Simple questions (< 30 seconds)
+- Quick lookups
+- Testing and development
+
+**Not recommended for:**
+- Complex reasoning tasks
+- Multi-source research
+- Blog content transformation
+- Large EDIFACT analysis
+
+See also: [`chatStreaming()`](#chatstreaming-payload-onprogress), [`ask()`](#askquestion-contextsettings-onprogress)
+
+---
+
+### `chatStreaming(chatId, payload, onProgress?)`
+
+✅ **RECOMMENDED:** Sends a message via Server-Sent Events (SSE) streaming with real-time progress updates.
+
+This method avoids timeout issues and provides better user experience for long-running AI operations.
+
+```typescript
+const session = await client.createSession();
+const result = await client.chatStreaming(
+  session.data.legacyChatId!,
+  {
+    content: 'Erkläre den GPKE-Prozess im Detail',
+    contextSettings: { preferredTopics: ['GPKE'] }
+  },
+  (event) => {
+    console.log(`${event.message} (${event.progress}%)`);
+  }
+);
+
+console.log(result.data.assistantMessage.content);
+```
+
+**Parameters:**
+- `chatId` – The `legacyChatId` from session creation (see [`createSession()`](#createsessionpayload))
+- `payload.content` – Message to send to the assistant
+- `payload.contextSettings` – Optional context override
+- `onProgress` – Optional callback for progress events (`status`, `progress`, `complete`, `error`)
+
+**Event Types:**
+- `status` – General status message (e.g., "Durchsuche Wissensdatenbank...")
+- `progress` – Progress update with percentage (0-100)
+- `complete` – Processing finished, contains final data
+- `error` – An error occurred
+
+**Recommended for:**
+- Complex reasoning tasks (> 90 seconds)
+- Blog content transformation
+- Large EDIFACT analysis
+- Multi-source research queries
+
+Returns a `StreamEvent` with `type: 'complete'` containing the final user and assistant messages.
+
+See also: [`ask()`](#askquestion-contextsettings-onprogress) for automatic session management
+
+---
+
+### `ask(question, contextSettings?, onProgress?)`
+
+✅ **HIGH-LEVEL HELPER:** Convenience method that creates a session automatically and uses streaming.
+
+Perfect for scripts and one-off questions without needing to manage session state.
+
+```typescript
+const response = await client.ask(
+  'Was sind die Unterschiede zwischen UTILMD und MSCONS?',
+  { companiesOfInterest: ['Enerchy'] },
+  (status, progress) => console.log(`${status} (${progress}%)`)
+);
+
+console.log(response.content);
+```
+
+**Parameters:**
+- `question` – The question or message to send
+- `contextSettings` – Optional context (preferences, companies of interest, etc.)
+- `onProgress` – Optional callback `(status: string, progress: number) => void`
+
+Returns the assistant's message object with `content` and `metadata`.
+
+**Example with Progress Bar:**
+```typescript
+const response = await client.ask(
+  'Erkläre GPKE',
+  undefined,
+  (status, progress) => {
+    const bars = Math.round(progress / 5);
+    const progressBar = '█'.repeat(bars) + '░'.repeat(20 - bars);
+    console.log(`[${progressBar}] ${progress}% - ${status}`);
+  }
+);
+```
+
+---
 
 ### `semanticSearch(payload)`
 

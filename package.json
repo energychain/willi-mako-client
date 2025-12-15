@@ -1,7 +1,7 @@
 {
   "name": "willi-mako-client",
-  "version": "0.9.3",
-  "description": "Official TypeScript client & CLI for the Willi-Mako API v2 (Marktkommunikation, compliance & ETL automation)",
+  "version": "1.0.0",
+  "description": "Official TypeScript client & CLI for the Willi-Mako API v2 – Streaming chat, EDIFACT analysis, market communication & ETL automation for German energy sector",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -46,7 +46,8 @@
     "example:orders": "node --loader ts-node/esm examples/orders-incident-report.ts",
     "example:pricat": "node --loader ts-node/esm examples/pricat-price-sync.ts",
     "example:invoic": "node --loader ts-node/esm examples/invoic-archive.ts",
-    "example:structured-data": "node --loader ts-node/esm examples/structured-data-query.ts"
+    "example:structured-data": "node --loader ts-node/esm examples/structured-data-query.ts",
+    "example:streaming": "node --loader ts-node/esm examples/streaming-chat.ts"
   },
   "keywords": [
     "willi-mako",
@@ -59,6 +60,10 @@
     "orders",
     "pricat",
     "invoic",
+    "streaming",
+    "sse",
+    "server-sent-events",
+    "real-time",
     "etl",
     "compliance",
     "audit",
@@ -72,7 +77,11 @@
     "mcp-server",
     "ai-agents",
     "workflow",
-    "integration"
+    "integration",
+    "edifact",
+    "gpke",
+    "wim",
+    "geli-gas"
   ],
   "author": "STROMDAO GmbH",
   "license": "MIT",

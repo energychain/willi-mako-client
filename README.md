@@ -487,6 +487,56 @@ Weitere Informationen: [TOKEN_SCRIPTS_README.md](./TOKEN_SCRIPTS_README.md)
 
 ---
 
+### 💬 Conversational Chat & Streaming
+
+**⚡ NEU in v1.0.0:** Streaming Chat für lange Anfragen!
+
+Das SDK bietet jetzt **zwei Chat-Methoden**:
+
+#### 1. `chat()` – Synchron (nur für einfache Fragen)
+
+⚠️ **Bei langen Anfragen (> 90s) tritt ein 504 Gateway Timeout auf**
+
+```typescript
+// Nur für einfache Fragen empfohlen
+const response = await client.chat({
+  sessionId,
+  message: 'Was ist UTILMD?'
+});
+```
+
+#### 2. `chatStreaming()` – Mit Server-Sent Events ✅ **EMPFOHLEN**
+
+```typescript
+const session = await client.createSession();
+const result = await client.chatStreaming(
+  session.data.legacyChatId!,
+  { content: 'Erkläre den GPKE-Prozess im Detail' },
+  (event) => console.log(`⏳ ${event.progress}% - ${event.message}`)
+);
+```
+
+#### 3. `ask()` – High-Level Helper ⭐ **AM EINFACHSTEN**
+
+```typescript
+const response = await client.ask(
+  'Erkläre GPKE im Detail',
+  { companiesOfInterest: ['Enerchy'] },
+  (status, progress) => console.log(`${status} (${progress}%)`)
+);
+```
+
+**CLI mit Streaming:**
+```bash
+# Mit Streaming (empfohlen!)
+willi-mako chat send -s $SESSION_ID -m "Lange Frage" --stream
+```
+
+**📖 Vollständige Dokumentation:** [`docs/STREAMING.md`](./docs/STREAMING.md)
+**💻 Beispiel-Code:** [`examples/streaming-chat.ts`](./examples/streaming-chat.ts)
+
+---
+
 ### API Methods
 
 | Methode | Zweck | Typische Formate | Hinweise |

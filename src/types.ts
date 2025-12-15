@@ -120,6 +120,60 @@ export interface ChatResponse {
 }
 
 /**
+ * Stream event types from the SSE endpoint.
+ * - `status`: General status update during processing
+ * - `progress`: Progress update with percentage
+ * - `complete`: Processing finished successfully
+ * - `error`: An error occurred during processing
+ */
+export type StreamEventType = 'status' | 'progress' | 'complete' | 'error';
+
+/**
+ * Individual event received from the streaming chat endpoint.
+ * The streaming endpoint sends Server-Sent Events (SSE) with these payloads.
+ */
+export interface StreamEvent {
+  /** Event type indicating the stage of processing */
+  type: StreamEventType;
+  /** Human-readable status message (e.g., "Durchsuche Wissensdatenbank...") */
+  message?: string;
+  /** Progress percentage (0-100) */
+  progress?: number;
+  /** Final data payload (only present in 'complete' events) */
+  data?: {
+    userMessage: {
+      id: string;
+      role: 'user';
+      content: string;
+      created_at: string;
+    };
+    assistantMessage: {
+      id: string;
+      role: 'assistant';
+      content: string;
+      metadata?: {
+        processingTime?: number;
+        modelUsed?: string;
+        sourcesCount?: number;
+        [key: string]: unknown;
+      };
+      created_at: string;
+    };
+  };
+}
+
+/**
+ * Request payload for the streaming chat endpoint.
+ * Uses Server-Sent Events (SSE) to provide progress updates during AI processing.
+ */
+export interface StreamingChatRequest {
+  /** Message content to send to the assistant */
+  content: string;
+  /** Optional context settings override */
+  contextSettings?: Record<string, unknown>;
+}
+
+/**
  * Options that control the semantic retrieval behaviour.
  */
 export interface SemanticSearchOptions {

@@ -225,23 +225,72 @@ chat
   .description('Send a message to the conversational Willi-Mako endpoint')
   .requiredOption('-s, --session <sessionId>', 'Session identifier used for the conversation')
   .requiredOption('-m, --message <message>', 'Message content to send to the assistant')
+  .option('--stream', 'Use streaming endpoint (recommended for long operations > 90s)')
   .option('--context <json>', 'Optional JSON object overriding context settings', parseJsonOptional)
   .option(
     '--timeline <uuid>',
     'Optional Timeline identifier to link the message to an existing flow'
   )
   .action(
-    async (options: { session: string; message: string; context?: unknown; timeline?: string }) => {
+    async (options: {
+      session: string;
+      message: string;
+      stream?: boolean;
+      context?: unknown;
+      timeline?: string;
+    }) => {
       const client = await createClient({ requireToken: true });
-      const payload: ChatRequest = {
-        sessionId: options.session,
-        message: options.message,
-        contextSettings: (options.context as Record<string, unknown>) ?? undefined,
-        timelineId: options.timeline ?? undefined
-      };
 
-      const response = await client.chat(payload);
-      outputJson(response);
+      if (options.stream) {
+        // Use streaming endpoint
+        console.error('📡 Using streaming endpoint...');
+
+        // Get legacyChatId from session
+        const session = await client.getSession(options.session);
+        const chatId = session.data.legacyChatId;
+
+        if (!chatId) {
+          console.error('❌ Error: Session has no legacyChatId for streaming');
+          console.error('   The session may be too old or created with an incompatible version.');
+          process.exit(1);
+        }
+
+        const result = await client.chatStreaming(
+          chatId,
+          {
+            content: options.message,
+            contextSettings: (options.context as Record<string, unknown>) ?? undefined
+          },
+          (event) => {
+            if (event.type === 'status' || event.type === 'progress') {
+              const progress = event.progress || 0;
+              const bars = Math.round(progress / 5);
+              const progressBar = '█'.repeat(bars) + '░'.repeat(20 - bars);
+              console.error(`⏳ [${progressBar}] ${progress}% - ${event.message}`);
+            }
+          }
+        );
+
+        console.error('✅ Complete!');
+        outputJson({
+          success: true,
+          data: {
+            userMessage: result.data?.userMessage,
+            assistantMessage: result.data?.assistantMessage
+          }
+        });
+      } else {
+        // Use synchronous endpoint (legacy)
+        const payload: ChatRequest = {
+          sessionId: options.session,
+          message: options.message,
+          contextSettings: (options.context as Record<string, unknown>) ?? undefined,
+          timelineId: options.timeline ?? undefined
+        };
+
+        const response = await client.chat(payload);
+        outputJson(response);
+      }
     }
   );
 
@@ -1500,6 +1549,7 @@ marketPartners
       const response = await client.searchMarketPartners({
         q: options.query,
         limit,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         role: options.role as any
       });
 
@@ -1622,6 +1672,7 @@ structuredData
         throw new Error('Cannot use both --capability and --query at the same time');
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let payload: any;
 
       if (options.capability) {
