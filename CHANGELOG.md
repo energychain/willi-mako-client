@@ -4,6 +4,34 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) as soon as we reach a stable `1.0.0` release.
 
+## [1.0.1] - 2025-12-15
+
+### 📝 Documentation Updates - Backend Heartbeat Issue
+
+#### Changed
+
+- **Updated OpenAPI Schema** to v1.0.1 from backend
+- **Added Critical Warning** to streaming methods (`chatStreaming`, `ask`) about backend heartbeat issue
+- **Updated docs/STREAMING.md** with "Known Issues" section explaining current limitations
+- **Added Workarounds** for Cloudflare timeout issue:
+  - Use direct API access: `https://api.stromhaltig.de/api/v2` (no Cloudflare proxy)
+  - Use synchronous endpoint for queries < 90 seconds
+  - Wait for backend update with heartbeat implementation
+
+#### Context
+
+The backend streaming endpoint (as of API v1.0.1) does NOT send heartbeat events during AI processing (90+ seconds). This causes Cloudflare to terminate the SSE connection after ~100 seconds, resulting in 504 timeouts.
+
+**Backend Fix Required:**
+- Option A: Heartbeat timer that sends events every ~30 seconds
+- Option B: Extend `advancedReasoningService` with progress callbacks
+
+**Client SDK Status:** ✅ Correctly implemented – waiting for backend fix
+
+See https://stromhaltig.de/api/v2/openapi.json for current API status.
+
+---
+
 ## [1.0.0] - 2025-12-15
 
 ### 🎉 First Stable Release
@@ -12,11 +40,11 @@ This is the first production-ready release of willi-mako-client! The SDK is now 
 
 ### ✨ Added - Streaming Chat (Major Feature)
 
-- **🔥 NEW: Streaming Chat Endpoint** – Avoid 504 Gateway Timeouts!
+- **🔥 NEW: Streaming Chat Endpoint** – Avoid 504 Gateway Timeouts (once backend heartbeats are active)!
   - `chatStreaming(chatId, payload, onProgress?)` – Send messages via Server-Sent Events (SSE) with real-time progress updates
   - `ask(question, contextSettings?, onProgress?)` – High-level helper with automatic session management and streaming
   - Stream events: `status`, `progress`, `complete`, `error`
-  - Works for operations taking 3-6 minutes without timeout issues
+  - Works for operations taking 3-6 minutes without timeout issues (requires backend heartbeat fix in v1.0.1+)
   - Perfect for complex reasoning tasks, blog content transformation, and large EDIFACT analysis
 
 - **📊 Real-time Progress Updates**

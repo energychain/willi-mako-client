@@ -384,8 +384,23 @@ export class WilliMakoClient {
    * Sends a message via Server-Sent Events (SSE) streaming.
    * **Recommended for long-running AI operations (> 90 seconds)** to avoid timeouts.
    *
+   * ⚠️ **IMPORTANT - Backend Heartbeat Issue (as of API v1.0.1):**
+   * The backend currently does NOT send heartbeat events during AI processing (90+ seconds).
+   * This causes Cloudflare to kill the SSE connection after ~100 seconds, resulting in the
+   * same 504 timeout as the synchronous endpoint.
+   *
+   * **Workarounds:**
+   * - Use direct API access without Cloudflare proxy: `api.stromhaltig.de`
+   * - Wait for backend update with heartbeat timer or progress callbacks
+   * - Use synchronous endpoint for queries < 90 seconds
+   *
+   * **What's being fixed in backend:**
+   * Backend needs to send periodic heartbeat events (every ~30s) or implement
+   * progress callbacks in `advancedReasoningService` to keep the connection alive.
+   *
    * This method uses the `/api/chat/chats/{chatId}/messages/stream` endpoint which provides
-   * real-time progress updates and works for operations that take several minutes.
+   * real-time progress updates and works for operations that take several minutes
+   * (once backend heartbeats are implemented).
    *
    * @param chatId - The legacyChatId from session creation (see {@link createSession})
    * @param payload - Message content and optional context settings
@@ -497,6 +512,10 @@ export class WilliMakoClient {
 
   /**
    * High-level helper for streaming chat with automatic session management.
+   *
+   * ⚠️ **IMPORTANT - Backend Heartbeat Issue (as of API v1.0.1):**
+   * The streaming endpoint currently has a Cloudflare timeout issue due to missing
+   * heartbeat events during AI processing. See {@link chatStreaming} for details and workarounds.
    *
    * This method creates a session automatically, sends the message via streaming,
    * and returns the assistant's response. Perfect for one-off questions or scripts

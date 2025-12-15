@@ -1,5 +1,8 @@
 # Streaming Chat – Server-Sent Events (SSE) Guide
 
+> ⚠️ **IMPORTANT UPDATE (API v1.0.1):** The backend currently has a heartbeat issue during AI processing.
+> See [Known Issues](#known-issues) below for workarounds.
+
 This guide explains how to use the streaming chat endpoint to avoid timeout issues and get real-time progress updates during long-running AI operations.
 
 ---
@@ -7,6 +10,7 @@ This guide explains how to use the streaming chat endpoint to avoid timeout issu
 ## Table of Contents
 
 - [Why Streaming?](#why-streaming)
+- [Known Issues](#known-issues)
 - [Quick Start](#quick-start)
 - [API Reference](#api-reference)
   - [`chatStreaming()`](#chatstreaming)
@@ -41,10 +45,54 @@ POST /api/v2/chat
 
 The streaming endpoint (`POST /api/chat/chats/{chatId}/messages/stream`) uses **Server-Sent Events (SSE)** to provide real-time progress updates:
 
-✅ No Cloudflare timeouts (works for 3-6 minutes)
+✅ No Cloudflare timeouts (**when heartbeats are active**)
 ✅ Real-time progress updates
 ✅ Better user experience
 ✅ Handles operations of any duration
+
+---
+
+## Known Issues
+
+### Backend Heartbeat Problem (as of API v1.0.1)
+
+**Current Limitation:**
+The backend streaming endpoint does NOT send heartbeat events during AI processing (90+ seconds). This causes Cloudflare to kill the SSE connection after ~100 seconds, resulting in the same 504 timeout as the synchronous endpoint.
+
+**Why SSE alone doesn't help:**
+SSE only prevents Cloudflare timeouts when the server sends data regularly (e.g., every 30 seconds). Currently, the backend code blocks like this:
+
+```javascript
+sendSSE({ message: 'Generiere Antwort...', progress: 50 });
+await advancedReasoningService.generateReasonedResponse(...); // ← 90+ seconds WITHOUT events!
+```
+
+**Backend Fix in Progress:**
+- **Option A (Quick-Fix):** Heartbeat timer that sends an event every 30 seconds
+- **Option B (Proper Fix):** Extend `advancedReasoningService` with progress callbacks
+
+**Workarounds (until backend fix is deployed):**
+
+1. **Use Direct API Access** (Recommended):
+   ```typescript
+   const client = new WilliMakoClient({
+     baseUrl: 'https://api.stromhaltig.de/api/v2', // No Cloudflare proxy
+     accessToken: 'your-token'
+   });
+   ```
+
+2. **Use Synchronous Endpoint for Quick Queries** (< 90s):
+   ```typescript
+   const response = await client.chat({
+     sessionId: session.data.sessionId,
+     message: 'Quick question about GPKE'
+   });
+   ```
+
+3. **Wait for Backend Update:**
+   Monitor the API changelog at https://stromhaltig.de/api/v2/openapi.json
+
+**Status:** ⚠️ Backend fix required – Client SDK is correctly implemented
 
 ---
 

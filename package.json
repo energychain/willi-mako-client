@@ -1,6 +1,6 @@
 {
   "name": "willi-mako-client",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Official TypeScript client & CLI for the Willi-Mako API v2 – Streaming chat, EDIFACT analysis, market communication & ETL automation for German energy sector",
   "type": "module",
   "main": "dist/index.js",
