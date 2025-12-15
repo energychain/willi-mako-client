@@ -1654,3 +1654,54 @@ export interface GetProvidersHealthResponse {
     providers: ProviderHealthInfo[];
   };
 }
+
+/**
+ * Chat status for polling endpoint (API v1.0.2+)
+ */
+export type ChatStatus = 'idle' | 'processing' | 'completed' | 'error';
+
+/**
+ * Response from GET /chat/chats/{chatId}/status (API v1.0.2+)
+ * Used for polling-based chat workflows
+ */
+export interface ChatStatusResponse {
+  success: boolean;
+  data: {
+    chatId: string;
+    /** Current processing status */
+    status: ChatStatus;
+    /** Estimated progress 0-100% */
+    estimatedProgress?: number;
+    /** Last user message in this chat */
+    lastUserMessage?: {
+      id: string;
+      content: string;
+      createdAt: string;
+    };
+    /** Last assistant response (null while processing) */
+    lastAssistantMessage?: {
+      id: string;
+      content: string;
+      createdAt: string;
+      metadata?: Record<string, unknown>;
+    };
+    /** Error message if status is 'error' */
+    error?: string;
+  };
+}
+
+/**
+ * Response from GET /chat/chats/{chatId}/latest-response (API v1.0.2+)
+ * Lightweight endpoint for high-frequency polling
+ */
+export interface LatestResponseData {
+  success: boolean;
+  /** Latest assistant message, or null if none exists yet */
+  data: {
+    id: string;
+    content: string;
+    createdAt: string;
+    metadata?: Record<string, unknown>;
+  } | null;
+  message?: string;
+}

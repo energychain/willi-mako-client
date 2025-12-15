@@ -364,10 +364,11 @@ export class WilliMakoClient {
    * Sends a conversational message to the Willi-Mako chat endpoint.
    *
    * ⚠️ **WARNING**: This method is synchronous and waits for complete AI processing.
-   * For long-running operations (> 90 seconds), use `chatStreaming()` instead to avoid
-   * 504 Gateway Timeout errors from Cloudflare.
+   * For long-running operations (> 90 seconds), use `chatStreaming()` or `chatWithPolling()`
+   * to avoid 504 Gateway Timeout errors from Cloudflare.
    *
-   * @see {@link chatStreaming} for streaming alternative with progress updates
+   * @see {@link chatStreaming} for streaming alternative with real-time progress updates
+   * @see {@link chatWithPolling} for polling-based workflow (API v1.0.2+)
    * @see {@link ask} for high-level helper with automatic streaming
    */
   public async chat(payload: ChatRequest): Promise<ChatResponse> {
@@ -382,25 +383,15 @@ export class WilliMakoClient {
 
   /**
    * Sends a message via Server-Sent Events (SSE) streaming.
-   * **Recommended for long-running AI operations (> 90 seconds)** to avoid timeouts.
+   * **Recommended for long-running AI operations (> 90 seconds)** with real-time progress.
    *
-   * ⚠️ **IMPORTANT - Backend Heartbeat Issue (as of API v1.0.1):**
-   * The backend currently does NOT send heartbeat events during AI processing (90+ seconds).
-   * This causes Cloudflare to kill the SSE connection after ~100 seconds, resulting in the
-   * same 504 timeout as the synchronous endpoint.
-   *
-   * **Workarounds:**
-   * - Use direct API access without Cloudflare proxy: `api.stromhaltig.de`
-   * - Wait for backend update with heartbeat timer or progress callbacks
-   * - Use synchronous endpoint for queries < 90 seconds
-   *
-   * **What's being fixed in backend:**
-   * Backend needs to send periodic heartbeat events (every ~30s) or implement
-   * progress callbacks in `advancedReasoningService` to keep the connection alive.
+   * ✅ **SOLVED in API v1.0.2**: The streaming endpoint now sends heartbeat events every 30 seconds
+   * during AI processing, preventing Cloudflare timeout issues. Streaming is production-ready.
    *
    * This method uses the `/api/chat/chats/{chatId}/messages/stream` endpoint which provides
-   * real-time progress updates and works for operations that take several minutes
-   * (once backend heartbeats are implemented).
+   * real-time progress updates and works reliably for operations that take several minutes.
+   *
+   * For environments where SSE is problematic, consider using {@link chatWithPolling} instead.
    *
    * @param chatId - The legacyChatId from session creation (see {@link createSession})
    * @param payload - Message content and optional context settings
@@ -513,9 +504,9 @@ export class WilliMakoClient {
   /**
    * High-level helper for streaming chat with automatic session management.
    *
-   * ⚠️ **IMPORTANT - Backend Heartbeat Issue (as of API v1.0.1):**
-   * The streaming endpoint currently has a Cloudflare timeout issue due to missing
-   * heartbeat events during AI processing. See {@link chatStreaming} for details and workarounds.
+   * ✅ **SOLVED in API v1.0.2**: The streaming endpoint now sends heartbeat events every 30 seconds
+   * during AI processing, preventing Cloudflare timeout issues. Both streaming and polling are
+   * production-ready approaches.
    *
    * This method creates a session automatically, sends the message via streaming,
    * and returns the assistant's response. Perfect for one-off questions or scripts
@@ -1707,6 +1698,77 @@ export class WilliMakoClient {
     }
 
     return body as T;
+  }
+
+  /**
+   * Get chat status for polling-based workflows (API v1.0.2+)
+   */
+  public async getChatStatus(chatId: string): Promise<any> {
+    const baseUrlForChat = this.baseUrl.replace(/\/api\/v2\/?$/, '/api/chat');
+    const url = `${baseUrlForChat}/chats/${encodeURIComponent(chatId)}/status`;
+    return this.request<any>(url, { method: 'GET' });
+  }
+
+  /**
+   * Get only the latest assistant response (API v1.0.2+)
+   */
+  public async getLatestResponse(chatId: string): Promise<any> {
+    const baseUrlForChat = this.baseUrl.replace(/\/api\/v2\/?$/, '/api/chat');
+    const url = `${baseUrlForChat}/chats/${encodeURIComponent(chatId)}/latest-response`;
+    return this.request<any>(url, { method: 'GET' });
+  }
+
+  /**
+   * Send a chat message and poll for completion (API v1.0.2+)
+   */
+  public async chatWithPolling(
+    sessionId: string,
+    message: string,
+    onProgress?: (status: string, progress: number) => void,
+    pollInterval: number = 2000,
+    maxPollTime: number = 300000
+  ): Promise<any> {
+    const session = await this.getSession(sessionId);
+    const chatId = session.data.legacyChatId;
+    if (!chatId) throw new WilliMakoError('Session has no legacyChatId', 500, session);
+
+    try {
+      await this.chat({ sessionId, message });
+    } catch (error) {
+      if (error instanceof WilliMakoError && error.status === 504) {
+        if (onProgress) onProgress('Request timed out, starting polling...', 10);
+      } else {
+        throw error;
+      }
+    }
+
+    const startTime = Date.now();
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const elapsed = Date.now() - startTime;
+      if (elapsed > maxPollTime) {
+        throw new WilliMakoError(`Polling timeout after ${maxPollTime}ms`, 408, {
+          chatId,
+          elapsed
+        });
+      }
+
+      const status = await this.getChatStatus(chatId);
+      const chatStatus = status.data.status;
+      const progress = status.data.estimatedProgress || 0;
+
+      if (onProgress) {
+        const statusMsg = chatStatus === 'processing' ? 'Processing...' : chatStatus;
+        onProgress(statusMsg, progress);
+      }
+
+      if (chatStatus === 'completed') return status.data.lastAssistantMessage;
+      if (chatStatus === 'error') {
+        throw new WilliMakoError(status.data.error || 'Chat processing failed', 500, status.data);
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, pollInterval));
+    }
   }
 }
 

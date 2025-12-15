@@ -4,6 +4,41 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) as soon as we reach a stable `1.0.0` release.
 
+## [1.0.2] - 2025-12-15
+
+### ✅ Backend Heartbeat Fix + Polling Support
+
+#### Added
+
+- **New Polling Methods** (API v1.0.2+):
+  - `getChatStatus(chatId)` - Check processing status with progress tracking
+  - `getLatestResponse(chatId)` - Get only the latest assistant message (lightweight)
+  - `chatWithPolling(sessionId, message, onProgress?, pollInterval?, maxPollTime?)` - Complete polling workflow
+- **New TypeScript Types**:
+  - `ChatStatus` - Status enum: 'idle' | 'processing' | 'completed' | 'error'
+  - `ChatStatusResponse` - Full status response interface
+  - `LatestResponseData` - Latest message response interface
+- **Documentation**:
+  - New `docs/POLLING.md` - Complete polling guide with examples
+  - New `examples/polling-chat.ts` - Working demonstrations of all polling methods
+
+#### Changed
+
+- **✅ SOLVED: Streaming Heartbeat Issue** - Backend now sends heartbeat events every 30 seconds during AI processing
+- **Updated OpenAPI Schema** to v1.0.2 from backend
+- **Removed Warnings** from `chatStreaming()` and `ask()` methods - streaming is now production-ready
+- **Updated docs/STREAMING.md** - Marked heartbeat issue as SOLVED
+
+#### Why Polling?
+
+Both streaming and polling are now production-ready approaches:
+- **Streaming**: Real-time progress, lower latency, works reliably (heartbeat fix)
+- **Polling**: Simpler implementation, better for environments where SSE is problematic
+
+Choose based on your use case:
+- Use **streaming** for interactive UIs and dashboards
+- Use **polling** for background jobs, scripts, or when SSE is blocked
+
 ## [1.0.1] - 2025-12-15
 
 ### 📝 Documentation Updates - Backend Heartbeat Issue
