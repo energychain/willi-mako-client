@@ -1705,3 +1705,181 @@ export interface LatestResponseData {
   } | null;
   message?: string;
 }
+
+// ============================================================================
+// OpenAI-Compatible Chat Completions (API v1.1.0+)
+// ============================================================================
+
+/**
+ * Role of a message participant in OpenAI format.
+ */
+export type ChatCompletionRole = 'system' | 'user' | 'assistant';
+
+/**
+ * A single message in the conversation history (OpenAI format).
+ */
+export interface ChatCompletionMessage {
+  /** Role of the message sender */
+  role: ChatCompletionRole;
+  /** Message content */
+  content: string;
+  /** Optional name of the participant */
+  name?: string;
+}
+
+/**
+ * Context settings for Chat Completions.
+ * These settings AUGMENT the automatic QDrant search (they do NOT disable it!).
+ */
+export interface ChatCompletionContextSettings {
+  /** Include user-specific documents */
+  includeUserDocuments?: boolean;
+  /** Include user-specific notes */
+  includeUserNotes?: boolean;
+  /** System knowledge base (QDrant) - Default: true, ALWAYS ACTIVE */
+  includeSystemKnowledge?: boolean;
+  /** Collection override: Only search specific collections. Default: All 5 collections */
+  targetCollections?: Array<'willi_mako' | 'willi-netz' | 'cs30' | 'willi-cs' | 's4hu'>;
+  /** Timeline ID for audit logging */
+  timelineId?: string;
+}
+
+/**
+ * Request payload for OpenAI-compatible chat completions.
+ *
+ * @example
+ * ```typescript
+ * const request: ChatCompletionRequest = {
+ *   messages: [
+ *     { role: 'system', content: 'Du bist ein Experte für Marktkommunikation.' },
+ *     { role: 'user', content: 'Was ist der Unterschied zwischen UTILMD und MSCONS?' }
+ *   ],
+ *   model: 'willi-mako-rag',
+ *   temperature: 0.7,
+ *   max_tokens: 2048
+ * };
+ * ```
+ */
+export interface ChatCompletionRequest {
+  /** Conversation history in OpenAI format */
+  messages: ChatCompletionMessage[];
+  /** Model name (optional, will be ignored - we use our active LLM) */
+  model?: string;
+  /** Temperature for sampling (0-2) */
+  temperature?: number;
+  /** Maximum number of tokens in response (1-32000) */
+  max_tokens?: number;
+  /** Top-p sampling (0-1) */
+  top_p?: number;
+  /** Enable streaming (Phase 2, not yet supported) */
+  stream?: boolean;
+  /** Stop sequences (string or array) */
+  stop?: string | string[];
+  /** Presence penalty (-2 to 2) */
+  presence_penalty?: number;
+  /** Frequency penalty (-2 to 2) */
+  frequency_penalty?: number;
+  /** Context settings to augment the automatic QDrant search */
+  context_settings?: ChatCompletionContextSettings;
+  /** Optional session ID for state management */
+  session_id?: string;
+}
+
+/**
+ * Message returned in a chat completion choice.
+ */
+export interface ChatCompletionResponseMessage {
+  /** Role is always 'assistant' */
+  role: 'assistant';
+  /** Generated response content */
+  content: string;
+}
+
+/**
+ * Reason why generation stopped.
+ */
+export type FinishReason = 'stop' | 'length' | 'content_filter';
+
+/**
+ * A single choice in the chat completion response.
+ */
+export interface ChatCompletionChoice {
+  /** Choice index */
+  index: number;
+  /** The generated message */
+  message: ChatCompletionResponseMessage;
+  /** Reason why generation stopped */
+  finish_reason: FinishReason;
+}
+
+/**
+ * Token usage statistics (approximation).
+ */
+export interface ChatCompletionUsage {
+  /** Tokens in the prompt */
+  prompt_tokens: number;
+  /** Tokens in the completion */
+  completion_tokens: number;
+  /** Total tokens used */
+  total_tokens: number;
+}
+
+/**
+ * Search strategy used for RAG retrieval.
+ */
+export type SearchStrategy = 'semantic' | 'hybrid' | 'keyword';
+
+/**
+ * RAG metadata extension (Willi-Mako specific).
+ */
+export interface ChatCompletionRagMetadata {
+  /** Which collections were searched */
+  searched_collections: string[];
+  /** Number of retrieved relevant documents */
+  retrieved_documents: number;
+  /** Retrieval duration in milliseconds */
+  retrieval_duration_ms: number;
+  /** Search strategy used */
+  search_strategy: SearchStrategy;
+  /** Top 3 source document IDs */
+  top_source_ids: string[];
+}
+
+/**
+ * System information extension (Willi-Mako specific).
+ */
+export interface ChatCompletionSystemInfo {
+  /** API version */
+  version: string;
+  /** Active LLM model */
+  active_llm: string;
+}
+
+/**
+ * Response from OpenAI-compatible chat completions endpoint.
+ *
+ * @example
+ * ```typescript
+ * const response = await client.createChatCompletion(request);
+ * console.log(response.choices[0].message.content);
+ * console.log(`RAG docs: ${response.x_rag_metadata.retrieved_documents}`);
+ * ```
+ */
+export interface ChatCompletionResponse {
+  /** Unique ID for this completion */
+  id: string;
+  /** Object type (always 'chat.completion') */
+  object: 'chat.completion';
+  /** Unix timestamp */
+  created: number;
+  /** Model used */
+  model: string;
+  /** Array of completion choices */
+  choices: ChatCompletionChoice[];
+  /** Token usage statistics */
+  usage: ChatCompletionUsage;
+  /** RAG metadata (Willi-Mako extension) */
+  x_rag_metadata: ChatCompletionRagMetadata;
+  /** System information (Willi-Mako extension) */
+  x_system_info: ChatCompletionSystemInfo;
+}

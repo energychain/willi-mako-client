@@ -67,7 +67,9 @@ import type {
   ResolveIntentRequest,
   ResolveIntentResponse,
   GetProvidersResponse,
-  GetProvidersHealthResponse
+  GetProvidersHealthResponse,
+  ChatCompletionRequest,
+  ChatCompletionResponse
 } from './types.js';
 
 const require: NodeJS.Require = createRequire(import.meta.url);
@@ -1769,6 +1771,85 @@ export class WilliMakoClient {
 
       await new Promise((resolve) => setTimeout(resolve, pollInterval));
     }
+  }
+
+  // ============================================================================
+  // OpenAI-Compatible Chat Completions (API v1.1.0+)
+  // ============================================================================
+
+  /**
+   * Create an OpenAI-compatible chat completion with RAG enhancement.
+   *
+   * This endpoint provides a drop-in replacement for OpenAI's chat completions API,
+   * but with automatic semantic search across Willi-Mako's energy sector knowledge base.
+   *
+   * **Key Features:**
+   * - OpenAI SDK compatible (works with Python, Node.js OpenAI clients)
+   * - Automatic QDrant search over 5 collections (ALWAYS active)
+   * - Stateless operation (no session required, but optional)
+   * - System instructions via messages array
+   * - RAG metadata included in response
+   *
+   * **Use Cases:**
+   * - Migration from OpenAI to Willi-Mako (only change base URL + API key)
+   * - External integrations using OpenAI SDK
+   * - Stateless requests without session management
+   * - Custom system instructions per request
+   *
+   * @param request - Chat completion request in OpenAI format
+   * @returns OpenAI-compatible response with RAG metadata extensions
+   *
+   * @example
+   * **Simple Question**
+   * ```typescript
+   * const response = await client.createChatCompletion({
+   *   messages: [
+   *     { role: 'user', content: 'Was ist der Unterschied zwischen UTILMD und MSCONS?' }
+   *   ]
+   * });
+   * console.log(response.choices[0].message.content);
+   * console.log(`RAG docs: ${response.x_rag_metadata.retrieved_documents}`);
+   * ```
+   *
+   * @example
+   * **With System Instructions**
+   * ```typescript
+   * const response = await client.createChatCompletion({
+   *   messages: [
+   *     {
+   *       role: 'system',
+   *       content: 'Du bist ein Senior-Berater für Netzbetreiber. Antworte präzise.'
+   *     },
+   *     { role: 'user', content: 'Welche Fristen gelten für den Lieferantenwechsel?' }
+   *   ],
+   *   temperature: 0.5,
+   *   max_tokens: 1500
+   * });
+   * ```
+   *
+   * @example
+   * **Restrict to Specific Collections**
+   * ```typescript
+   * const response = await client.createChatCompletion({
+   *   messages: [
+   *     { role: 'user', content: 'Was sind die TAB-Anforderungen für PV-Anlagen?' }
+   *   ],
+   *   context_settings: {
+   *     targetCollections: ['willi-netz']
+   *   }
+   * });
+   * ```
+   *
+   * @see https://platform.openai.com/docs/api-reference/chat/create
+   */
+  public async createChatCompletion(
+    request: ChatCompletionRequest
+  ): Promise<ChatCompletionResponse> {
+    const url = `${this.baseUrl}/chat/completions`;
+    return this.request<ChatCompletionResponse>(url, {
+      method: 'POST',
+      body: JSON.stringify(request)
+    });
   }
 }
 

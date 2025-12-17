@@ -379,6 +379,7 @@ Tools:
 - willi-netz-chat – Chat based on willi-netz collection (BNetzA, ARegV, §14a EnWG, smart meters)
 - combined-semantic-search – Search across both willi_mako and willi-netz collections
 - combined-chat – Chat with access to both collections (auto-selects relevant knowledge)
+- create-chat-completion – OpenAI-compatible chat completion with RAG enhancement (API v1.1.0+, stateless)
 - willi-mako-reasoning-generate – Multi-step investigations across energy-market data sets
 - willi-mako-resolve-context – Resolve contextual decisions and resources for user intents
 - willi-mako-clarification-analyze – Analyse whether clarification questions are required
@@ -397,6 +398,7 @@ Capabilities:
 - Regulatory context spanning EnWG, StromNZV, StromNEV, EEG, MessEG/MessEV and current BNetzA guidance.
 - Authoritative format knowledge for EDIFACT/edi@energy, BDEW MaKo-Richtlinien, UTILMD, MSCONS, ORDERS, PRICAT, INVOIC und ergänzende Prüfkataloge.
 - Network management expertise via willi-netz: BNetzA regulations, incentive regulation (ARegV), technical connection requirements (TAB from Westnetz, Netze BW, etc.), asset management (ISO 55000), SAIDI/SAIFI quality indicators.
+- OpenAI-compatible Chat Completions (API v1.1.0+): Drop-in replacement for OpenAI API with automatic RAG enhancement, stateless operation, system instructions support, and collection targeting.
 - Need prompt scaffolding for frequently used checklists? Add lightweight helper tools that wrap the chat endpoint with prefilled context instead of reinventing workflows.
 
 Resources:
@@ -894,6 +896,83 @@ Resources:
           };
           const response = await clientInstance.combinedChat(payload);
           return respond({ ...response, sessionId: activeSessionId });
+        })
+    );
+
+    registerTool(
+      'create-chat-completion',
+      {
+        title: 'OpenAI-compatible chat completion (API v1.1.0+)',
+        description:
+          '✅ **OpenAI-compatible Chat API** with automatic RAG-Enhancement. Drop-in replacement for OpenAI with stateless operation and automatic QDrant search over 5 collections (ALWAYS active). Perfect for: Migration from OpenAI, external integrations, stateless requests, custom system instructions per request. RAG-Metadata included in response.',
+        inputSchema: {
+          messages: z
+            .array(
+              z.object({
+                role: z
+                  .enum(['system', 'user', 'assistant'])
+                  .describe('Role of the message sender'),
+                content: z.string().describe('Message content'),
+                name: z.string().optional().describe('Optional name of the participant')
+              })
+            )
+            .min(1)
+            .describe('Conversation history in OpenAI format'),
+          model: z
+            .string()
+            .optional()
+            .default('willi-mako-rag')
+            .describe('Model name (optional, will be ignored - we use our active LLM)'),
+          temperature: z
+            .number()
+            .min(0)
+            .max(2)
+            .optional()
+            .default(0.7)
+            .describe('Temperature for sampling'),
+          max_tokens: z
+            .number()
+            .int()
+            .min(1)
+            .max(32000)
+            .optional()
+            .default(2048)
+            .describe('Maximum number of tokens in response'),
+          top_p: z.number().min(0).max(1).optional().default(1).describe('Top-p sampling'),
+          context_settings: z
+            .object({
+              includeUserDocuments: z.boolean().optional(),
+              includeUserNotes: z.boolean().optional(),
+              includeSystemKnowledge: z.boolean().optional().default(true),
+              targetCollections: z
+                .array(z.enum(['willi_mako', 'willi-netz', 'cs30', 'willi-cs', 's4hu']))
+                .optional()
+                .describe('Collection Override: Only specific collections. Default: All 5'),
+              timelineId: z.string().uuid().optional().describe('Timeline-ID for audit logging')
+            })
+            .optional()
+            .describe('Context settings to augment the automatic QDrant search'),
+          session_id: z
+            .string()
+            .uuid()
+            .optional()
+            .describe('Optional: Session-ID for state management')
+        }
+      },
+      async (input: Record<string, unknown>, _extra?: RequestContext) =>
+        withClient(_extra, async (clientInstance) => {
+          const request = input as {
+            messages: Array<{ role: string; content: string; name?: string }>;
+            model?: string;
+            temperature?: number;
+            max_tokens?: number;
+            top_p?: number;
+            context_settings?: Record<string, unknown>;
+            session_id?: string;
+          };
+
+          const response = await clientInstance.createChatCompletion(request as any);
+          return respond(response);
         })
     );
 

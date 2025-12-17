@@ -84,6 +84,7 @@ Mit dem SDK erhalten Sie:
 - 🔐 **Flexible Auth** – Login-Helper mit optionaler Tokenpersistenz oder direkte Verwendung von Service Tokens.
 - 🧱 **Session Lifecycle APIs** – Sessions anlegen, inspizieren, bereinigen und dabei Präferenzen/Kontexte steuern.
 - 🧠 **Conversational Stack** – Chat, semantische Suche, Reasoning, Kontextauflösung und Klarstellungsanalyse aus einer Hand.
+- 🤖 **OpenAI-Compatible Chat (v1.1.0)** – Drop-in Replacement für OpenAI API mit automatischer RAG-Enhancement, stateless operation und collection targeting.
 - 📚 **Erweiterte Wissensabdeckung (v0.8.0)** – Combined-Search und willi-netz Collection umfassen nun wissenschaftliche Studien, BNetzA-Regulierung, BDEW-, VKU- und andere Veröffentlichungen für ganzheitliche Energiewirtschafts-Expertise.
 - 🛠️ **Tooling Sandbox** – sichere Node.js-Ausführung für ETL, Validierung, KI-Skripte.
 - 🗂️ **Artifact Storage** – persistente Protokolle, Audit-Trails und EDIFACT-Snapshots.
@@ -113,6 +114,81 @@ yarn add willi-mako-client
 ---
 
 ## 🚀 Quick Start
+
+### 🤖 OpenAI-Compatible Chat Completions (v1.1.0+)
+
+**Drop-in Replacement für OpenAI API** – nur Base-URL und API-Key ändern!
+
+#### TypeScript/JavaScript
+
+```typescript
+import { WilliMakoClient } from 'willi-mako-client';
+
+const client = new WilliMakoClient({
+  token: process.env.WILLI_MAKO_TOKEN
+});
+
+const response = await client.createChatCompletion({
+  messages: [
+    { role: 'system', content: 'Du bist ein Experte für Marktkommunikation.' },
+    { role: 'user', content: 'Was ist der Unterschied zwischen UTILMD und MSCONS?' }
+  ],
+  temperature: 0.7,
+  max_tokens: 2048
+});
+
+console.log(response.choices[0].message.content);
+console.log(`RAG docs: ${response.x_rag_metadata.retrieved_documents}`);
+```
+
+#### Python (OpenAI SDK)
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="YOUR_WILLI_MAKO_TOKEN",
+    base_url="https://stromhaltig.de/api/v2"  # Nur diese Zeile ändern!
+)
+
+response = client.chat.completions.create(
+    model="willi-mako-rag",
+    messages=[
+        {"role": "user", "content": "Was ist der Unterschied zwischen UTILMD und MSCONS?"}
+    ]
+)
+
+print(response.choices[0].message.content)
+print(f"RAG Docs: {response.x_rag_metadata['retrieved_documents']}")
+```
+
+#### CLI
+
+```bash
+willi-mako chat completions \
+  --message "Was ist der Unterschied zwischen UTILMD und MSCONS?" \
+  --system "Du bist ein Experte für Marktkommunikation." \
+  --temperature 0.7 \
+  --max-tokens 2048
+```
+
+**Features:**
+- ✅ OpenAI SDK-kompatibel (Python, Node.js, etc.)
+- ✅ Automatische QDrant-Suche über 5 Collections (IMMER aktiv)
+- ✅ Stateless (keine Session erforderlich)
+- ✅ System Instructions via messages array
+- ✅ Token Usage Statistics
+- ✅ RAG Metadata transparent (`x_rag_metadata`)
+
+**Use Cases:**
+- Migration von OpenAI zu Willi-Mako
+- Externe Integrationen (Tools, die OpenAI-SDK nutzen)
+- Stateless Anfragen ohne Session-Management
+- Custom System Instructions pro Request
+
+📚 **Beispiel:** [`examples/openai-compatible-chat.ts`](./examples/openai-compatible-chat.ts)
+
+---
 
 ### Local SDK Quickstart
 

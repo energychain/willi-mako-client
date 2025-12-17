@@ -1,7 +1,7 @@
 {
   "name": "willi-mako-client",
-  "version": "1.0.2",
-  "description": "Official TypeScript client & CLI for the Willi-Mako API v2 – Streaming chat, EDIFACT analysis, market communication & ETL automation for German energy sector",
+  "version": "1.1.0",
+  "description": "Official TypeScript client & CLI for the Willi-Mako API v2 – OpenAI-compatible chat completions, streaming chat, EDIFACT analysis, market communication & ETL automation for German energy sector",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -47,7 +47,8 @@
     "example:pricat": "node --loader ts-node/esm examples/pricat-price-sync.ts",
     "example:invoic": "node --loader ts-node/esm examples/invoic-archive.ts",
     "example:structured-data": "node --loader ts-node/esm examples/structured-data-query.ts",
-    "example:streaming": "node --loader ts-node/esm examples/streaming-chat.ts"
+    "example:streaming": "node --loader ts-node/esm examples/streaming-chat.ts",
+    "example:openai-chat": "node --loader ts-node/esm examples/openai-compatible-chat.ts"
   },
   "keywords": [
     "willi-mako",

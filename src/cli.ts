@@ -348,6 +348,134 @@ chat
     }
   );
 
+chat
+  .command('completions')
+  .description('OpenAI-compatible chat completions with RAG enhancement (API v1.1.0+, stateless)')
+  .requiredOption('-m, --message <message>', 'User message content')
+  .option('--system <instruction>', 'System instruction to prepend to conversation')
+  .option('--model <name>', 'Model name (optional, will be ignored)', 'willi-mako-rag')
+  .option('--temperature <number>', 'Temperature for sampling (0-2)', parseFloat, 0.7)
+  .option('--max-tokens <number>', 'Maximum tokens in response (1-32000)', parseInt, 2048)
+  .option('--top-p <number>', 'Top-p sampling (0-1)', parseFloat, 1.0)
+  .option(
+    '--collections <list>',
+    'Target collections (comma-separated: willi_mako,willi-netz,cs30,willi-cs,s4hu)'
+  )
+  .option('--session <sessionId>', 'Optional session ID for state management')
+  .option(
+    '--json-messages <json>',
+    'Full messages array in JSON format (overrides --message/--system)',
+    parseJsonOptional
+  )
+  .action(
+    async (options: {
+      message?: string;
+      system?: string;
+      model?: string;
+      temperature?: number;
+      maxTokens?: number;
+      topP?: number;
+      collections?: string;
+      session?: string;
+      jsonMessages?: unknown;
+    }) => {
+      const client = await createClient({ requireToken: true });
+
+      // Build messages array
+      let messages: Array<{ role: string; content: string }>;
+
+      if (options.jsonMessages) {
+        // Use provided JSON messages array
+        messages = options.jsonMessages as Array<{ role: string; content: string }>;
+      } else {
+        // Build from command line options
+        messages = [];
+        if (options.system) {
+          messages.push({ role: 'system', content: options.system });
+        }
+        if (options.message) {
+          messages.push({ role: 'user', content: options.message });
+        }
+      }
+
+      if (messages.length === 0) {
+        console.error(
+          '❌ Error: At least one message is required (use --message or --json-messages)'
+        );
+        process.exit(1);
+      }
+
+      // Build context settings
+      const contextSettings: Record<string, unknown> = {};
+      if (options.collections) {
+        const targetCollections = options.collections.split(',').map((c) => c.trim());
+        contextSettings.targetCollections = targetCollections;
+      }
+
+      // Build request payload
+      const payload: {
+        messages: Array<{ role: string; content: string }>;
+        model?: string;
+        temperature?: number;
+        max_tokens?: number;
+        top_p?: number;
+        context_settings?: Record<string, unknown>;
+        session_id?: string;
+      } = {
+        messages,
+        model: options.model,
+        temperature: options.temperature,
+        max_tokens: options.maxTokens,
+        top_p: options.topP
+      };
+
+      if (Object.keys(contextSettings).length > 0) {
+        payload.context_settings = contextSettings;
+      }
+
+      if (options.session) {
+        payload.session_id = options.session;
+      }
+
+      try {
+        const response = await client.createChatCompletion(payload as any);
+
+        // Output formatted response
+        console.log('\n✅ Chat Completion Response\n');
+        console.log('='.repeat(80));
+        console.log(`\n📄 Content:\n${response.choices[0].message.content}\n`);
+        console.log('='.repeat(80));
+
+        console.log('\n📊 RAG Metadata:');
+        console.log(`   Collections: ${response.x_rag_metadata.searched_collections.join(', ')}`);
+        console.log(`   Documents retrieved: ${response.x_rag_metadata.retrieved_documents}`);
+        console.log(`   Retrieval duration: ${response.x_rag_metadata.retrieval_duration_ms}ms`);
+        console.log(`   Search strategy: ${response.x_rag_metadata.search_strategy}`);
+        console.log(`   Top sources: ${response.x_rag_metadata.top_source_ids.join(', ')}`);
+
+        console.log('\n📈 Token Usage:');
+        console.log(`   Prompt tokens: ${response.usage.prompt_tokens}`);
+        console.log(`   Completion tokens: ${response.usage.completion_tokens}`);
+        console.log(`   Total tokens: ${response.usage.total_tokens}`);
+
+        console.log('\n🔧 System Info:');
+        console.log(`   Version: ${response.x_system_info.version}`);
+        console.log(`   Model: ${response.x_system_info.active_llm}\n`);
+
+        // Also output full JSON for scripting
+        outputJson(response);
+      } catch (error) {
+        if (error instanceof WilliMakoError) {
+          console.error(`❌ API Error ${error.status}:`);
+          console.error(error.body);
+        } else {
+          console.error('❌ Error:', error);
+        }
+        process.exit(1);
+      }
+    }
+  );
+
 const retrieval = program.command('retrieval').description('Knowledge retrieval helpers');
 
 retrieval

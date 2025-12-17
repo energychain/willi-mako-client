@@ -1,7 +1,7 @@
 # 🎉 Release v1.0.2 - Heartbeat Fix + Polling Support
 
-**Release Date:** December 15, 2025  
-**API Version:** v1.0.2  
+**Release Date:** December 15, 2025
+**API Version:** v1.0.2
 **Status:** ✅ Production Ready
 
 ---
@@ -199,7 +199,7 @@ await client.deleteSession(session.data.sessionId);
 ```
 ████████████████████ 100% - completed
 
-Response: Der GPKE-Prozess (Geschäftsprozesse zur Kundenbelieferung mit Elektrizität) 
+Response: Der GPKE-Prozess (Geschäftsprozesse zur Kundenbelieferung mit Elektrizität)
 regelt den Lieferantenwechsel in Deutschland...
 ```
 
@@ -219,8 +219,8 @@ regelt den Lieferantenwechsel in Deutschland...
 
 Have questions or feedback? Open an issue on GitHub or contribute to the project!
 
-**Backend API:** https://stromhaltig.de/api/v2/openapi.json  
-**Client SDK:** https://github.com/your-repo/willi-mako-client  
+**Backend API:** https://stromhaltig.de/api/v2/openapi.json
+**Client SDK:** https://github.com/your-repo/willi-mako-client
 
 ---
 
