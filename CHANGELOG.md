@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) as soon as we reach a stable `1.0.0` release.
 
+## [1.1.3] - 2025-12-20
+
+### Fixed
+
+- **MCP Token-in-Path Authentication**: Fixed critical bug where API tokens provided via URL path (`https://mcp.stromhaltig.de/<TOKEN>/mcp`) were not properly passed to `createSessionContext` during initialization, causing "Authentication required" errors. The `pathToken` is now correctly used as fallback when no authorization header is present.
+
+## [1.1.2] - 2025-12-17
+
+### Fixed
+
+- MCP path-token authentication now also honors proxy-forwarded paths (`x-original-url`, `x-original-uri`, `x-rewrite-url`, `x-forwarded-uri`, `x-forwarded-url`, `x-envoy-original-path`), ensuring bearer tokens survive ingress rewrites when using `/<token>/mcp` URLs.
+
+## [1.1.1] - 2025-12-17
+
+### Fixed
+
+- MCP server now reliably picks up bearer tokens provided via the path prefix (`/<token>/mcp`) and persists them per transport session, eliminating false "Authentication required" errors when the URL already contains the token.
+
 ## [1.0.2] - 2025-12-15
 
 ### ✅ Backend Heartbeat Fix + Polling Support

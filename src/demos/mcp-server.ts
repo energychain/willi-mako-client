@@ -202,6 +202,36 @@ export async function startMcpServer(options: McpServerOptions = {}): Promise<Mc
     return Number.isNaN(timestamp) ? undefined : timestamp;
   };
 
+  const extractBearerToken = (authorization: string | string[] | undefined): string | undefined => {
+    const raw = Array.isArray(authorization) ? authorization.at(-1) : authorization;
+    if (!raw) {
+      return undefined;
+    }
+
+    const [schemeRaw, ...rest] = raw.trim().split(/\s+/);
+    if (schemeRaw?.toLowerCase() !== 'bearer') {
+      return undefined;
+    }
+
+    const token = rest.join(' ');
+    return token || undefined;
+  };
+
+  const extractPathTokenFromPath = (path: string | undefined): string | undefined => {
+    if (!path) {
+      return undefined;
+    }
+    try {
+      const segments = path.split('/').filter(Boolean);
+      if (segments.length >= 2 && segments[1] === 'mcp' && segments[0] !== 'mcp') {
+        return decodeURIComponent(segments[0]);
+      }
+    } catch {
+      // ignore decode errors
+    }
+    return undefined;
+  };
+
   const resolveTokenFromBasic = async (encoded: string): Promise<string> => {
     const cached = basicTokenCache.get(encoded);
     if (cached) {
@@ -1866,6 +1896,7 @@ Resources:
     createdAt: number;
     lastSeen: number;
     finalized: boolean;
+    bootstrapToken?: string;
   }
 
   const activeSessionContexts = new Set<SessionContext>();
@@ -1884,7 +1915,7 @@ Resources:
     context.finalized = true;
   };
 
-  const createSessionContext = async (): Promise<SessionContext> => {
+  const createSessionContext = async (bootstrapToken?: string): Promise<SessionContext> => {
     const server = new McpServer(
       {
         name: 'willi-mako',
@@ -1902,7 +1933,8 @@ Resources:
       transport: undefined as unknown as StreamableHTTPServerTransport,
       createdAt: Date.now(),
       lastSeen: Date.now(),
-      finalized: false
+      finalized: false,
+      bootstrapToken
     };
 
     const transport = new StreamableHTTPServerTransport({
@@ -1912,9 +1944,11 @@ Resources:
         context.sessionId = sessionId;
         context.lastSeen = Date.now();
         sessionContextsById.set(sessionId, context);
-        if (!transportState.has(sessionId)) {
-          transportState.set(sessionId, {});
+        const state = transportState.get(sessionId) ?? {};
+        if (!state.token && context.bootstrapToken) {
+          state.token = context.bootstrapToken;
         }
+        transportState.set(sessionId, state);
         emitLog(
           `🔗 MCP transport session ${sessionId} initialised (active=${sessionContextsById.size}).`
         );
@@ -2021,12 +2055,39 @@ Resources:
     let pathToken: string | undefined;
     let parsedUrl: URL | undefined;
 
+    const forwardedPaths = [
+      originalUrl,
+      typeof req.headers['x-original-url'] === 'string' ? req.headers['x-original-url'] : undefined,
+      typeof req.headers['x-original-uri'] === 'string' ? req.headers['x-original-uri'] : undefined,
+      typeof req.headers['x-rewrite-url'] === 'string' ? req.headers['x-rewrite-url'] : undefined,
+      typeof req.headers['x-forwarded-uri'] === 'string'
+        ? req.headers['x-forwarded-uri']
+        : undefined,
+      typeof req.headers['x-forwarded-url'] === 'string'
+        ? req.headers['x-forwarded-url']
+        : undefined,
+      typeof req.headers['x-envoy-original-path'] === 'string'
+        ? req.headers['x-envoy-original-path']
+        : undefined
+    ];
+
+    for (const candidate of forwardedPaths) {
+      const token = extractPathTokenFromPath(candidate);
+      if (token) {
+        pathToken = token;
+        break;
+      }
+    }
+
     try {
       parsedUrl = new URL(originalUrl, 'http://localhost');
       const segments = parsedUrl.pathname.split('/').filter(Boolean);
 
-      if (segments.length >= 2 && segments[0] !== 'mcp' && segments[1] === 'mcp') {
+      if (!pathToken && segments.length >= 2 && segments[0] !== 'mcp' && segments[1] === 'mcp') {
         pathToken = decodeURIComponent(segments[0]);
+      }
+
+      if (segments.length >= 2 && segments[0] !== 'mcp' && segments[1] === 'mcp') {
         const remaining = segments.slice(1);
         parsedUrl.pathname = `/${remaining.join('/')}`;
         normalizedUrl = `${parsedUrl.pathname}${parsedUrl.search}`;
@@ -2043,6 +2104,8 @@ Resources:
     if (pathToken && !req.headers.authorization) {
       req.headers.authorization = `Bearer ${pathToken}`;
     }
+
+    const headerToken = extractBearerToken(req.headers.authorization);
 
     if (!req.headers['mcp-session-id']) {
       const headerSession = req.headers['x-session-id'];
@@ -2080,6 +2143,18 @@ Resources:
     const transportSessionId = Array.isArray(transportSessionHeader)
       ? transportSessionHeader.at(-1)
       : transportSessionHeader;
+
+    if (transportSessionId && headerToken) {
+      const state = transportState.get(transportSessionId) ?? {};
+      state.token = headerToken;
+      transportState.set(transportSessionId, state);
+    }
+
+    if (transportSessionId && pathToken && !headerToken) {
+      const state = transportState.get(transportSessionId) ?? {};
+      state.token = pathToken;
+      transportState.set(transportSessionId, state);
+    }
     emitLog(
       `🌐 ${req.method ?? 'UNKNOWN'} ${normalizedUrl} from ${remoteAddress}${
         transportSessionId ? ` (transport=${transportSessionId})` : ''
@@ -2108,7 +2183,7 @@ Resources:
             }
           }
 
-          const context = await createSessionContext();
+          const context = await createSessionContext(headerToken || pathToken);
           let initializationError: unknown;
 
           try {
