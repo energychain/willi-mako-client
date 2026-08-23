@@ -1502,7 +1502,7 @@
               "marketPartnerResolution": {
                 "type": "array",
                 "items": {
-                  "$ref": "#/components/schemas/MarketPartnerResolutionItem"
+                  "$ref": "#/$defs/marketPartnerResolutionItem"
                 }
               }
             }
@@ -1622,31 +1622,31 @@
               "officialEvidence": {
                 "type": "array",
                 "items": {
-                  "$ref": "#/components/schemas/EvidenceItem"
+                  "$ref": "#/$defs/evidenceItem"
                 }
               },
               "hintsOnly": {
                 "type": "array",
                 "items": {
-                  "$ref": "#/components/schemas/EvidenceItem"
+                  "$ref": "#/$defs/evidenceItem"
                 }
               },
               "advisoryKnowledge": {
                 "type": "array",
                 "items": {
-                  "$ref": "#/components/schemas/EvidenceItem"
+                  "$ref": "#/$defs/evidenceItem"
                 }
               },
               "userClaims": {
                 "type": "array",
                 "items": {
-                  "$ref": "#/components/schemas/EvidenceItem"
+                  "$ref": "#/$defs/evidenceItem"
                 }
               },
               "missingEvidence": {
                 "type": "array",
                 "items": {
-                  "$ref": "#/components/schemas/MissingEvidenceItem"
+                  "$ref": "#/$defs/missingEvidenceItem"
                 }
               },
               "assumptions": {
@@ -1657,16 +1657,16 @@
                 "description": "The model's own free-text notes (newAssumptions), never populated by the deterministic EDIFACT parser."
               },
               "edifactEnvelope": {
-                "$ref": "#/components/schemas/EdifactEnvelope"
+                "$ref": "#/$defs/edifactEnvelope"
               },
               "edifactMessages": {
                 "type": "array",
                 "items": {
-                  "$ref": "#/components/schemas/EdifactMessageItem"
+                  "$ref": "#/$defs/edifactMessageItem"
                 }
               },
               "edifactSyntaxCheck": {
-                "$ref": "#/components/schemas/EdifactSyntaxCheck"
+                "$ref": "#/$defs/edifactSyntaxCheck"
               }
             }
           },
@@ -1719,13 +1719,13 @@
               "nodes": {
                 "type": "array",
                 "items": {
-                  "$ref": "#/components/schemas/DiagramNode"
+                  "$ref": "#/$defs/diagramNode"
                 }
               },
               "edges": {
                 "type": "array",
                 "items": {
-                  "$ref": "#/components/schemas/DiagramEdge"
+                  "$ref": "#/$defs/diagramEdge"
                 }
               },
               "mermaid": {
@@ -1778,7 +1778,7 @@
           "sources": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/SourceItem"
+              "$ref": "#/$defs/sourceItem"
             }
           },
           "export": {
@@ -1798,6 +1798,1087 @@
               },
               "pdfReady": {
                 "type": "boolean"
+              }
+            }
+          }
+        },
+        "$defs": {
+          "evidenceItem": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "label",
+              "value",
+              "sourceClass",
+              "bindingStrength"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              },
+              "sourceClass": {
+                "type": "string"
+              },
+              "bindingStrength": {
+                "type": "string",
+                "enum": [
+                  "official_evidence",
+                  "not_official_proof",
+                  "advisory_knowledge",
+                  "user_claim",
+                  "assumption"
+                ]
+              }
+            }
+          },
+          "missingEvidenceItem": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "missingDataPoint",
+              "label",
+              "sourceClass",
+              "enablesDossierAddition"
+            ],
+            "properties": {
+              "missingDataPoint": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              },
+              "sourceClass": {
+                "type": "string"
+              },
+              "enablesDossierAddition": {
+                "type": "string"
+              }
+            }
+          },
+          "diagramNode": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "label",
+              "type"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string"
+              }
+            }
+          },
+          "diagramEdge": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "from",
+              "to",
+              "label"
+            ],
+            "properties": {
+              "from": {
+                "type": "string"
+              },
+              "to": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              }
+            }
+          },
+          "marketPartnerResolutionItem": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "code",
+              "status",
+              "label",
+              "notes"
+            ],
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "resolved",
+                  "not_found"
+                ]
+              },
+              "label": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "notes": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "sourceItem": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "title",
+              "url",
+              "score",
+              "endpoint"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "url": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "score": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "endpoint": {
+                "type": "string"
+              }
+            }
+          },
+          "edifactEnvelope": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "interchangeReference": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "testIndicator": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          "edifactDateTime": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "qualifier",
+              "value"
+            ],
+            "properties": {
+              "qualifier": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              }
+            }
+          },
+          "edifactReference": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "qualifier": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              },
+              "dateQualifier": {
+                "type": "string"
+              },
+              "date": {
+                "type": "string"
+              }
+            }
+          },
+          "edifactAmount": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "qualifier",
+              "amount"
+            ],
+            "properties": {
+              "qualifier": {
+                "type": "string"
+              },
+              "amount": {
+                "type": "string"
+              }
+            }
+          },
+          "edifactPayment": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "qualifier",
+              "amount",
+              "reference",
+              "date"
+            ],
+            "properties": {
+              "qualifier": {
+                "type": "string"
+              },
+              "amount": {
+                "type": "string"
+              },
+              "reference": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "date": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          "edifactQuantity": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "qualifier",
+              "value",
+              "unit"
+            ],
+            "properties": {
+              "qualifier": {
+                "type": "string"
+              },
+              "value": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "unit": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          "edifactPrice": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": false,
+            "required": [
+              "amount",
+              "basis",
+              "unit"
+            ],
+            "properties": {
+              "amount": {
+                "type": "string"
+              },
+              "basis": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "unit": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          "edifactLineItem": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "lineNumber",
+              "article",
+              "quantities",
+              "dateTimes",
+              "amounts",
+              "price",
+              "priceMissing",
+              "taxRate",
+              "priceMissingWarning"
+            ],
+            "properties": {
+              "lineNumber": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "article": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "quantities": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/edifactQuantity"
+                }
+              },
+              "dateTimes": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/edifactDateTime"
+                }
+              },
+              "amounts": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/edifactAmount"
+                }
+              },
+              "price": {
+                "$ref": "#/$defs/edifactPrice"
+              },
+              "priceMissing": {
+                "type": "boolean"
+              },
+              "taxRate": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "priceMissingWarning": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          "edifactReferencedDocument": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "documentType",
+              "documentNumber",
+              "amounts",
+              "dateTimes"
+            ],
+            "properties": {
+              "documentType": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "documentNumber": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "amounts": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/edifactAmount"
+                }
+              },
+              "dateTimes": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/edifactDateTime"
+                }
+              }
+            }
+          },
+          "edifactIdentifier": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "qualifier",
+              "value"
+            ],
+            "properties": {
+              "qualifier": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              }
+            }
+          },
+          "edifactQuantityGeneric": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "qualifier",
+              "value",
+              "unit"
+            ],
+            "properties": {
+              "qualifier": {
+                "type": "string"
+              },
+              "value": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "unit": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          "edifactCharacteristic": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "qualifier",
+              "class",
+              "values"
+            ],
+            "properties": {
+              "qualifier": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "class": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "values": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "edifactSubBlock": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "seqQualifier",
+              "article",
+              "quantities",
+              "dateTimes",
+              "characteristics"
+            ],
+            "properties": {
+              "seqQualifier": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "article": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "quantities": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/edifactQuantityGeneric"
+                }
+              },
+              "dateTimes": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/edifactDateTime"
+                }
+              },
+              "characteristics": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/edifactCharacteristic"
+                }
+              }
+            }
+          },
+          "edifactStatus": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": false,
+            "required": [
+              "qualifier",
+              "code"
+            ],
+            "properties": {
+              "qualifier": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "code": {
+                "type": "string"
+              }
+            }
+          },
+          "edifactCharacteristicRecord": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "objectId",
+              "description",
+              "status",
+              "locationId",
+              "references",
+              "dateTimes",
+              "subBlocks"
+            ],
+            "properties": {
+              "objectId": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "description": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "status": {
+                "$ref": "#/$defs/edifactStatus"
+              },
+              "locationId": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "references": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/edifactReference"
+                }
+              },
+              "dateTimes": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/edifactDateTime"
+                }
+              },
+              "subBlocks": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/edifactSubBlock"
+                }
+              }
+            }
+          },
+          "edifactBankAccount": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "qualifier",
+              "iban",
+              "accountHolder",
+              "bic",
+              "bankName"
+            ],
+            "properties": {
+              "qualifier": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "iban": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "accountHolder": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "bic": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "bankName": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          "edifactNote": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "qualifier",
+              "text"
+            ],
+            "properties": {
+              "qualifier": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "text": {
+                "type": "string"
+              }
+            }
+          },
+          "edifactAddress": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": false,
+            "required": [
+              "street",
+              "city",
+              "postcode",
+              "country"
+            ],
+            "properties": {
+              "street": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "city": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "postcode": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "country": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          "edifactParty": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "qualifier",
+              "name",
+              "address",
+              "contactName",
+              "email",
+              "phone",
+              "fax",
+              "bankAccounts",
+              "notes",
+              "references",
+              "dateTimes",
+              "characteristics"
+            ],
+            "properties": {
+              "qualifier": {
+                "type": "string"
+              },
+              "name": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "address": {
+                "$ref": "#/$defs/edifactAddress"
+              },
+              "contactName": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "email": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "phone": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "fax": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "bankAccounts": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/edifactBankAccount"
+                }
+              },
+              "notes": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/edifactNote"
+                }
+              },
+              "references": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/edifactReference"
+                }
+              },
+              "dateTimes": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/edifactDateTime"
+                }
+              },
+              "characteristics": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/edifactCharacteristic"
+                }
+              }
+            }
+          },
+          "edifactCommercial": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": false,
+            "required": [
+              "maloId",
+              "productQualifier",
+              "contactName",
+              "contactEmail",
+              "contactPhone",
+              "lineItems",
+              "referencedDocuments",
+              "characteristicRecords",
+              "parties",
+              "totals",
+              "paymentHistory"
+            ],
+            "properties": {
+              "maloId": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "productQualifier": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "contactName": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "contactEmail": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "contactPhone": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "lineItems": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/edifactLineItem"
+                }
+              },
+              "referencedDocuments": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/edifactReferencedDocument"
+                }
+              },
+              "characteristicRecords": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/edifactCharacteristicRecord"
+                }
+              },
+              "parties": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/edifactParty"
+                }
+              },
+              "totals": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/edifactAmount"
+                }
+              },
+              "paymentHistory": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/edifactPayment"
+                }
+              }
+            }
+          },
+          "edifactOutcome": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": false,
+            "required": [
+              "value",
+              "label",
+              "status"
+            ],
+            "properties": {
+              "value": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string"
+              }
+            }
+          },
+          "edifactMessageItem": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "messageReference",
+              "messageType",
+              "outcome",
+              "errorCodes",
+              "errorTexts",
+              "messageDate",
+              "dateTimes",
+              "references",
+              "identifiers",
+              "bgmDocumentId",
+              "commercial"
+            ],
+            "properties": {
+              "messageReference": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "messageType": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "outcome": {
+                "$ref": "#/$defs/edifactOutcome"
+              },
+              "errorCodes": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "errorTexts": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "messageDate": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "dateTimes": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/edifactDateTime"
+                }
+              },
+              "references": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/edifactReference"
+                }
+              },
+              "identifiers": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/edifactIdentifier"
+                }
+              },
+              "bgmDocumentId": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "commercial": {
+                "$ref": "#/$defs/edifactCommercial"
+              }
+            }
+          },
+          "edifactSyntaxMessage": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "messageReference",
+              "segmentCountOk",
+              "declaredSegmentCount",
+              "actualSegmentCount",
+              "messageRefMatch",
+              "ok"
+            ],
+            "properties": {
+              "messageReference": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "segmentCountOk": {
+                "type": "boolean"
+              },
+              "declaredSegmentCount": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "actualSegmentCount": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "messageRefMatch": {
+                "type": "boolean"
+              },
+              "ok": {
+                "type": "boolean"
+              }
+            }
+          },
+          "edifactSyntaxCheck": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": false,
+            "required": [
+              "messageCount",
+              "messages",
+              "interchangeRefMatch",
+              "interchangeCountOk",
+              "ok",
+              "issues"
+            ],
+            "properties": {
+              "messageCount": {
+                "type": "number"
+              },
+              "messages": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/edifactSyntaxMessage"
+                }
+              },
+              "interchangeRefMatch": {
+                "type": [
+                  "boolean",
+                  "null"
+                ]
+              },
+              "interchangeCountOk": {
+                "type": [
+                  "boolean",
+                  "null"
+                ]
+              },
+              "ok": {
+                "type": "boolean"
+              },
+              "issues": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
               }
             }
           }
@@ -2231,1085 +3312,6 @@
           "persisted": {
             "type": "boolean",
             "const": true
-          }
-        }
-      },
-      "EvidenceItem": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "id",
-          "label",
-          "value",
-          "sourceClass",
-          "bindingStrength"
-        ],
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "label": {
-            "type": "string"
-          },
-          "value": {
-            "type": "string"
-          },
-          "sourceClass": {
-            "type": "string"
-          },
-          "bindingStrength": {
-            "type": "string",
-            "enum": [
-              "official_evidence",
-              "not_official_proof",
-              "advisory_knowledge",
-              "user_claim",
-              "assumption"
-            ]
-          }
-        }
-      },
-      "MissingEvidenceItem": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "missingDataPoint",
-          "label",
-          "sourceClass",
-          "enablesDossierAddition"
-        ],
-        "properties": {
-          "missingDataPoint": {
-            "type": "string"
-          },
-          "label": {
-            "type": "string"
-          },
-          "sourceClass": {
-            "type": "string"
-          },
-          "enablesDossierAddition": {
-            "type": "string"
-          }
-        }
-      },
-      "DiagramNode": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "id",
-          "label",
-          "type"
-        ],
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "label": {
-            "type": "string"
-          },
-          "type": {
-            "type": "string"
-          }
-        }
-      },
-      "DiagramEdge": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "from",
-          "to",
-          "label"
-        ],
-        "properties": {
-          "from": {
-            "type": "string"
-          },
-          "to": {
-            "type": "string"
-          },
-          "label": {
-            "type": "string"
-          }
-        }
-      },
-      "MarketPartnerResolutionItem": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "code",
-          "status",
-          "label",
-          "notes"
-        ],
-        "properties": {
-          "code": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "resolved",
-              "not_found"
-            ]
-          },
-          "label": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "notes": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        }
-      },
-      "SourceItem": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "id",
-          "title",
-          "url",
-          "score",
-          "endpoint"
-        ],
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "title": {
-            "type": "string"
-          },
-          "url": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "score": {
-            "type": [
-              "number",
-              "null"
-            ]
-          },
-          "endpoint": {
-            "type": "string"
-          }
-        }
-      },
-      "EdifactEnvelope": {
-        "type": [
-          "object",
-          "null"
-        ],
-        "additionalProperties": false,
-        "properties": {
-          "interchangeReference": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "testIndicator": {
-            "type": [
-              "string",
-              "null"
-            ]
-          }
-        }
-      },
-      "EdifactDateTime": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "qualifier",
-          "value"
-        ],
-        "properties": {
-          "qualifier": {
-            "type": "string"
-          },
-          "value": {
-            "type": "string"
-          }
-        }
-      },
-      "EdifactReference": {
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "qualifier": {
-            "type": "string"
-          },
-          "value": {
-            "type": "string"
-          },
-          "dateQualifier": {
-            "type": "string"
-          },
-          "date": {
-            "type": "string"
-          }
-        }
-      },
-      "EdifactAmount": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "qualifier",
-          "amount"
-        ],
-        "properties": {
-          "qualifier": {
-            "type": "string"
-          },
-          "amount": {
-            "type": "string"
-          }
-        }
-      },
-      "EdifactPayment": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "qualifier",
-          "amount",
-          "reference",
-          "date"
-        ],
-        "properties": {
-          "qualifier": {
-            "type": "string"
-          },
-          "amount": {
-            "type": "string"
-          },
-          "reference": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "date": {
-            "type": [
-              "string",
-              "null"
-            ]
-          }
-        }
-      },
-      "EdifactQuantity": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "qualifier",
-          "value",
-          "unit"
-        ],
-        "properties": {
-          "qualifier": {
-            "type": "string"
-          },
-          "value": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "unit": {
-            "type": [
-              "string",
-              "null"
-            ]
-          }
-        }
-      },
-      "EdifactPrice": {
-        "type": [
-          "object",
-          "null"
-        ],
-        "additionalProperties": false,
-        "required": [
-          "amount",
-          "basis",
-          "unit"
-        ],
-        "properties": {
-          "amount": {
-            "type": "string"
-          },
-          "basis": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "unit": {
-            "type": [
-              "string",
-              "null"
-            ]
-          }
-        }
-      },
-      "EdifactLineItem": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "lineNumber",
-          "article",
-          "quantities",
-          "dateTimes",
-          "amounts",
-          "price",
-          "priceMissing",
-          "taxRate",
-          "priceMissingWarning"
-        ],
-        "properties": {
-          "lineNumber": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "article": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "quantities": {
-            "type": "array",
-            "items": {
-              "$ref": "#/$defs/edifactQuantity"
-            }
-          },
-          "dateTimes": {
-            "type": "array",
-            "items": {
-              "$ref": "#/$defs/edifactDateTime"
-            }
-          },
-          "amounts": {
-            "type": "array",
-            "items": {
-              "$ref": "#/$defs/edifactAmount"
-            }
-          },
-          "price": {
-            "$ref": "#/$defs/edifactPrice"
-          },
-          "priceMissing": {
-            "type": "boolean"
-          },
-          "taxRate": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "priceMissingWarning": {
-            "type": [
-              "string",
-              "null"
-            ]
-          }
-        }
-      },
-      "EdifactReferencedDocument": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "documentType",
-          "documentNumber",
-          "amounts",
-          "dateTimes"
-        ],
-        "properties": {
-          "documentType": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "documentNumber": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "amounts": {
-            "type": "array",
-            "items": {
-              "$ref": "#/$defs/edifactAmount"
-            }
-          },
-          "dateTimes": {
-            "type": "array",
-            "items": {
-              "$ref": "#/$defs/edifactDateTime"
-            }
-          }
-        }
-      },
-      "EdifactIdentifier": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "qualifier",
-          "value"
-        ],
-        "properties": {
-          "qualifier": {
-            "type": "string"
-          },
-          "value": {
-            "type": "string"
-          }
-        }
-      },
-      "EdifactQuantityGeneric": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "qualifier",
-          "value",
-          "unit"
-        ],
-        "properties": {
-          "qualifier": {
-            "type": "string"
-          },
-          "value": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "unit": {
-            "type": [
-              "string",
-              "null"
-            ]
-          }
-        }
-      },
-      "EdifactCharacteristic": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "qualifier",
-          "class",
-          "values"
-        ],
-        "properties": {
-          "qualifier": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "class": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "values": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        }
-      },
-      "EdifactSubBlock": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "seqQualifier",
-          "article",
-          "quantities",
-          "dateTimes",
-          "characteristics"
-        ],
-        "properties": {
-          "seqQualifier": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "article": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "quantities": {
-            "type": "array",
-            "items": {
-              "$ref": "#/$defs/edifactQuantityGeneric"
-            }
-          },
-          "dateTimes": {
-            "type": "array",
-            "items": {
-              "$ref": "#/$defs/edifactDateTime"
-            }
-          },
-          "characteristics": {
-            "type": "array",
-            "items": {
-              "$ref": "#/$defs/edifactCharacteristic"
-            }
-          }
-        }
-      },
-      "EdifactStatus": {
-        "type": [
-          "object",
-          "null"
-        ],
-        "additionalProperties": false,
-        "required": [
-          "qualifier",
-          "code"
-        ],
-        "properties": {
-          "qualifier": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "code": {
-            "type": "string"
-          }
-        }
-      },
-      "EdifactCharacteristicRecord": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "objectId",
-          "description",
-          "status",
-          "locationId",
-          "references",
-          "dateTimes",
-          "subBlocks"
-        ],
-        "properties": {
-          "objectId": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "description": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "status": {
-            "$ref": "#/$defs/edifactStatus"
-          },
-          "locationId": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "references": {
-            "type": "array",
-            "items": {
-              "$ref": "#/$defs/edifactReference"
-            }
-          },
-          "dateTimes": {
-            "type": "array",
-            "items": {
-              "$ref": "#/$defs/edifactDateTime"
-            }
-          },
-          "subBlocks": {
-            "type": "array",
-            "items": {
-              "$ref": "#/$defs/edifactSubBlock"
-            }
-          }
-        }
-      },
-      "EdifactBankAccount": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "qualifier",
-          "iban",
-          "accountHolder",
-          "bic",
-          "bankName"
-        ],
-        "properties": {
-          "qualifier": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "iban": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "accountHolder": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "bic": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "bankName": {
-            "type": [
-              "string",
-              "null"
-            ]
-          }
-        }
-      },
-      "EdifactNote": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "qualifier",
-          "text"
-        ],
-        "properties": {
-          "qualifier": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "text": {
-            "type": "string"
-          }
-        }
-      },
-      "EdifactAddress": {
-        "type": [
-          "object",
-          "null"
-        ],
-        "additionalProperties": false,
-        "required": [
-          "street",
-          "city",
-          "postcode",
-          "country"
-        ],
-        "properties": {
-          "street": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "city": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "postcode": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "country": {
-            "type": [
-              "string",
-              "null"
-            ]
-          }
-        }
-      },
-      "EdifactParty": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "qualifier",
-          "name",
-          "address",
-          "contactName",
-          "email",
-          "phone",
-          "fax",
-          "bankAccounts",
-          "notes",
-          "references",
-          "dateTimes",
-          "characteristics"
-        ],
-        "properties": {
-          "qualifier": {
-            "type": "string"
-          },
-          "name": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "address": {
-            "$ref": "#/$defs/edifactAddress"
-          },
-          "contactName": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "email": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "phone": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "fax": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "bankAccounts": {
-            "type": "array",
-            "items": {
-              "$ref": "#/$defs/edifactBankAccount"
-            }
-          },
-          "notes": {
-            "type": "array",
-            "items": {
-              "$ref": "#/$defs/edifactNote"
-            }
-          },
-          "references": {
-            "type": "array",
-            "items": {
-              "$ref": "#/$defs/edifactReference"
-            }
-          },
-          "dateTimes": {
-            "type": "array",
-            "items": {
-              "$ref": "#/$defs/edifactDateTime"
-            }
-          },
-          "characteristics": {
-            "type": "array",
-            "items": {
-              "$ref": "#/$defs/edifactCharacteristic"
-            }
-          }
-        }
-      },
-      "EdifactCommercial": {
-        "type": [
-          "object",
-          "null"
-        ],
-        "additionalProperties": false,
-        "required": [
-          "maloId",
-          "productQualifier",
-          "contactName",
-          "contactEmail",
-          "contactPhone",
-          "lineItems",
-          "referencedDocuments",
-          "characteristicRecords",
-          "parties",
-          "totals",
-          "paymentHistory"
-        ],
-        "properties": {
-          "maloId": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "productQualifier": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "contactName": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "contactEmail": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "contactPhone": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "lineItems": {
-            "type": "array",
-            "items": {
-              "$ref": "#/$defs/edifactLineItem"
-            }
-          },
-          "referencedDocuments": {
-            "type": "array",
-            "items": {
-              "$ref": "#/$defs/edifactReferencedDocument"
-            }
-          },
-          "characteristicRecords": {
-            "type": "array",
-            "items": {
-              "$ref": "#/$defs/edifactCharacteristicRecord"
-            }
-          },
-          "parties": {
-            "type": "array",
-            "items": {
-              "$ref": "#/$defs/edifactParty"
-            }
-          },
-          "totals": {
-            "type": "array",
-            "items": {
-              "$ref": "#/$defs/edifactAmount"
-            }
-          },
-          "paymentHistory": {
-            "type": "array",
-            "items": {
-              "$ref": "#/$defs/edifactPayment"
-            }
-          }
-        }
-      },
-      "EdifactOutcome": {
-        "type": [
-          "object",
-          "null"
-        ],
-        "additionalProperties": false,
-        "required": [
-          "value",
-          "label",
-          "status"
-        ],
-        "properties": {
-          "value": {
-            "type": "string"
-          },
-          "label": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string"
-          }
-        }
-      },
-      "EdifactMessageItem": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "messageReference",
-          "messageType",
-          "outcome",
-          "errorCodes",
-          "errorTexts",
-          "messageDate",
-          "dateTimes",
-          "references",
-          "identifiers",
-          "bgmDocumentId",
-          "commercial"
-        ],
-        "properties": {
-          "messageReference": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "messageType": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "outcome": {
-            "$ref": "#/$defs/edifactOutcome"
-          },
-          "errorCodes": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "errorTexts": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "messageDate": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "dateTimes": {
-            "type": "array",
-            "items": {
-              "$ref": "#/$defs/edifactDateTime"
-            }
-          },
-          "references": {
-            "type": "array",
-            "items": {
-              "$ref": "#/$defs/edifactReference"
-            }
-          },
-          "identifiers": {
-            "type": "array",
-            "items": {
-              "$ref": "#/$defs/edifactIdentifier"
-            }
-          },
-          "bgmDocumentId": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "commercial": {
-            "$ref": "#/$defs/edifactCommercial"
-          }
-        }
-      },
-      "EdifactSyntaxMessage": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "messageReference",
-          "segmentCountOk",
-          "declaredSegmentCount",
-          "actualSegmentCount",
-          "messageRefMatch",
-          "ok"
-        ],
-        "properties": {
-          "messageReference": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "segmentCountOk": {
-            "type": "boolean"
-          },
-          "declaredSegmentCount": {
-            "type": [
-              "number",
-              "null"
-            ]
-          },
-          "actualSegmentCount": {
-            "type": [
-              "number",
-              "null"
-            ]
-          },
-          "messageRefMatch": {
-            "type": "boolean"
-          },
-          "ok": {
-            "type": "boolean"
-          }
-        }
-      },
-      "EdifactSyntaxCheck": {
-        "type": [
-          "object",
-          "null"
-        ],
-        "additionalProperties": false,
-        "required": [
-          "messageCount",
-          "messages",
-          "interchangeRefMatch",
-          "interchangeCountOk",
-          "ok",
-          "issues"
-        ],
-        "properties": {
-          "messageCount": {
-            "type": "number"
-          },
-          "messages": {
-            "type": "array",
-            "items": {
-              "$ref": "#/$defs/edifactSyntaxMessage"
-            }
-          },
-          "interchangeRefMatch": {
-            "type": [
-              "boolean",
-              "null"
-            ]
-          },
-          "interchangeCountOk": {
-            "type": [
-              "boolean",
-              "null"
-            ]
-          },
-          "ok": {
-            "type": "boolean"
-          },
-          "issues": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
           }
         }
       }

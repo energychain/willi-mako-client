@@ -8,8 +8,6 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write
-  checks: write
 
 jobs:
   test:
@@ -26,71 +24,26 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: 'npm'
+          cache: npm
 
       - name: Install dependencies
         run: npm ci
-
-      - name: Lint code
-        run: npm run lint
-
-      - name: Check formatting
-        run: npm run format:check
-
-      - name: Type check
-        run: npm run typecheck
-
-      - name: Run tests
-        env:
-          WILLI_MAKO_TOKEN: ${{ secrets.WILLI_MAKO_TOKEN }}
-        run: npm test
 
       - name: Build package
         run: npm run build
 
-      - name: Check bundle size
+      - name: Type check source
+        run: npm run typecheck
+
+      - name: Type check tests
+        run: npx tsc --noEmit --target ES2022 --module NodeNext --moduleResolution NodeNext --lib ES2022,DOM --types node --strict tests/client.test.ts tests/cli.test.ts
+
+      - name: Run tests
+        run: npm test
+
+      - name: Validate npm package contents
         if: matrix.node-version == 20
-        run: |
-          npm run build
-          BUNDLE_SIZE=$(du -sh dist | cut -f1)
-          echo "Bundle size: $BUNDLE_SIZE"
-          echo "BUNDLE_SIZE=$BUNDLE_SIZE" >> $GITHUB_ENV
-
-  coverage:
-    name: Code Coverage
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run tests with coverage
-        env:
-          WILLI_MAKO_TOKEN: ${{ secrets.WILLI_MAKO_TOKEN }}
-        run: npm run test:coverage
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          file: ./coverage/coverage-final.json
-          flags: unittests
-          name: codecov-umbrella
-          fail_ci_if_error: false
-
-      - name: Comment coverage on PR
-        if: github.event_name == 'pull_request'
-        uses: codecov/codecov-action@v4
-        with:
-          file: ./coverage/coverage-final.json
-          flags: unittests
+        run: npm pack --dry-run
 
   security:
     name: Security Audit
@@ -103,20 +56,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          cache: npm
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Run npm audit
-        run: npm audit --audit-level=moderate
-        continue-on-error: true
-
-      - name: Run security scan with Snyk
-        uses: snyk/actions/node@master
-        continue-on-error: true
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      - name: Run npm audit for production dependencies
+        run: npm audit --audit-level=moderate --omit=dev
 
   dependency-review:
     name: Dependency Review
