@@ -1,640 +1,221 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
-  DEFAULT_BASE_URL,
+  MemoryCookieStore,
   WilliMakoClient,
   WilliMakoError,
-  bundledOpenApiDocument
+  type AvvOnboardingResponse,
+  type AvvRecordResponse,
+  type AuthMeResponse,
+  type CoachMessageResponse,
+  type CoachStartResponse,
+  type CoachTurnResponse,
+  type MandantMembersResponse,
+  type MandantUsageResponse,
+  type RequestLinkResponse,
+  type SessionDetailResponse,
+  type SessionListResponse,
+  type TokenPeekResponse,
+  type VerifyAuthResponse
 } from '../src/index.js';
-import type {
-  RunNodeScriptJobRequest,
-  CreateArtifactRequest,
-  GenerateToolScriptRequest
-} from '../src/types.js';
 
-const createFetchMock = () =>
-  vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>();
+type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;
+type Expect<T extends true> = T;
 
-describe('WilliMakoClient', () => {
-  beforeEach(() => {
-    vi.restoreAllMocks();
+interface RecordedRequest {
+  url: string;
+  init: RequestInit;
+}
+
+function jsonResponse(body: unknown, init: ResponseInit = {}): Response {
+  return new Response(JSON.stringify(body), {
+    status: 200,
+    headers: { 'content-type': 'application/json', ...(init.headers as Record<string, string> | undefined) },
+    ...init
+  });
+}
+
+function recordingFetch(response: Response) {
+  const calls: RecordedRequest[] = [];
+  const fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+    calls.push({ url: String(input), init: init ?? {} });
+    return response.clone();
+  };
+  return { fetch, calls };
+}
+
+describe('WilliMakoClient response types', () => {
+  it('exposes concrete API response types for common Node.js calls', () => {
+    type Client = WilliMakoClient;
+    type Cases = [
+      Expect<Equal<Awaited<ReturnType<Client['requestMagicLink']>>, RequestLinkResponse>>,
+      Expect<Equal<Awaited<ReturnType<Client['peekToken']>>, TokenPeekResponse>>,
+      Expect<Equal<Awaited<ReturnType<Client['verifyMagicLink']>>, VerifyAuthResponse>>,
+      Expect<Equal<Awaited<ReturnType<Client['currentUser']>>, AuthMeResponse>>,
+      Expect<Equal<Awaited<ReturnType<Client['listMandantMembers']>>, MandantMembersResponse>>,
+      Expect<Equal<Awaited<ReturnType<Client['getMandantUsage']>>, MandantUsageResponse>>,
+      Expect<Equal<Awaited<ReturnType<Client['getAvvRecord']>>, AvvRecordResponse>>,
+      Expect<Equal<Awaited<ReturnType<Client['getAvvOnboarding']>>, AvvOnboardingResponse>>,
+      Expect<Equal<Awaited<ReturnType<Client['startCoach']>>, CoachStartResponse>>,
+      Expect<Equal<Awaited<ReturnType<Client['sendCoachMessage']>>, CoachMessageResponse>>,
+      Expect<Equal<Awaited<ReturnType<Client['getCoachTurn']>>, CoachTurnResponse>>,
+      Expect<Equal<Awaited<ReturnType<Client['listSessions']>>, SessionListResponse>>,
+      Expect<Equal<Awaited<ReturnType<Client['getSession']>>, SessionDetailResponse>>
+    ];
+    const _typed: Cases = [true, true, true, true, true, true, true, true, true, true, true, true, true];
+    function assertNodeUsageTypes(
+      started: Awaited<ReturnType<Client['startCoach']>>,
+      messaged: Awaited<ReturnType<Client['sendCoachMessage']>>,
+      turn: Awaited<ReturnType<Client['getCoachTurn']>>,
+      sessions: Awaited<ReturnType<Client['listSessions']>>,
+      detail: Awaited<ReturnType<Client['getSession']>>,
+      verified: Awaited<ReturnType<Client['verifyMagicLink']>>
+    ): void {
+      const startSessionId: string = started.sessionId;
+      const startTurnId: string = started.turnId;
+      const messageTurnId: string = messaged.turnId;
+      const turnStatus: string = turn.status;
+      const sessionCount: number = sessions.sessions.length;
+      const detailMessages: unknown[] | undefined = detail.messages;
+      void [startSessionId, startTurnId, messageTurnId, turnStatus, sessionCount, detailMessages];
+    }
+    void assertNodeUsageTypes;
+    expect(_typed).toHaveLength(13);
+  });
+});
+
+describe('WilliMakoClient runtime behavior', () => {
+  it('requests magic links with JSON content type against willi.cernion.de', async () => {
+    const { fetch, calls } = recordingFetch(jsonResponse({ ok: true }));
+    const client = new WilliMakoClient({ fetch });
+
+    await client.requestMagicLink({ email: 'thorsten@example.test' });
+
+    expect(calls[0].url).toBe('https://willi.cernion.de/api/auth/request-link');
+    expect(calls[0].init.method).toBe('POST');
+    expect(new Headers(calls[0].init.headers).get('content-type')).toBe('application/json');
+    expect(calls[0].init.body).toBe(JSON.stringify({ email: 'thorsten@example.test' }));
   });
 
-  describe('Configuration', () => {
-    it('exposes the bundled OpenAPI document', () => {
-      const client = new WilliMakoClient();
-      expect(client.getBundledOpenApiDocument()).toEqual(bundledOpenApiDocument);
-    });
-
-    it('uses the default productive base URL when none is provided', () => {
-      const client = new WilliMakoClient();
-      expect(client.getBaseUrl()).toBe(DEFAULT_BASE_URL);
-    });
-
-    it('accepts a custom base URL', () => {
-      const customUrl = 'http://localhost:3000/api/v2';
-      const client = new WilliMakoClient({ baseUrl: customUrl });
-      expect(client.getBaseUrl()).toBe(customUrl);
-    });
-
-    it('falls back to environment variable for token', () => {
-      const originalToken = process.env.WILLI_MAKO_TOKEN;
-      process.env.WILLI_MAKO_TOKEN = 'env-token';
-
-      const client = new WilliMakoClient();
-      expect(client).toBeDefined();
-
-      // Restore original
-      if (originalToken) {
-        process.env.WILLI_MAKO_TOKEN = originalToken;
-      } else {
-        delete process.env.WILLI_MAKO_TOKEN;
+  it('captures wm_sid from verify responses and sends it on subsequent requests', async () => {
+    const calls: RecordedRequest[] = [];
+    const fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      calls.push({ url: String(input), init: init ?? {} });
+      if (calls.length === 1) {
+        return new Response(JSON.stringify({ ok: true }), {
+          headers: { 'content-type': 'application/json', 'set-cookie': 'wm_sid=session-123; HttpOnly; SameSite=Strict' }
+        });
       }
-    });
+      return jsonResponse({ data: [] });
+    };
+    const cookieStore = new MemoryCookieStore();
+    const client = new WilliMakoClient({ fetch, cookieStore });
+
+    await client.verifyMagicLink({ token: 'token-from-mail' });
+    await client.listSessions();
+
+    expect(cookieStore.snapshot()).toEqual({ wm_sid: 'session-123' });
+    expect(new Headers(calls[1].init.headers).get('cookie')).toBe('wm_sid=session-123');
   });
 
-  describe('Authentication', () => {
-    it('creates a tooling job with authorization header', async () => {
-      const fetchMock = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>(
-        async () =>
-          new Response(
-            JSON.stringify({
-              success: true,
-              data: { sessionId: 's', job: { id: 'job', status: 'queued' } }
-            }),
-            {
-              status: 200,
-              headers: { 'Content-Type': 'application/json' }
-            }
-          )
-      );
-
-      const client = new WilliMakoClient({ token: 'secret', fetch: fetchMock });
-      const payload: RunNodeScriptJobRequest = {
-        sessionId: 'session-id',
-        source: 'console.log("test")'
-      };
-
-      await client.createNodeScriptJob(payload);
-
-      expect(fetchMock).toHaveBeenCalledTimes(1);
-      const [, init] = fetchMock.mock.calls[0] ?? [];
-      const headers = new Headers(init?.headers);
-      expect(headers.get('Authorization')).toBe('Bearer secret');
-      expect(headers.get('Content-Type')).toBe('application/json');
-    });
-  });
-
-  describe('Error Handling', () => {
-    it('throws a WilliMakoError on non-successful responses', async () => {
-      const fetchMock = createFetchMock();
-      fetchMock.mockImplementation(
-        async () =>
-          new Response(JSON.stringify({ error: 'forbidden' }), {
-            status: 403,
-            headers: { 'Content-Type': 'application/json' }
-          })
-      );
-
-      const client = new WilliMakoClient({ token: 'secret', fetch: fetchMock });
-
-      await expect(client.getToolJob('job-1')).rejects.toBeInstanceOf(WilliMakoError);
-    });
-
-    it('includes status and body in WilliMakoError', async () => {
-      const errorBody = { error: 'Unauthorized', code: 'AUTH_ERROR' };
-      const fetchMock = createFetchMock();
-      fetchMock.mockImplementation(
-        async () =>
-          new Response(JSON.stringify(errorBody), {
-            status: 401,
-            headers: { 'Content-Type': 'application/json' }
-          })
-      );
-
-      const client = new WilliMakoClient({ token: 'invalid', fetch: fetchMock });
-
-      try {
-        await client.getToolJob('job-1');
-        expect.fail('Should have thrown WilliMakoError');
-      } catch (error) {
-        expect(error).toBeInstanceOf(WilliMakoError);
-        if (error instanceof WilliMakoError) {
-          expect(error.status).toBe(401);
-          expect(error.body).toEqual(errorBody);
-        }
+  it('does not attach or store session credentials for absolute cross-origin URLs', async () => {
+    const calls: RecordedRequest[] = [];
+    const fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      calls.push({ url: String(input), init: init ?? {} });
+      if (calls.length === 1) {
+        return new Response(JSON.stringify({ ok: true }), {
+          headers: { 'content-type': 'application/json', 'set-cookie': 'wm_sid=session-123; HttpOnly; SameSite=Strict' }
+        });
       }
-    });
+      if (String(input).startsWith('https://evil.example')) {
+        return new Response(JSON.stringify({ ok: true }), {
+          headers: { 'content-type': 'application/json', 'set-cookie': 'wm_sid=evil-session; HttpOnly' }
+        });
+      }
+      return jsonResponse({ data: [] });
+    };
+    const cookieStore = new MemoryCookieStore();
+    const client = new WilliMakoClient({ fetch, cookieStore, sessionId: 'saved-session-123' });
+
+    await client.verifyMagicLink({ token: 'token-from-mail' });
+    await client.get('https://evil.example/api/probe');
+    await client.listSessions();
+
+    const crossOriginHeaders = new Headers(calls[1].init.headers);
+    expect(calls[1].url).toBe('https://evil.example/api/probe');
+    expect(crossOriginHeaders.get('cookie')).toBeNull();
+    expect(crossOriginHeaders.get('authorization')).toBeNull();
+    expect(calls[1].init.credentials).toBe('omit');
+    expect(cookieStore.snapshot()).toEqual({ wm_sid: 'session-123' });
+    expect(new Headers(calls[2].init.headers).get('cookie')).toBe('wm_sid=session-123');
   });
 
-  describe('API Methods', () => {
-    it('fetches remote OpenAPI schema', async () => {
-      const schema = { info: { title: 'Willi-Mako API', version: '2.0.0' } };
-      const fetchMock = createFetchMock();
-      fetchMock.mockImplementation(
-        async () =>
-          new Response(JSON.stringify(schema), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' }
-          })
-      );
+  it('sends a saved session id as wm_sid cookie without overriding an explicit cookie', async () => {
+    const { fetch, calls } = recordingFetch(jsonResponse({ data: [] }));
+    const client = new WilliMakoClient({ fetch, sessionId: 'saved-session-123' });
 
-      const client = new WilliMakoClient({ fetch: fetchMock });
-      const result = await client.getRemoteOpenApiDocument();
+    await client.listSessions();
 
-      expect(result).toEqual(schema);
+    expect(new Headers(calls[0].init.headers).get('cookie')).toBe('wm_sid=saved-session-123');
+    expect(new Headers(calls[0].init.headers).get('authorization')).toBeNull();
+
+    const explicit = recordingFetch(jsonResponse({ data: [] }));
+    const explicitClient = new WilliMakoClient({
+      fetch: explicit.fetch,
+      sessionId: 'saved-session-123',
+      defaultHeaders: { cookie: 'wm_sid=explicit-session' }
     });
 
-    it('creates an artifact with all fields', async () => {
-      const artifactRequest: CreateArtifactRequest = {
-        sessionId: 'session-123',
-        type: 'validation-report',
-        name: 'report.json',
-        mimeType: 'application/json',
-        encoding: 'utf8',
-        content: JSON.stringify({ valid: true }),
-        description: 'Test report',
-        version: '1.0.0',
-        tags: ['test', 'validation']
-      };
+    await explicitClient.listSessions();
 
-      const artifactResponse = {
-        success: true,
-        data: {
-          sessionId: 'session-123',
-          artifact: {
-            id: 'artifact-789',
-            sessionId: 'session-123',
-            type: 'validation-report',
-            name: 'report.json',
-            mimeType: 'application/json',
-            byteSize: 16,
-            checksum: 'abc123',
-            createdAt: '2024-01-01T00:00:00Z',
-            updatedAt: '2024-01-01T00:00:00Z',
-            storage: {
-              mode: 'inline' as const,
-              encoding: 'utf8' as const,
-              content: artifactRequest.content
-            },
-            preview: null,
-            description: 'Test report',
-            version: '1.0.0',
-            tags: ['test', 'validation']
-          }
-        }
-      };
-
-      const fetchMock = createFetchMock();
-      fetchMock.mockImplementation(
-        async () =>
-          new Response(JSON.stringify(artifactResponse), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' }
-          })
-      );
-
-      const client = new WilliMakoClient({ token: 'secret', fetch: fetchMock });
-      const result = await client.createArtifact(artifactRequest);
-
-      expect(result.success).toBe(true);
-      expect(result.data.artifact.name).toBe('report.json');
-      expect(result.data.artifact.tags).toEqual(['test', 'validation']);
-    });
-
-    it('sends attachments when generating tool scripts', async () => {
-      const responsePayload = {
-        success: true,
-        data: {
-          sessionId: 'session-123',
-          job: { id: 'job-1', status: 'queued' }
-        }
-      };
-
-      const fetchMock = createFetchMock();
-      fetchMock.mockImplementation(
-        async () =>
-          new Response(JSON.stringify(responsePayload), {
-            status: 202,
-            headers: { 'Content-Type': 'application/json' }
-          })
-      );
-
-      const client = new WilliMakoClient({ token: 'secret', fetch: fetchMock });
-      const request: GenerateToolScriptRequest = {
-        sessionId: 'session-123',
-        instructions: 'Erstelle ein Tool',
-        attachments: [
-          {
-            filename: 'kontext.md',
-            content: '# Kontext',
-            description: 'Fachliche Rahmenbedingungen'
-          }
-        ]
-      };
-
-      await client.generateToolScript(request);
-
-      expect(fetchMock).toHaveBeenCalledTimes(1);
-      const [, init] = fetchMock.mock.calls[0] ?? [];
-      const payload = init?.body ? JSON.parse(String(init.body)) : null;
-      expect(payload).not.toBeNull();
-      expect(payload.attachments).toEqual([
-        expect.objectContaining({
-          filename: 'kontext.md',
-          content: '# Kontext',
-          description: 'Fachliche Rahmenbedingungen'
-        })
-      ]);
-    });
+    expect(new Headers(explicit.calls[0].init.headers).get('cookie')).toBe('wm_sid=explicit-session');
   });
 
-  describe('Tool generation heuristics', () => {
-    it('surfaces MSCONS metadata when UTILMD distractors are filtered', async () => {
-      const responsePayload = {
-        success: true,
-        data: {
-          sessionId: 'session-mscons',
-          job: {
-            id: 'job-mscons',
-            type: 'generate-script' as const,
-            sessionId: 'session-mscons',
-            status: 'succeeded' as const,
-            createdAt: '2025-10-19T00:00:00.000Z',
-            updatedAt: '2025-10-19T00:00:05.000Z',
-            warnings: [],
-            progress: {
-              stage: 'completed' as const,
-              message: 'Skript erfolgreich generiert',
-              attempt: 1
-            },
-            attempts: 1,
-            metadata: {
-              detectedMessageTypes: ['MSCONS', 'UTILMD'],
-              primaryMessageType: 'MSCONS',
-              filteredSnippets: ['UTILMD_PSEUDOCODE']
-            },
-            result: {
-              sessionId: 'session-mscons',
-              script: {
-                code: "module.exports = { run: async () => ({ code: 'success' }) };",
-                language: 'javascript' as const,
-                entrypoint: 'run' as const,
-                description: 'Konvertiert MSCONS in CSV',
-                runtime: 'node18' as const,
-                deterministic: true,
-                dependencies: [] as string[],
-                source: {
-                  language: 'node' as const,
-                  hash: 'abc123',
-                  bytes: 256,
-                  preview: 'module.exports = { run: async () => ({ code: "success" }) };',
-                  lineCount: 3
-                },
-                validation: {
-                  syntaxValid: true,
-                  deterministic: true,
-                  forbiddenApis: [] as string[],
-                  warnings: [] as string[]
-                },
-                notes: [] as string[]
-              },
-              expectedOutputDescription: 'CSV-Datei mit Lastgangdaten',
-              warnings: ['Fokus: MSCONS – UTILMD Snippets verworfen.'],
-              promptEnhancement: {
-                engine: 'gemini' as const,
-                model: 'gemini-pro',
-                originalQuery: 'Konvertiere MSCONS Lastgang in CSV',
-                enhancedQuery: 'Konvertiere MSCONS Lastgang in CSV'
-              },
-              contextSnippets: [
-                {
-                  id: 'MSCONS.edi#part-1',
-                  title: 'Beispiel MSCONS Extrakt',
-                  snippet: 'UNH+1+MSCONS:D:04B:UN:2.4c',
-                  origin: 'reference',
-                  score: 50,
-                  weight: 80
-                },
-                {
-                  id: 'knowledge-base-mscons-guide',
-                  title: 'MSCONS Leitfaden',
-                  snippet: 'Segment-Übersicht MSCONS',
-                  origin: 'retrieval',
-                  score: 0.92,
-                  weight: 60
-                }
-              ],
-              repairHistory: [] as unknown[],
-              detectedMessageTypes: ['MSCONS'],
-              primaryMessageType: 'MSCONS'
-            },
-            error: null
-          }
-        }
-      } satisfies Awaited<ReturnType<WilliMakoClient['generateToolScript']>>;
+  it('maps sessions, coach, markdown and review endpoints from the current OpenAPI', async () => {
+    const { fetch, calls } = recordingFetch(jsonResponse({ ok: true }));
+    const client = new WilliMakoClient({ fetch, baseUrl: 'https://example.test/' });
 
-      const fetchMock = createFetchMock();
-      fetchMock.mockImplementation(
-        async () =>
-          new Response(JSON.stringify(responsePayload), {
-            status: 202,
-            headers: { 'Content-Type': 'application/json' }
-          })
-      );
+    await client.startCoach({ text: 'GPKE' });
+    await client.listMandantMembers();
+    await client.getMandantUsage();
+    await client.getAvvRecord();
+    await client.getAvvOnboarding();
+    await client.sendCoachMessage({ sessionId: 's1', text: 'Hallo' });
+    await client.getCoachTurn('turn 1');
+    await client.getSession('session/1');
+    await client.closeSession('session/1');
+    await client.setLiveCoaching('session/1', { enabled: true });
+    await client.reviewSession({ sessionId: 'session/1' });
 
-      const client = new WilliMakoClient({ token: 'secret', fetch: fetchMock });
-      const request: GenerateToolScriptRequest = {
-        sessionId: 'session-mscons',
-        instructions: 'Konvertiere MSCONS Lastgang in CSV',
-        attachments: [
-          {
-            filename: 'MSCONS.edi',
-            content: 'UNH+1+MSCONS:D:04B:UN:2.4c\nBGM+Z06+12345',
-            description: 'Original MSCONS Ausschnitt'
-          },
-          {
-            filename: 'UTILMD-distractor.edi',
-            content: 'UNH+1+UTILMD:D:04B:UN:2.3e\nBGM+Z01+6789',
-            description: 'Fachfremdes UTILMD Beispiel'
-          }
-        ]
-      };
-
-      const response = await client.generateToolScript(request);
-
-      expect(fetchMock).toHaveBeenCalledTimes(1);
-      const [, init] = fetchMock.mock.calls[0] ?? [];
-      const body = init?.body ? JSON.parse(String(init.body)) : null;
-      expect(body?.attachments).toHaveLength(2);
-
-      const job = response.data.job;
-      expect(job.metadata?.primaryMessageType).toBe('MSCONS');
-      expect(job.metadata?.detectedMessageTypes).toEqual(['MSCONS', 'UTILMD']);
-
-      const snippets = job.result?.contextSnippets ?? [];
-      expect(snippets.length).toBeGreaterThanOrEqual(2);
-      expect(snippets.some((snippet) => snippet.origin === 'reference')).toBe(true);
-      expect(
-        snippets.every(
-          (snippet) => !/UTILMD/i.test(snippet.id ?? '') && !/UTILMD/i.test(snippet.title ?? '')
-        )
-      ).toBe(true);
-      expect(job.result?.warnings).toContain('Fokus: MSCONS – UTILMD Snippets verworfen.');
-    });
+    expect(calls.map((call) => [call.init.method, call.url])).toEqual([
+      ['POST', 'https://example.test/api/coach/start'],
+      ['GET', 'https://example.test/api/mandant/members'],
+      ['GET', 'https://example.test/api/mandant/usage'],
+      ['GET', 'https://example.test/api/mandant/avv-record'],
+      ['GET', 'https://example.test/api/onboarding/avv'],
+      ['POST', 'https://example.test/api/coach/message'],
+      ['GET', 'https://example.test/api/coach/turn/turn%201'],
+      ['GET', 'https://example.test/api/sessions/session%2F1'],
+      ['POST', 'https://example.test/api/sessions/session%2F1/close'],
+      ['POST', 'https://example.test/api/sessions/session%2F1/live-coaching'],
+      ['POST', 'https://example.test/api/review/session']
+    ]);
   });
 
-  describe('Login workflow', () => {
-    it('logs in and persists the received token by default', async () => {
-      const loginResponse = {
-        success: true,
-        data: { accessToken: 'jwt-token', expiresAt: '2025-01-01T00:00:00Z' }
-      };
+  it('returns markdown responses as text', async () => {
+    const { fetch } = recordingFetch(new Response('# Karte', { headers: { 'content-type': 'text/markdown' } }));
+    const client = new WilliMakoClient({ fetch });
 
-      const jobResponse = {
-        success: true,
-        data: {
-          sessionId: 'session-1',
-          job: { id: 'job-1', status: 'queued' }
-        }
-      };
-
-      const fetchMock = createFetchMock();
-      fetchMock
-        .mockResolvedValueOnce(
-          new Response(JSON.stringify(loginResponse), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' }
-          })
-        )
-        .mockResolvedValueOnce(
-          new Response(JSON.stringify(jobResponse), {
-            status: 202,
-            headers: { 'Content-Type': 'application/json' }
-          })
-        );
-
-      const client = new WilliMakoClient({ fetch: fetchMock });
-      await client.login({ email: 'user@example.com', password: 'secret' });
-      await client.createNodeScriptJob({ sessionId: 'session-1', source: 'console.log("ok")' });
-
-      expect(fetchMock).toHaveBeenCalledTimes(2);
-      const loginCall = fetchMock.mock.calls[0];
-      const loginHeaders = new Headers(loginCall?.[1]?.headers);
-      expect(loginHeaders.get('Authorization')).toBeNull();
-
-      const jobCall = fetchMock.mock.calls[1];
-      const jobHeaders = new Headers(jobCall?.[1]?.headers);
-      expect(jobHeaders.get('Authorization')).toBe('Bearer jwt-token');
-    });
-
-    it('supports disabling token persistence during login', async () => {
-      const loginResponse = {
-        success: true,
-        data: { accessToken: 'jwt-token', expiresAt: '2025-01-01T00:00:00Z' }
-      };
-
-      const jobResponse = {
-        success: true,
-        data: {
-          sessionId: 'session-1',
-          job: { id: 'job-1', status: 'queued' }
-        }
-      };
-
-      const fetchMock = createFetchMock();
-      fetchMock
-        .mockResolvedValueOnce(
-          new Response(JSON.stringify(loginResponse), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' }
-          })
-        )
-        .mockResolvedValueOnce(
-          new Response(JSON.stringify(jobResponse), {
-            status: 202,
-            headers: { 'Content-Type': 'application/json' }
-          })
-        );
-
-      const client = new WilliMakoClient({ fetch: fetchMock });
-      await client.login(
-        { email: 'user@example.com', password: 'secret' },
-        { persistToken: false }
-      );
-      await client.createNodeScriptJob({ sessionId: 'session-1', source: 'console.log("ok")' });
-
-      const loginCall = fetchMock.mock.calls[0];
-      const loginHeaders = new Headers(loginCall?.[1]?.headers);
-      expect(loginHeaders.get('Authorization')).toBeNull();
-
-      const jobCall = fetchMock.mock.calls[1];
-      const jobHeaders = new Headers(jobCall?.[1]?.headers);
-      expect(jobHeaders.get('Authorization')).toBeNull();
-    });
+    await expect(client.getSessionCardMarkdown('abc')).resolves.toBe('# Karte');
   });
 
-  describe('Sessions API', () => {
-    it('creates, retrieves and deletes sessions', async () => {
-      const sessionPayload = {
-        success: true,
-        data: {
-          sessionId: 'session-1',
-          userId: 'user-1',
-          workspaceContext: {},
-          policyFlags: {},
-          preferences: {},
-          expiresAt: '2025-01-01T00:00:00Z'
-        }
-      };
+  it('throws WilliMakoError with parsed JSON body on non-2xx responses', async () => {
+    const { fetch } = recordingFetch(jsonResponse({ error: 'no session' }, { status: 404 }));
+    const client = new WilliMakoClient({ fetch });
 
-      const fetchMock = createFetchMock();
-      fetchMock
-        .mockResolvedValueOnce(
-          new Response(JSON.stringify(sessionPayload), {
-            status: 201,
-            headers: { 'Content-Type': 'application/json' }
-          })
-        )
-        .mockResolvedValueOnce(
-          new Response(JSON.stringify(sessionPayload), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' }
-          })
-        )
-        .mockResolvedValueOnce(new Response(null, { status: 204 }));
-
-      const client = new WilliMakoClient({ token: 'secret', fetch: fetchMock });
-
-      const created = await client.createSession({ ttlMinutes: 15 });
-      expect(created.data.sessionId).toBe('session-1');
-
-      const retrieved = await client.getSession('session-1');
-      expect(retrieved.data.sessionId).toBe('session-1');
-
-      await client.deleteSession('session-1');
-
-      const [createUrl, createInit] = fetchMock.mock.calls[0] ?? [];
-      expect(String(createUrl)).toContain('/sessions');
-      expect(createInit?.method).toBe('POST');
-
-      const [getUrl, getInit] = fetchMock.mock.calls[1] ?? [];
-      expect(String(getUrl)).toContain('/sessions/session-1');
-      expect(getInit?.method ?? 'GET').toBe('GET');
-
-      const [deleteUrl, deleteInit] = fetchMock.mock.calls[2] ?? [];
-      expect(String(deleteUrl)).toContain('/sessions/session-1');
-      expect(deleteInit?.method).toBe('DELETE');
-    });
-  });
-
-  describe('Advanced endpoints', () => {
-    it('handles chat, search, reasoning, context and clarification calls', async () => {
-      const chatResponse = {
-        success: true,
-        data: { reply: 'Antwort', sessionId: 'session-1' }
-      };
-      const searchResponse = {
-        success: true,
-        data: {
-          sessionId: 'session-1',
-          query: 'test',
-          totalResults: 1,
-          durationMs: 12,
-          options: {},
-          results: []
-        }
-      };
-      const reasoningResponse = {
-        success: true,
-        data: {
-          sessionId: 'session-1',
-          response: 'Ergebnis'
-        }
-      };
-      const contextResponse = {
-        success: true,
-        data: {
-          sessionId: 'session-1',
-          contextSettingsUsed: {},
-          decision: {},
-          publicContext: []
-        }
-      };
-      const clarificationResponse = {
-        success: true,
-        data: {
-          sessionId: 'session-1',
-          query: 'test',
-          analysis: { clarificationNeeded: false }
-        }
-      };
-
-      const fetchMock = createFetchMock();
-      fetchMock
-        .mockResolvedValueOnce(
-          new Response(JSON.stringify(chatResponse), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' }
-          })
-        )
-        .mockResolvedValueOnce(
-          new Response(JSON.stringify(searchResponse), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' }
-          })
-        )
-        .mockResolvedValueOnce(
-          new Response(JSON.stringify(reasoningResponse), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' }
-          })
-        )
-        .mockResolvedValueOnce(
-          new Response(JSON.stringify(contextResponse), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' }
-          })
-        )
-        .mockResolvedValueOnce(
-          new Response(JSON.stringify(clarificationResponse), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' }
-          })
-        );
-
-      const client = new WilliMakoClient({ token: 'secret', fetch: fetchMock });
-
-      const chatResult = await client.chat({ sessionId: 'session-1', message: 'Hallo' });
-      expect(chatResult).toEqual(chatResponse);
-
-      const searchResult = await client.semanticSearch({ sessionId: 'session-1', query: 'test' });
-      expect(searchResult).toEqual(searchResponse);
-
-      const reasoningResult = await client.generateReasoning({
-        sessionId: 'session-1',
-        query: 'Analyse'
-      });
-      expect(reasoningResult).toEqual(reasoningResponse);
-
-      const contextResult = await client.resolveContext({
-        sessionId: 'session-1',
-        query: 'Kontext?'
-      });
-      expect(contextResult).toEqual(contextResponse);
-
-      const clarificationResult = await client.analyzeClarification({
-        sessionId: 'session-1',
-        query: 'Frage?'
-      });
-      expect(clarificationResult).toEqual(clarificationResponse);
-      const calledPaths = fetchMock.mock.calls.map((call) => String(call?.[0]));
-      expect(calledPaths).toEqual([
-        expect.stringContaining('/chat'),
-        expect.stringContaining('/retrieval/semantic-search'),
-        expect.stringContaining('/reasoning/generate'),
-        expect.stringContaining('/context/resolve'),
-        expect.stringContaining('/clarification/analyze')
-      ]);
-    });
+    await expect(client.currentUser()).rejects.toMatchObject({
+      name: 'WilliMakoError',
+      status: 404,
+      body: { error: 'no session' }
+    } satisfies Partial<WilliMakoError>);
   });
 });

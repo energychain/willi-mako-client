@@ -1,1862 +1,509 @@
-/**
- * @module willi-mako-client
- * High-level TypeScript client utilities, CLI exports, and shared constants for the Willi-Mako API v2.
- * Consumers should import from this entrypoint to interact with Marktkommunikation workflows programmatically.
- */
-import { createRequire } from 'node:module';
-import type {
-  CreateArtifactRequest,
-  CreateArtifactResponse,
-  RunNodeScriptJobRequest,
-  RunNodeScriptJobResponse,
-  GetToolJobResponse,
-  LoginRequest,
-  LoginResponse,
-  LoginOptions,
-  CreateSessionRequest,
-  SessionEnvelopeResponse,
-  ChatRequest,
-  ChatResponse,
-  StreamEvent,
-  StreamingChatRequest,
-  SemanticSearchRequest,
-  SemanticSearchResponse,
-  WilliNetzSemanticSearchRequest,
-  WilliNetzSemanticSearchResponse,
-  WilliNetzChatRequest,
-  WilliNetzChatResponse,
-  CombinedSemanticSearchRequest,
-  CombinedSemanticSearchResponse,
-  CombinedChatRequest,
-  CombinedChatResponse,
-  ReasoningGenerateRequest,
-  ReasoningGenerateResponse,
-  ContextResolveRequest,
-  ContextResolveResponse,
-  ClarificationAnalyzeRequest,
-  ClarificationAnalyzeResponse,
-  GenerateToolScriptRequest,
-  GenerateToolScriptJobOperationResponse,
-  RepairGenerateToolScriptRequest,
-  UploadDocumentRequest,
-  UploadDocumentResponse,
-  UploadMultipleDocumentsRequest,
-  UploadMultipleDocumentsResponse,
-  ListDocumentsQuery,
-  ListDocumentsResponse,
-  GetDocumentResponse,
-  UpdateDocumentRequest,
-  UpdateDocumentResponse,
-  ToggleAiContextRequest,
-  ToggleAiContextResponse,
-  ReprocessDocumentResponse,
-  AnalyzeEdifactMessageRequest,
-  AnalyzeEdifactMessageResponse,
-  EdifactChatRequest,
-  EdifactChatResponse,
-  ExplainEdifactMessageRequest,
-  ExplainEdifactMessageResponse,
-  ValidateEdifactMessageRequest,
-  ValidateEdifactMessageResponse,
-  ModifyEdifactMessageRequest,
-  ModifyEdifactMessageResponse,
-  MarketPartnerSearchQuery,
-  MarketPartnerSearchResponse,
-  StructuredDataQueryRequest,
-  StructuredDataQueryResponse,
-  ResolveIntentRequest,
-  ResolveIntentResponse,
-  GetProvidersResponse,
-  GetProvidersHealthResponse,
-  ChatCompletionRequest,
-  ChatCompletionResponse
-} from './types.js';
+export const DEFAULT_BASE_URL = 'https://willi.cernion.de';
 
-const require: NodeJS.Require = createRequire(import.meta.url);
-const openApiDocument: Record<string, unknown> = require('../schemas/openapi.json');
+export type FetchLike = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
-export * from './types.js';
-export * from './tool-generation.js';
+export interface CookieStore {
+  getCookieHeader(url: string): string | undefined;
+  storeFromResponse(url: string, response: Response): void;
+}
 
-/**
- * Default base URL pointing to the productive Willi-Mako API v2 endpoint.
- * Located at: https://stromhaltig.de/api/v2
- */
-export const DEFAULT_BASE_URL = 'https://stromhaltig.de/api/v2';
-
-/**
- * Pre-bundled OpenAPI 3.0 specification for the Willi-Mako API v2.
- * This schema is included in the package for offline access and code generation tools.
- */
-export const bundledOpenApiDocument = openApiDocument;
-
-/**
- * Configuration options for the WilliMakoClient.
- */
 export interface WilliMakoClientOptions {
-  /**
-   * Base URL of the Willi-Mako API. Defaults to the productive environment.
-   * @default "https://stromhaltig.de/api/v2"
-   */
   baseUrl?: string;
+  fetch?: FetchLike;
+  cookieStore?: CookieStore;
+  defaultHeaders?: HeadersInit;
   /**
-   * Bearer token for API authentication.
-   * Falls back to the WILLI_MAKO_TOKEN environment variable if not provided.
-   * @default process.env.WILLI_MAKO_TOKEN
+   * Stored `wm_sid` session value for non-browser clients.
+   * The client only attaches it to same-origin requests for the configured base URL.
    */
-  token?: string | null;
-  /**
-   * Custom fetch implementation for testing or polyfills.
-   * @default globalThis.fetch
-   */
-  fetch?: typeof fetch;
+  readonly sessionId?: string;
 }
 
-/**
- * Additional options for individual API requests.
- */
-export interface RequestOptions extends RequestInit {
-  /**
-   * Skip attaching the Authorization header for public endpoints.
-   * @default false
-   */
-  skipAuth?: boolean;
+export class MemoryCookieStore implements CookieStore {
+  private readonly cookies = new Map<string, string>();
+
+  getCookieHeader(): string | undefined {
+    const pairs = Array.from(this.cookies.entries()).map(([name, value]) => `${name}=${value}`);
+    return pairs.length > 0 ? pairs.join('; ') : undefined;
+  }
+
+  storeFromResponse(_url: string, response: Response): void {
+    const setCookieHeaders = collectSetCookieHeaders(response.headers);
+    for (const header of setCookieHeaders) {
+      const [pair] = header.split(';', 1);
+      const separator = pair.indexOf('=');
+      if (separator > 0) {
+        const name = pair.slice(0, separator).trim();
+        const value = pair.slice(separator + 1).trim();
+        if (value === '') {
+          this.cookies.delete(name);
+        } else {
+          this.cookies.set(name, value);
+        }
+      }
+    }
+  }
+
+  snapshot(): Record<string, string> {
+    return Object.fromEntries(this.cookies.entries());
+  }
 }
 
-/**
- * Custom error class for Willi-Mako API failures.
- * Provides structured access to HTTP status codes and response bodies.
- *
- * @example
- * ```typescript
- * try {
- *   await client.createArtifact(request);
- * } catch (error) {
- *   if (error instanceof WilliMakoError) {
- *     console.error(`API error ${error.status}:`, error.body);
- *   }
- * }
- * ```
- */
-/**
- * Custom error class for Willi-Mako API failures.
- * Provides structured access to HTTP status codes and response bodies.
- *
- * @example
- * ```typescript
- * try {
- *   await client.createArtifact(request);
- * } catch (error) {
- *   if (error instanceof WilliMakoError) {
- *     console.error(`API error ${error.status}:`, error.body);
- *   }
- * }
- * ```
- */
+function collectSetCookieHeaders(headers: Headers): string[] {
+  const anyHeaders = headers as Headers & { getSetCookie?: () => string[]; raw?: () => Record<string, string[]> };
+  if (typeof anyHeaders.getSetCookie === 'function') {
+    return anyHeaders.getSetCookie();
+  }
+  if (typeof anyHeaders.raw === 'function') {
+    return anyHeaders.raw()['set-cookie'] ?? [];
+  }
+  const single = headers.get('set-cookie');
+  return single ? [single] : [];
+}
+
 export class WilliMakoError extends Error {
-  /** HTTP status code of the failed request */
-  public readonly status: number;
-  /** Parsed response body (may be an error object or text) */
-  public readonly body: unknown;
-
-  constructor(message: string, status: number, body: unknown) {
+  constructor(
+    message: string,
+    readonly status: number,
+    readonly response: Response,
+    readonly body: unknown
+  ) {
     super(message);
     this.name = 'WilliMakoError';
-    this.status = status;
-    this.body = body;
   }
 }
 
-/**
- * Official TypeScript client for the Willi-Mako API v2.
- *
- * Willi-Mako is the knowledge and automation platform for energy market communication
- * (Marktkommunikation) in the German energy sector. This client provides type-safe
- * access to APIs for:
- *
- * - **EDIFACT/edi@energy processing**: Parse, validate, and transform messages
- *   like UTILMD, MSCONS, ORDERS according to market communication standards
- * - **Tooling Sandbox**: Execute Node.js scripts in a secure environment for
- *   testing parsing logic, validation rules, or data transformations
- * - **Artifact Storage**: Store and retrieve ETL outputs, compliance reports,
- *   validation results, or EDIFACT message snapshots
- * - **Market Roles & Billing**: Access reference data for market locations
- *   (Marktlokationen), billing periods, and energy supplier relationships
- *
- * @example
- * **Basic Usage**
- * ```typescript
- * import { WilliMakoClient } from 'willi-mako-client';
- *
- * const client = new WilliMakoClient({
- *   token: process.env.WILLI_MAKO_TOKEN
- * });
- *
- * // Fetch the API schema
- * const schema = await client.getRemoteOpenApiDocument();
- * console.log(schema.info.title);
- * ```
- *
- * @example
- * **Testing EDIFACT Parsing Logic**
- * ```typescript
- * const job = await client.createNodeScriptJob({
- *   sessionId: 'my-session-id',
- *   source: `
- *     // Parse UTILMD message segments
- *     const message = 'UNH+1+UTILMD:D:04B:UN:2.3e';
- *     const segments = message.split('+');
- *     console.log('Message type:', segments[1]);
- *   `,
- *   timeoutMs: 5000
- * });
- *
- * console.log('Job status:', job.data.job.status);
- *
- * // Poll for results
- * const result = await client.getToolJob(job.data.job.id);
- * if (result.data.job.status === 'succeeded') {
- *   console.log('Output:', result.data.job.result?.stdout);
- * }
- * ```
- *
- * @example
- * **Storing Validation Results**
- * ```typescript
- * await client.createArtifact({
- *   sessionId: 'my-session-id',
- *   type: 'validation-report',
- *   name: 'utilmd-validation-2024-03.json',
- *   mimeType: 'application/json',
- *   encoding: 'utf8',
- *   content: JSON.stringify({
- *     timestamp: new Date().toISOString(),
- *     validMessages: 142,
- *     errors: []
- *   }),
- *   tags: ['utilmd', 'validation', 'Q1-2024']
- * });
- * ```
- */
+export interface RequestLinkRequest { email: string; }
+export interface VerifyRequest { token: string; }
+export interface InviteRequest { email: string; role?: string; }
+export interface SwitchMandantRequest { mandantId: string; }
+export interface AcceptAvvRequest { accepted: boolean; name?: string; role?: string; }
+export interface StartCoachRequest { text: string; caseId?: string; [key: string]: unknown; }
+export interface CoachMessageRequest { sessionId: string; text: string; [key: string]: unknown; }
+export interface ReviewSessionRequest { sessionId: string; feedback?: string; reviewer?: string; [key: string]: unknown; }
+export interface LiveCoachingRequest { enabled?: boolean; requested?: boolean; }
+
+export interface ApiEnvelope<T = unknown> {
+  success?: boolean;
+  data?: T;
+  ok?: boolean;
+  error?: string | null;
+  [key: string]: unknown;
+}
+
+export interface ApiSuccessEnvelope<T = unknown> extends ApiEnvelope<T> {
+  success: true;
+}
+
+export interface RequestLinkResponse extends ApiSuccessEnvelope {
+  message?: string;
+}
+
+export interface TokenPeekResponse extends ApiEnvelope {
+  valid: boolean;
+  purpose?: string;
+  emailMasked?: string;
+}
+
+export interface PendingMandantSwitch {
+  mandantId?: string;
+  mandantName?: string | null;
+  [key: string]: unknown;
+}
+
+export interface VerifyAuthResponse extends ApiSuccessEnvelope {
+  email?: string;
+  emailMasked?: string;
+  mandantId?: string;
+  mandantName?: string | null;
+  pendingMandantSwitch?: PendingMandantSwitch | null;
+  /** Backwards-compatible session aliases observed by older API deployments. */
+  sessionId?: string;
+  sid?: string;
+  token?: string;
+}
+
+export interface AuthMeResponse extends ApiSuccessEnvelope {
+  email?: string;
+  mandantId?: string;
+  mandantName?: string | null;
+  isStaff?: boolean;
+  avvAccepted?: boolean;
+}
+
+export interface GenericSuccessResponse extends ApiSuccessEnvelope {}
+
+export interface MandantInviteResponse extends ApiSuccessEnvelope {
+  email?: string;
+  role?: string;
+}
+
+export interface SwitchMandantResponse extends ApiSuccessEnvelope {
+  mandantId: string;
+  mandantName: string | null;
+}
+
+export interface MandantMember {
+  email?: string;
+  role?: string;
+  isStaff?: boolean;
+  createdAt?: string;
+  [key: string]: unknown;
+}
+
+export interface MandantMembersResponse extends ApiSuccessEnvelope<MandantMember[]> {
+  members?: MandantMember[];
+}
+
+export interface UsageDay {
+  date?: string;
+  turns?: number;
+  [key: string]: unknown;
+}
+
+export interface MandantUsageResponse extends ApiSuccessEnvelope<UsageDay[]> {
+  totalTurns: number;
+  last30Days: UsageDay[];
+}
+
+export interface AvvSection {
+  title?: string;
+  body?: string;
+  [key: string]: unknown;
+}
+
+export interface AvvRecordResponse extends ApiSuccessEnvelope<AvvSection[]> {
+  avvVersion: string;
+  acceptedAt: string;
+  sections: AvvSection[];
+}
+
+export interface CompanyDetails {
+  name?: string;
+  address?: string;
+  [key: string]: unknown;
+}
+
+export interface AvvOnboardingResponse extends ApiSuccessEnvelope<AvvSection[]> {
+  avvVersion: string;
+  sections: AvvSection[];
+  company?: CompanyDetails | null;
+  needsCompanyDetails: boolean;
+  userName: string | null;
+}
+
+export interface AcceptAvvResponse extends ApiSuccessEnvelope {
+  avvVersion?: string;
+  acceptedAt?: string;
+}
+
+export interface CoachStartResponse extends ApiSuccessEnvelope {
+  sessionId: string;
+  turnId: string;
+}
+
+export interface CoachMessageResponse extends ApiSuccessEnvelope {
+  sessionId: string;
+  turnId: string;
+}
+
+export type CoachTurnKickoff = CoachStartResponse;
+
+export interface CoachTurnResult {
+  success?: boolean;
+  sessionId?: string;
+  assistant?: string;
+  answer?: string;
+  markdown?: string;
+  card?: unknown;
+  [key: string]: unknown;
+}
+
+export interface TurnProgressStep {
+  stage?: string;
+  message?: string;
+  at?: string;
+  [key: string]: unknown;
+}
+
+export interface CoachTurnResponse extends ApiSuccessEnvelope<CoachTurnResult | null> {
+  status: 'running' | 'done' | 'error' | (string & {});
+  progress: TurnProgressStep[];
+  result: CoachTurnResult | null;
+  error: string | null;
+}
+
+export interface LiveCoachingState {
+  enabled?: boolean;
+  requested?: boolean;
+  [key: string]: unknown;
+}
+
+export interface CaseSessionSummary {
+  sessionId: string;
+  id?: string;
+  title?: string;
+  summary?: string;
+  status?: string;
+  domain?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  turns?: number;
+  openQuestions?: number;
+  sources?: number;
+  reviews?: number;
+  liveCoaching?: LiveCoachingState;
+  [key: string]: unknown;
+}
+
+export interface SessionListResponse extends ApiSuccessEnvelope<CaseSessionSummary[]> {
+  sessions: CaseSessionSummary[];
+}
+
+export interface ChatTurn {
+  role?: string;
+  content?: string;
+  createdAt?: string;
+  [key: string]: unknown;
+}
+
+export interface SessionVersionSummary {
+  versionId?: string;
+  createdAt?: string;
+  [key: string]: unknown;
+}
+
+export interface SessionDetailResponse extends ApiSuccessEnvelope {
+  sessionId: string;
+  title?: string;
+  summary?: string;
+  status?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  card?: unknown;
+  chat?: ChatTurn[];
+  calls?: unknown[];
+  versions?: SessionVersionSummary[];
+  reviewCount?: number;
+  liveCoaching?: LiveCoachingState;
+  messages?: unknown[];
+  [key: string]: unknown;
+}
+
+export interface LiveCoachingResponse extends ApiSuccessEnvelope {
+  sessionId: string;
+  liveCoaching: LiveCoachingState;
+}
+
+export interface ReviewResponse extends ApiSuccessEnvelope<string[]> {
+  sessionId: string;
+  reviewMarkdown: string;
+  proposals: string[];
+  persisted: true;
+}
+
 export class WilliMakoClient {
-  private baseUrl: string;
-  private token: string | null;
-  private readonly fetchImpl: typeof fetch;
+  readonly baseUrl: string;
+  private readonly fetchImpl: FetchLike;
+  private readonly cookieStore?: CookieStore;
+  private readonly defaultHeaders?: HeadersInit;
+  private readonly sessionId?: string;
 
-  /**
-   * Creates a new Willi-Mako API client instance.
-   *
-   * @param options - Configuration options for the client
-   *
-   * @example
-   * ```typescript
-   * // Use default productive endpoint with token from environment
-   * const client = new WilliMakoClient();
-   *
-   * // Provide token explicitly
-   * const client = new WilliMakoClient({
-   *   token: 'your-bearer-token'
-   * });
-   *
-   * // Use custom base URL (e.g., for testing)
-   * const client = new WilliMakoClient({
-   *   baseUrl: 'http://localhost:3000/api/v2',
-   *   token: 'test-token'
-   * });
-   * ```
-   */
   constructor(options: WilliMakoClientOptions = {}) {
-    this.baseUrl = (options.baseUrl ?? DEFAULT_BASE_URL).replace(/\/+$/, '');
-    this.token = options.token ?? process.env.WILLI_MAKO_TOKEN ?? null;
-    this.fetchImpl = options.fetch ?? globalThis.fetch;
-
-    if (typeof this.fetchImpl !== 'function') {
-      throw new Error(
-        'A fetch implementation is required. Provide options.fetch or upgrade to Node.js >= 18.'
-      );
-    }
+    this.baseUrl = normalizeBaseUrl(options.baseUrl ?? DEFAULT_BASE_URL);
+    this.fetchImpl = options.fetch ?? globalThis.fetch.bind(globalThis);
+    this.cookieStore = options.cookieStore;
+    this.defaultHeaders = options.defaultHeaders;
+    this.sessionId = options.sessionId;
   }
 
-  /**
-   * Updates the bearer token used for API authentication.
-   * Useful for implementing token refresh logic or switching between different user sessions.
-   *
-   * @param token - The new bearer token, or null to clear authentication
-   *
-   * @example
-   * ```typescript
-   * client.setToken('new-token-after-refresh');
-   * ```
-   */
-  public setToken(token: string | null): void {
-    this.token = token;
+  requestMagicLink(body: RequestLinkRequest): Promise<RequestLinkResponse> {
+    return this.post('/api/auth/request-link', body);
   }
 
-  /**
-   * Performs a credential based login flow to obtain a JWT bearer token.
-   * On success the token is automatically stored on the client instance.
-   *
-   * @param credentials - Email/password combination issued by the platform
-   * @returns Login response including the access token and expiry timestamp
-   */
-  public async login(
-    credentials: LoginRequest,
-    options: LoginOptions = {}
-  ): Promise<LoginResponse> {
-    const response = await this.request<LoginResponse>('/auth/token', {
-      method: 'POST',
-      body: JSON.stringify(credentials),
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      skipAuth: true
-    });
-
-    if (response.success && response.data?.accessToken) {
-      if (options.persistToken === false) {
-        this.setToken(null);
-      } else {
-        this.setToken(response.data.accessToken);
-      }
-    }
-
-    return response;
+  peekToken(token: string): Promise<TokenPeekResponse> {
+    return this.get(`/api/auth/token-peek?token=${encodeURIComponent(token)}`);
   }
 
-  /**
-   * Returns the currently configured base URL.
-   *
-   * @returns The base URL (without trailing slash)
-   */
-  public getBaseUrl(): string {
-    return this.baseUrl;
+  verifyMagicLink(body: VerifyRequest): Promise<VerifyAuthResponse> {
+    return this.post('/api/auth/verify', body);
   }
 
-  /**
-   * Creates a new workspace session. Sessions group tooling jobs, artefacts and
-   * conversational state. They also carry policy information such as market role.
-   */
-  public async createSession(payload: CreateSessionRequest = {}): Promise<SessionEnvelopeResponse> {
-    return this.request<SessionEnvelopeResponse>('/sessions', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
+  currentUser(): Promise<AuthMeResponse> {
+    return this.get('/api/auth/me');
   }
 
-  /**
-   * Retrieves the metadata of an existing session.
-   */
-  public async getSession(sessionId: string): Promise<SessionEnvelopeResponse> {
-    return this.request<SessionEnvelopeResponse>(`/sessions/${encodeURIComponent(sessionId)}`);
+  logout(): Promise<GenericSuccessResponse> {
+    return this.post('/api/auth/logout', {});
   }
 
-  /**
-   * Deletes a session and all associated sandbox jobs / artefacts.
-   */
-  public async deleteSession(sessionId: string): Promise<void> {
-    await this.request<void>(`/sessions/${encodeURIComponent(sessionId)}`, {
-      method: 'DELETE'
-    });
+  inviteMandantMember(body: InviteRequest): Promise<MandantInviteResponse> {
+    return this.post('/api/mandant/invite', body);
   }
 
-  /**
-   * Sends a conversational message to the Willi-Mako chat endpoint.
-   *
-   * ⚠️ **WARNING**: This method is synchronous and waits for complete AI processing.
-   * For long-running operations (> 90 seconds), use `chatStreaming()` or `chatWithPolling()`
-   * to avoid 504 Gateway Timeout errors from Cloudflare.
-   *
-   * @see {@link chatStreaming} for streaming alternative with real-time progress updates
-   * @see {@link chatWithPolling} for polling-based workflow (API v1.0.2+)
-   * @see {@link ask} for high-level helper with automatic streaming
-   */
-  public async chat(payload: ChatRequest): Promise<ChatResponse> {
-    return this.request<ChatResponse>('/chat', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
+  switchMandant(body: SwitchMandantRequest): Promise<SwitchMandantResponse> {
+    return this.post('/api/mandant/switch', body);
   }
 
-  /**
-   * Sends a message via Server-Sent Events (SSE) streaming.
-   * **Recommended for long-running AI operations (> 90 seconds)** with real-time progress.
-   *
-   * ✅ **SOLVED in API v1.0.2**: The streaming endpoint now sends heartbeat events every 30 seconds
-   * during AI processing, preventing Cloudflare timeout issues. Streaming is production-ready.
-   *
-   * This method uses the `/api/chat/chats/{chatId}/messages/stream` endpoint which provides
-   * real-time progress updates and works reliably for operations that take several minutes.
-   *
-   * For environments where SSE is problematic, consider using {@link chatWithPolling} instead.
-   *
-   * @param chatId - The legacyChatId from session creation (see {@link createSession})
-   * @param payload - Message content and optional context settings
-   * @param onProgress - Optional callback for progress events (status, progress percentage)
-   * @returns Final completion event with user and assistant messages
-   *
-   * @throws {WilliMakoError} When the stream fails or returns an error event
-   *
-   * @example
-   * ```typescript
-   * const session = await client.createSession();
-   * const result = await client.chatStreaming(
-   *   session.data.legacyChatId!,
-   *   { content: 'Erkläre den GPKE-Prozess im Detail' },
-   *   (event) => {
-   *     console.log(`${event.message} (${event.progress}%)`);
-   *   }
-   * );
-   * console.log(result.data.assistantMessage.content);
-   * ```
-   */
-  public async chatStreaming(
-    chatId: string,
-    payload: StreamingChatRequest,
-    onProgress?: (event: StreamEvent) => void
-  ): Promise<StreamEvent> {
-    // Build URL: Replace /api/v2 with /api/chat for the streaming endpoint
-    const baseUrlForChat = this.baseUrl.replace(/\/api\/v2\/?$/, '/api/chat');
-    const url = `${baseUrlForChat}/chats/${encodeURIComponent(chatId)}/messages/stream`;
+  listMandantMembers(): Promise<MandantMembersResponse> {
+    return this.get('/api/mandant/members');
+  }
 
-    const response = await this.fetchImpl(url, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${this.token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(payload)
-    });
+  getMandantUsage(): Promise<MandantUsageResponse> {
+    return this.get('/api/mandant/usage');
+  }
 
+  getAvvRecord(): Promise<AvvRecordResponse> {
+    return this.get('/api/mandant/avv-record');
+  }
+
+  getAvvOnboarding(): Promise<AvvOnboardingResponse> {
+    return this.get('/api/onboarding/avv');
+  }
+
+  acceptAvv(body: AcceptAvvRequest): Promise<AcceptAvvResponse> {
+    return this.post('/api/onboarding/avv/accept', body);
+  }
+
+  startCoach(body: StartCoachRequest): Promise<CoachStartResponse> {
+    return this.post('/api/coach/start', body);
+  }
+
+  sendCoachMessage(body: CoachMessageRequest): Promise<CoachMessageResponse> {
+    return this.post('/api/coach/message', body);
+  }
+
+  getCoachTurn(turnId: string): Promise<CoachTurnResponse> {
+    return this.get(`/api/coach/turn/${encodeURIComponent(turnId)}`);
+  }
+
+  listSessions(): Promise<SessionListResponse> {
+    return this.get('/api/sessions');
+  }
+
+  getSession(sessionId: string): Promise<SessionDetailResponse> {
+    return this.get(`/api/sessions/${encodeURIComponent(sessionId)}`);
+  }
+
+  getSessionCardMarkdown(sessionId: string): Promise<string> {
+    return this.getText(`/api/sessions/${encodeURIComponent(sessionId)}/card.md`);
+  }
+
+  getSessionReviewMarkdown(sessionId: string): Promise<string> {
+    return this.getText(`/api/sessions/${encodeURIComponent(sessionId)}/review.md`);
+  }
+
+  closeSession(sessionId: string): Promise<GenericSuccessResponse> {
+    return this.post(`/api/sessions/${encodeURIComponent(sessionId)}/close`, {});
+  }
+
+  setLiveCoaching(sessionId: string, body: LiveCoachingRequest): Promise<LiveCoachingResponse> {
+    return this.post(`/api/sessions/${encodeURIComponent(sessionId)}/live-coaching`, body);
+  }
+
+  reviewSession(body: ReviewSessionRequest): Promise<ReviewResponse> {
+    return this.post('/api/review/session', body);
+  }
+
+  rawOpenApi(): Promise<Record<string, unknown>> {
+    return this.get('/api/openapi.json');
+  }
+
+  get<T = unknown>(path: string): Promise<T> {
+    return this.request<T>('GET', path);
+  }
+
+  post<T = unknown>(path: string, body: unknown): Promise<T> {
+    return this.request<T>('POST', path, body);
+  }
+
+  async getText(path: string): Promise<string> {
+    const requestUrl = this.url(path);
+    const response = await this.perform('GET', path);
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new WilliMakoError(
-        `Streaming request failed: ${response.statusText}`,
-        response.status,
-        errorText
-      );
+      throw await this.toError(response);
     }
-
-    if (!response.body) {
-      throw new WilliMakoError('Response body is null (streaming not supported)', 500, null);
+    if (this.isSameOrigin(requestUrl)) {
+      this.cookieStore?.storeFromResponse(requestUrl, response);
     }
+    return response.text();
+  }
 
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
-    let finalEvent: StreamEvent | null = null;
+  async request<T>(method: string, path: string, body?: unknown): Promise<T> {
+    const requestUrl = this.url(path);
+    const response = await this.perform(method, path, body);
+    if (this.isSameOrigin(requestUrl)) {
+      this.cookieStore?.storeFromResponse(requestUrl, response);
+    }
+    if (!response.ok) {
+      throw await this.toError(response);
+    }
+    if (response.status === 204) {
+      return undefined as T;
+    }
+    const contentType = response.headers.get('content-type') ?? '';
+    if (contentType.includes('application/json')) {
+      return (await response.json()) as T;
+    }
+    return (await response.text()) as T;
+  }
 
+  private async perform(method: string, path: string, body?: unknown): Promise<Response> {
+    const url = this.url(path);
+    const sameOrigin = this.isSameOrigin(url);
+    const headers = new Headers(this.defaultHeaders);
+    headers.set('accept', 'application/json');
+    if (!sameOrigin) {
+      headers.delete('cookie');
+      headers.delete('authorization');
+    }
+    if (body !== undefined) {
+      headers.set('content-type', 'application/json');
+    }
+    if (sameOrigin) {
+      const cookie = this.cookieStore?.getCookieHeader(url);
+      if (cookie) {
+        headers.set('cookie', cookie);
+      } else if (this.sessionId && !headers.has('cookie')) {
+        headers.set('cookie', `wm_sid=${this.sessionId}`);
+      }
+    }
+    return this.fetchImpl(url, {
+      method,
+      headers,
+      body: body === undefined ? undefined : JSON.stringify(body),
+      credentials: sameOrigin ? 'include' : 'omit'
+    });
+  }
+
+  private url(path: string): string {
+    if (/^https?:\/\//i.test(path)) {
+      return path;
+    }
+    return `${this.baseUrl}${path.startsWith('/') ? path : `/${path}`}`;
+  }
+
+  private isSameOrigin(url: string): boolean {
+    return new URL(url).origin === new URL(this.baseUrl).origin;
+  }
+
+  private async toError(response: Response): Promise<WilliMakoError> {
+    let parsed: unknown;
     try {
-      // eslint-disable-next-line no-constant-condition
-      while (true) {
-        const { done, value } = await reader.read();
-
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n\n');
-
-        // Keep last incomplete line in buffer
-        buffer = lines.pop() || '';
-
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            try {
-              const event: StreamEvent = JSON.parse(line.slice(6));
-
-              // Call progress callback
-              if (onProgress) {
-                onProgress(event);
-              }
-
-              // Store final event
-              if (event.type === 'complete') {
-                finalEvent = event;
-              }
-
-              // Handle errors
-              if (event.type === 'error') {
-                throw new WilliMakoError(event.message || 'Stream error', 500, event);
-              }
-            } catch (parseError) {
-              // Silently skip unparseable events
-              if (parseError instanceof WilliMakoError) {
-                throw parseError;
-              }
-            }
-          }
-        }
-      }
-    } finally {
-      reader.releaseLock();
+      const contentType = response.headers.get('content-type') ?? '';
+      parsed = contentType.includes('application/json') ? await response.json() : await response.text();
+    } catch {
+      parsed = undefined;
     }
-
-    if (!finalEvent) {
-      throw new WilliMakoError('Stream ended without complete event', 500, null);
-    }
-
-    return finalEvent;
-  }
-
-  /**
-   * High-level helper for streaming chat with automatic session management.
-   *
-   * ✅ **SOLVED in API v1.0.2**: The streaming endpoint now sends heartbeat events every 30 seconds
-   * during AI processing, preventing Cloudflare timeout issues. Both streaming and polling are
-   * production-ready approaches.
-   *
-   * This method creates a session automatically, sends the message via streaming,
-   * and returns the assistant's response. Perfect for one-off questions or scripts
-   * that don't need to maintain session state.
-   *
-   * @param question - The question or message to send
-   * @param contextSettings - Optional context settings (e.g., companiesOfInterest)
-   * @param onProgress - Optional callback for progress updates (status message, progress %)
-   * @returns The assistant's message object with content and metadata
-   *
-   * @example
-   * ```typescript
-   * const response = await client.ask(
-   *   'Erkläre GPKE im Detail',
-   *   { companiesOfInterest: ['Enerchy'] },
-   *   (status, progress) => console.log(`${status} (${progress}%)`)
-   * );
-   * console.log(response.content);
-   * ```
-   */
-  public async ask(
-    question: string,
-    contextSettings?: Record<string, unknown>,
-    onProgress?: (status: string, progress: number) => void
-  ): Promise<unknown> {
-    const session = await this.createSession();
-    const chatId = session.data.legacyChatId;
-
-    if (!chatId) {
-      throw new WilliMakoError('Session has no legacyChatId', 500, session);
-    }
-
-    const result = await this.chatStreaming(
-      chatId,
-      { content: question, contextSettings },
-      (event) => {
-        if ((event.type === 'status' || event.type === 'progress') && onProgress && event.message) {
-          onProgress(event.message, event.progress || 0);
-        }
-      }
-    );
-
-    return result.data?.assistantMessage;
-  }
-
-  /**
-   * Executes a hybrid semantic search against the knowledge base.
-   */
-  public async semanticSearch(payload: SemanticSearchRequest): Promise<SemanticSearchResponse> {
-    return this.request<SemanticSearchResponse>('/retrieval/semantic-search', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-  }
-
-  /**
-   * Executes a semantic search against the willi-netz collection.
-   * The willi-netz collection is specialized on network management, regulation, TAB, and asset management.
-   * Contains: Energy law (EnWG, StromNEV, ARegV), BNetzA regulations & monitoring reports,
-   * TAB from network operators, BDEW guidelines, VDE-FNN instructions, Asset Management (ISO 55000).
-   */
-  public async williNetzSemanticSearch(
-    payload: WilliNetzSemanticSearchRequest
-  ): Promise<WilliNetzSemanticSearchResponse> {
-    return this.request<WilliNetzSemanticSearchResponse>('/willi-netz/semantic-search', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-  }
-
-  /**
-   * Chat interaction based on the willi-netz collection.
-   * Ideal for questions about: BNetzA regulation, incentive regulation (ARegV),
-   * technical connection requirements, §14a EnWG, smart meters, e-mobility, storage, supply quality.
-   */
-  public async williNetzChat(payload: WilliNetzChatRequest): Promise<WilliNetzChatResponse> {
-    return this.request<WilliNetzChatResponse>('/willi-netz/chat', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-  }
-
-  /**
-   * Executes a combined semantic search across both willi_mako and willi-netz collections.
-   * Results include sourceCollection information in the payload.
-   * Ideal for cross-cutting research covering both market processes and regulatory/technical network topics.
-   */
-  public async combinedSemanticSearch(
-    payload: CombinedSemanticSearchRequest
-  ): Promise<CombinedSemanticSearchResponse> {
-    return this.request<CombinedSemanticSearchResponse>('/combined/semantic-search', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-  }
-
-  /**
-   * Chat interaction with access to both willi_mako and willi-netz collections.
-   * Automatically uses the most relevant collection based on the request.
-   * Ideal for complex questions covering both market communication aspects (EDIFACT, supplier switch)
-   * and regulatory/technical network topics (network fees, TAB, §14a EnWG).
-   */
-  public async combinedChat(payload: CombinedChatRequest): Promise<CombinedChatResponse> {
-    return this.request<CombinedChatResponse>('/combined/chat', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-  }
-
-  /**
-   * Triggers the advanced reasoning pipeline.
-   */
-  public async generateReasoning(
-    payload: ReasoningGenerateRequest
-  ): Promise<ReasoningGenerateResponse> {
-    return this.request<ReasoningGenerateResponse>('/reasoning/generate', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-  }
-
-  /**
-   * Resolves the most relevant context for a user query.
-   */
-  public async resolveContext(payload: ContextResolveRequest): Promise<ContextResolveResponse> {
-    return this.request<ContextResolveResponse>('/context/resolve', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-  }
-
-  /**
-   * Analyzes whether clarification questions are required before continuing.
-   */
-  public async analyzeClarification(
-    payload: ClarificationAnalyzeRequest
-  ): Promise<ClarificationAnalyzeResponse> {
-    return this.request<ClarificationAnalyzeResponse>('/clarification/analyze', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-  }
-
-  /**
-   * Returns the bundled OpenAPI 3.0 specification.
-   * This is the schema that was bundled with this package version.
-   *
-   * @returns The OpenAPI document object
-   *
-   * @example
-   * ```typescript
-   * const schema = client.getBundledOpenApiDocument();
-   * console.log('API version:', schema.info.version);
-   * ```
-   */
-  public getBundledOpenApiDocument(): typeof openApiDocument {
-    return openApiDocument;
-  }
-
-  /**
-   * Fetches the current OpenAPI specification from the remote API.
-   * Use this to get the most up-to-date schema, which may include newer
-   * endpoints or fields not yet available in the bundled version.
-   *
-   * @returns Promise resolving to the OpenAPI document
-   *
-   * @example
-   * ```typescript
-   * const remoteSchema = await client.getRemoteOpenApiDocument();
-   * console.log('Available endpoints:', Object.keys(remoteSchema.paths));
-   * ```
-   */
-  public async getRemoteOpenApiDocument(): Promise<unknown> {
-    return this.request<unknown>('/openapi.json', { skipAuth: true });
-  }
-
-  /**
-   * Creates a new Node.js sandbox job for executing custom scripts.
-   *
-   * The tooling sandbox provides a secure environment for running JavaScript/TypeScript
-   * code. Common use cases include:
-   * - Testing EDIFACT parsing logic before production deployment
-   * - Validating market communication message structures
-   * - Prototyping data transformations for ETL pipelines
-   * - Running compliance checks on energy data
-   *
-   * Jobs are executed asynchronously. Use {@link getToolJob} to poll for results.
-   *
-   * @param payload - Job creation request with source code and configuration
-   * @returns Promise resolving to the created job with initial status
-   *
-   * @example
-   * ```typescript
-   * const job = await client.createNodeScriptJob({
-   *   sessionId: 'session-uuid',
-   *   source: `
-   *     // Parse MSCONS (meter reading) message
-   *     const reading = 'SEQ+Z02+1234';
-   *     const parts = reading.split('+');
-   *     console.log('Reading value:', parts[2]);
-   *   `,
-   *   timeoutMs: 3000,
-   *   metadata: { messageType: 'MSCONS', purpose: 'parsing-test' }
-   * });
-   *
-   * console.log('Job ID:', job.data.job.id);
-   * console.log('Initial status:', job.data.job.status);
-   * ```
-   */
-  public async createNodeScriptJob(
-    payload: RunNodeScriptJobRequest
-  ): Promise<RunNodeScriptJobResponse> {
-    return this.request<RunNodeScriptJobResponse>('/tools/run-node-script', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-  }
-
-  /**
-   * Retrieves the current status and results of a tooling job.
-   *
-   * Use this method to poll for job completion after creating a job with
-   * {@link createNodeScriptJob}. Jobs may take time to execute depending
-   * on queue length and code complexity.
-   *
-   * @param jobId - The unique identifier of the job
-   * @returns Promise resolving to the job details including status and results
-   *
-   * @example
-   * ```typescript
-   * // Poll until job completes
-   * let job = await client.getToolJob('job-uuid');
-   *
-   * while (job.data.job.status === 'queued' || job.data.job.status === 'running') {
-   *   await new Promise(resolve => setTimeout(resolve, 1000));
-   *   job = await client.getToolJob('job-uuid');
-   * }
-   *
-   * if (job.data.job.status === 'succeeded') {
-   *   console.log('Output:', job.data.job.result?.stdout);
-   * } else {
-   *   console.error('Error:', job.data.job.result?.error);
-   * }
-   * ```
-   */
-  public async getToolJob(jobId: string): Promise<GetToolJobResponse> {
-    return this.request<GetToolJobResponse>(`/tools/jobs/${encodeURIComponent(jobId)}`);
-  }
-
-  /**
-   * Creates a new artifact to store data snapshots, reports, or EDIFACT messages.
-   *
-   * Artifacts are versioned data objects associated with a session. They serve as
-   * an audit trail for ETL processes and can be used to:
-   * - Store imported EDIFACT messages (UTILMD, MSCONS, ORDERS, etc.)
-   * - Save validation or compliance reports
-   * - Archive ETL transformation results
-   * - Keep meter reading snapshots for billing periods
-   *
-   * @param payload - Artifact creation request with content and metadata
-   * @returns Promise resolving to the created artifact details
-   *
-   * @example
-   * **Store an EDIFACT Message**
-   * ```typescript
-   * await client.createArtifact({
-   *   sessionId: 'session-uuid',
-   *   type: 'edifact-message',
-   *   name: 'UTILMD_Stammdaten_2024-03-15.edi',
-   *   mimeType: 'text/plain',
-   *   encoding: 'utf8',
-   *   content: 'UNH+1+UTILMD:D:04B:UN:2.3e...',
-   *   description: 'Stammdatenänderung für Marktlokation DE0001234567890',
-   *   tags: ['utilmd', 'stammdaten', 'march-2024'],
-   *   version: '1.0'
-   * });
-   * ```
-   *
-   * @example
-   * **Store a Validation Report**
-   * ```typescript
-   * const report = {
-   *   timestamp: new Date().toISOString(),
-   *   messageType: 'MSCONS',
-   *   totalMessages: 150,
-   *   validMessages: 148,
-   *   errors: [
-   *     { line: 42, message: 'Invalid meter ID format' }
-   *   ]
-   * };
-   *
-   * await client.createArtifact({
-   *   sessionId: 'session-uuid',
-   *   type: 'validation-report',
-   *   name: 'mscons-validation-2024-Q1.json',
-   *   mimeType: 'application/json',
-   *   encoding: 'utf8',
-   *   content: JSON.stringify(report, null, 2),
-   *   tags: ['mscons', 'validation', 'Q1-2024']
-   * });
-   * ```
-   */
-  public async createArtifact(payload: CreateArtifactRequest): Promise<CreateArtifactResponse> {
-    return this.request<CreateArtifactResponse>('/artifacts', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-  }
-
-  /**
-   * Generates a deterministic Node.js tooling script using the dedicated tooling endpoint.
-   */
-  public async generateToolScript(
-    payload: GenerateToolScriptRequest
-  ): Promise<GenerateToolScriptJobOperationResponse> {
-    return this.request<GenerateToolScriptJobOperationResponse>('/tools/generate-script', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-  }
-
-  /**
-   * Requests an automatic repair attempt for a failed tooling generation job.
-   */
-  public async repairToolScript(
-    payload: RepairGenerateToolScriptRequest
-  ): Promise<GenerateToolScriptJobOperationResponse> {
-    return this.request<GenerateToolScriptJobOperationResponse>('/tools/generate-script/repair', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-  }
-
-  /**
-   * Uploads a single document to the knowledge base.
-   *
-   * Documents can be PDF, DOCX, TXT, or MD files (max 50MB). They are automatically
-   * processed for text extraction and can be included in semantic search and AI chat
-   * when `is_ai_context_enabled` is true.
-   *
-   * @param payload - Document upload request with file and metadata
-   * @returns Promise resolving to the uploaded document details
-   *
-   * @example
-   * ```typescript
-   * import { readFileSync } from 'fs';
-   *
-   * const fileBuffer = readFileSync('./compliance-guide.pdf');
-   * const response = await client.uploadDocument({
-   *   file: fileBuffer,
-   *   title: 'GPKE Compliance Guide 2024',
-   *   description: 'Internal compliance documentation for GPKE processes',
-   *   tags: ['gpke', 'compliance', '2024'],
-   *   is_ai_context_enabled: true
-   * });
-   *
-   * console.log('Document ID:', response.data.document.id);
-   * ```
-   */
-  public async uploadDocument(payload: UploadDocumentRequest): Promise<UploadDocumentResponse> {
-    const formData = new FormData();
-
-    // Handle file - works in both Node.js and browser
-    if (payload.file instanceof Buffer) {
-      // Node.js Buffer - convert to ArrayBuffer then to Blob
-      const arrayBuffer = payload.file.buffer.slice(
-        payload.file.byteOffset,
-        payload.file.byteOffset + payload.file.byteLength
-      ) as ArrayBuffer;
-      const blob = new Blob([arrayBuffer]);
-      formData.append('file', blob, 'document');
-    } else {
-      // Browser File or Blob
-      formData.append('file', payload.file as Blob);
-    }
-
-    if (payload.title) {
-      formData.append('title', payload.title);
-    }
-
-    if (payload.description) {
-      formData.append('description', payload.description);
-    }
-
-    if (payload.tags) {
-      const tagsString = Array.isArray(payload.tags) ? JSON.stringify(payload.tags) : payload.tags;
-      formData.append('tags', tagsString);
-    }
-
-    if (payload.is_ai_context_enabled !== undefined) {
-      formData.append('is_ai_context_enabled', String(payload.is_ai_context_enabled));
-    }
-
-    return this.request<UploadDocumentResponse>('/documents/upload', {
-      method: 'POST',
-      body: formData as unknown as BodyInit,
-      // Don't set Content-Type - let fetch set it with boundary for multipart/form-data
-      skipAuth: false
-    });
-  }
-
-  /**
-   * Uploads multiple documents at once (max 10 files).
-   *
-   * @param payload - Multiple document upload request
-   * @returns Promise resolving to array of uploaded documents
-   *
-   * @example
-   * ```typescript
-   * import { readFileSync } from 'fs';
-   *
-   * const files = [
-   *   readFileSync('./doc1.pdf'),
-   *   readFileSync('./doc2.pdf')
-   * ];
-   *
-   * const response = await client.uploadMultipleDocuments({
-   *   files: files,
-   *   is_ai_context_enabled: true
-   * });
-   *
-   * console.log(`Uploaded ${response.data.documents.length} documents`);
-   * ```
-   */
-  public async uploadMultipleDocuments(
-    payload: UploadMultipleDocumentsRequest
-  ): Promise<UploadMultipleDocumentsResponse> {
-    if (payload.files.length > 10) {
-      throw new Error('Maximum 10 files allowed per upload');
-    }
-
-    const formData = new FormData();
-
-    for (const file of payload.files) {
-      if (file instanceof Buffer) {
-        const arrayBuffer = file.buffer.slice(
-          file.byteOffset,
-          file.byteOffset + file.byteLength
-        ) as ArrayBuffer;
-        const blob = new Blob([arrayBuffer]);
-        formData.append('files', blob, 'document');
-      } else {
-        formData.append('files', file as Blob);
-      }
-    }
-
-    if (payload.is_ai_context_enabled !== undefined) {
-      formData.append('is_ai_context_enabled', String(payload.is_ai_context_enabled));
-    }
-
-    return this.request<UploadMultipleDocumentsResponse>('/documents/upload-multiple', {
-      method: 'POST',
-      body: formData as unknown as BodyInit,
-      skipAuth: false
-    });
-  } /**
-   * Lists all documents with optional pagination, search, and filtering.
-   *
-   * @param query - Query parameters for filtering and pagination
-   * @returns Promise resolving to paginated list of documents
-   *
-   * @example
-   * ```typescript
-   * // Get first page with default settings
-   * const response = await client.listDocuments();
-   *
-   * // Search for specific documents
-   * const searchResults = await client.listDocuments({
-   *   search: 'GPKE',
-   *   processed: true,
-   *   page: 1,
-   *   limit: 20
-   * });
-   *
-   * console.log(`Found ${searchResults.data.pagination.total} documents`);
-   * searchResults.data.documents.forEach(doc => {
-   *   console.log(`- ${doc.title} (${doc.file_size} bytes)`);
-   * });
-   * ```
-   */
-  public async listDocuments(query: ListDocumentsQuery = {}): Promise<ListDocumentsResponse> {
-    const params = new URLSearchParams();
-
-    if (query.page) {
-      params.append('page', String(query.page));
-    }
-
-    if (query.limit) {
-      params.append('limit', String(query.limit));
-    }
-
-    if (query.search) {
-      params.append('search', query.search);
-    }
-
-    if (query.processed !== undefined) {
-      params.append('processed', String(query.processed));
-    }
-
-    const queryString = params.toString();
-    const path = queryString ? `/documents?${queryString}` : '/documents';
-
-    return this.request<ListDocumentsResponse>(path);
-  }
-
-  /**
-   * Retrieves a single document by its ID.
-   *
-   * @param documentId - The unique document identifier
-   * @returns Promise resolving to the document details
-   *
-   * @example
-   * ```typescript
-   * const document = await client.getDocument('doc-uuid');
-   * console.log('Title:', document.data.title);
-   * console.log('Processed:', document.data.is_processed);
-   * console.log('Extracted text length:', document.data.extracted_text_length);
-   * ```
-   */
-  public async getDocument(documentId: string): Promise<GetDocumentResponse> {
-    return this.request<GetDocumentResponse>(`/documents/${encodeURIComponent(documentId)}`);
-  }
-
-  /**
-   * Updates document metadata (title, description, tags, AI context setting).
-   *
-   * @param documentId - The unique document identifier
-   * @param payload - Fields to update
-   * @returns Promise resolving to the updated document
-   *
-   * @example
-   * ```typescript
-   * const updated = await client.updateDocument('doc-uuid', {
-   *   title: 'Updated GPKE Guide 2024',
-   *   description: 'Revised compliance documentation',
-   *   tags: ['gpke', 'compliance', '2024', 'revised'],
-   *   is_ai_context_enabled: true
-   * });
-   * ```
-   */
-  public async updateDocument(
-    documentId: string,
-    payload: UpdateDocumentRequest
-  ): Promise<UpdateDocumentResponse> {
-    return this.request<UpdateDocumentResponse>(`/documents/${encodeURIComponent(documentId)}`, {
-      method: 'PUT',
-      body: JSON.stringify(payload),
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-  }
-
-  /**
-   * Deletes a document permanently.
-   *
-   * @param documentId - The unique document identifier
-   * @returns Promise that resolves when the document is deleted
-   *
-   * @example
-   * ```typescript
-   * await client.deleteDocument('doc-uuid');
-   * console.log('Document deleted successfully');
-   * ```
-   */
-  public async deleteDocument(documentId: string): Promise<void> {
-    await this.request<void>(`/documents/${encodeURIComponent(documentId)}`, {
-      method: 'DELETE'
-    });
-  }
-
-  /**
-   * Downloads the original document file.
-   *
-   * @param documentId - The unique document identifier
-   * @returns Promise resolving to the file content as ArrayBuffer
-   *
-   * @example
-   * ```typescript
-   * import { writeFileSync } from 'fs';
-   *
-   * const fileData = await client.downloadDocument('doc-uuid');
-   * writeFileSync('./downloaded.pdf', Buffer.from(fileData));
-   * ```
-   */
-  public async downloadDocument(documentId: string): Promise<ArrayBuffer> {
-    const response = await this.fetchImpl(
-      this.resolveUrl(`/documents/${encodeURIComponent(documentId)}/download`),
-      {
-        method: 'GET',
-        headers: {
-          Authorization: this.token ? `Bearer ${this.token}` : ''
-        }
-      }
-    );
-
-    if (!response.ok) {
-      const text = await response.text();
-      const body = text.length ? parseJsonSafe(text) : undefined;
-
-      // Extract error message from various possible response structures
-      let message: string;
-      const bodyObj = body as Record<string, unknown> | undefined;
-
-      if (bodyObj?.error) {
-        if (typeof bodyObj.error === 'string') {
-          message = bodyObj.error;
-        } else if (typeof bodyObj.error === 'object' && bodyObj.error !== null) {
-          const errorObj = bodyObj.error as Record<string, unknown>;
-          message =
-            typeof errorObj.message === 'string' ? errorObj.message : JSON.stringify(bodyObj.error);
-        } else {
-          message = String(bodyObj.error);
-        }
-      } else if (typeof bodyObj?.message === 'string') {
-        message = bodyObj.message;
-      } else {
-        message = response.statusText || 'Download failed';
-      }
-
-      throw new WilliMakoError(message, response.status, body);
-    }
-
-    return response.arrayBuffer();
-  }
-
-  /**
-   * Triggers reprocessing of a document (re-extraction of text and re-embedding).
-   *
-   * Useful when a document failed to process initially or when you want to
-   * refresh the extracted content with updated processing logic.
-   *
-   * @param documentId - The unique document identifier
-   * @returns Promise resolving to the reprocessing status message
-   *
-   * @example
-   * ```typescript
-   * const response = await client.reprocessDocument('doc-uuid');
-   * console.log(response.data.message); // "Reprocessing started"
-   * ```
-   */
-  public async reprocessDocument(documentId: string): Promise<ReprocessDocumentResponse> {
-    return this.request<ReprocessDocumentResponse>(
-      `/documents/${encodeURIComponent(documentId)}/reprocess`,
-      {
-        method: 'POST'
-      }
-    );
-  }
-
-  /**
-   * Toggles whether a document should be included in AI context for chat and reasoning.
-   *
-   * When enabled, the document's content will be available to semantic search and
-   * can be referenced in chat responses and reasoning pipelines.
-   *
-   * @param documentId - The unique document identifier
-   * @param enabled - Whether to enable or disable AI context
-   * @returns Promise resolving to the updated document
-   *
-   * @example
-   * ```typescript
-   * // Enable AI context for a document
-   * await client.toggleAiContext('doc-uuid', true);
-   *
-   * // Disable AI context
-   * await client.toggleAiContext('doc-uuid', false);
-   * ```
-   */
-  public async toggleAiContext(
-    documentId: string,
-    enabled: boolean
-  ): Promise<ToggleAiContextResponse> {
-    const payload: ToggleAiContextRequest = { enabled };
-    return this.request<ToggleAiContextResponse>(
-      `/documents/${encodeURIComponent(documentId)}/ai-context`,
-      {
-        method: 'POST',
-        body: JSON.stringify(payload),
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      }
-    );
-  }
-
-  // =====================================================================
-  // EDIFACT Message Analyzer Methods (Version 0.7.0)
-  // =====================================================================
-
-  /**
-   * Analyzes an EDIFACT message structurally.
-   *
-   * Performs a structural analysis of an EDIFACT message, extracts segments,
-   * and enriches them with code lookup information from BDEW/EIC databases.
-   *
-   * @param payload - Request containing the EDIFACT message to analyze
-   * @returns Promise resolving to the analysis result with structured data
-   *
-   * @example
-   * ```typescript
-   * const analysis = await client.analyzeEdifactMessage({
-   *   message: 'UNH+00000000001111+MSCONS:D:11A:UN:2.6e\\nBGM+E01+1234567890+9\\nUNT+3+00000000001111'
-   * });
-   *
-   * console.log('Format:', analysis.data.format);
-   * console.log('Summary:', analysis.data.summary);
-   * console.log('Segments:', analysis.data.structuredData.segments.length);
-   *
-   * analysis.data.structuredData.segments.forEach(segment => {
-   *   console.log(`${segment.tag}: ${segment.description}`);
-   *   if (segment.resolvedCodes) {
-   *     console.log('Resolved codes:', segment.resolvedCodes);
-   *   }
-   * });
-   * ```
-   */
-  public async analyzeEdifactMessage(
-    payload: AnalyzeEdifactMessageRequest
-  ): Promise<AnalyzeEdifactMessageResponse> {
-    return this.request<AnalyzeEdifactMessageResponse>('/message-analyzer/analyze', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-  }
-
-  /**
-   * Enables interactive chat about an EDIFACT message.
-   *
-   * Ask questions and have discussions about an EDIFACT message with a context-aware
-   * AI assistant that understands market communication standards and EDIFACT structure.
-   *
-   * @param payload - Request with message, chat history, and current EDIFACT context
-   * @returns Promise resolving to the AI assistant's response
-   *
-   * @example
-   * ```typescript
-   * const edifactMessage = 'UNH+1+MSCONS:D:11A:UN:2.6e\\n...';
-   *
-   * // First question
-   * const response1 = await client.chatAboutEdifactMessage({
-   *   message: 'Welche Zählernummer ist in dieser Nachricht enthalten?',
-   *   currentEdifactMessage: edifactMessage
-   * });
-   *
-   * console.log('Answer:', response1.data.response);
-   *
-   * // Follow-up question with history
-   * const response2 = await client.chatAboutEdifactMessage({
-   *   message: 'In welchem Zeitfenster ist der Verbrauch am höchsten?',
-   *   chatHistory: [
-   *     { role: 'user', content: 'Welche Zählernummer ist in dieser Nachricht enthalten?' },
-   *     { role: 'assistant', content: response1.data.response }
-   *   ],
-   *   currentEdifactMessage: edifactMessage
-   * });
-   * ```
-   */
-  public async chatAboutEdifactMessage(payload: EdifactChatRequest): Promise<EdifactChatResponse> {
-    return this.request<EdifactChatResponse>('/message-analyzer/chat', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-  }
-
-  /**
-   * Generates a human-readable explanation of an EDIFACT message.
-   *
-   * Uses LLM and expert knowledge to create a structured, understandable explanation
-   * of what the EDIFACT message contains and represents in business terms.
-   *
-   * @param payload - Request containing the EDIFACT message to explain
-   * @returns Promise resolving to the generated explanation
-   *
-   * @example
-   * ```typescript
-   * const explanation = await client.explainEdifactMessage({
-   *   message: 'UNH+1+UTILMD:D:04B:UN:2.3e\\nBGM+E01+123456+9\\n...'
-   * });
-   *
-   * console.log('Explanation:');
-   * console.log(explanation.data.explanation);
-   * ```
-   */
-  public async explainEdifactMessage(
-    payload: ExplainEdifactMessageRequest
-  ): Promise<ExplainEdifactMessageResponse> {
-    return this.request<ExplainEdifactMessageResponse>('/message-analyzer/explanation', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-  }
-
-  /**
-   * Validates an EDIFACT message structurally and semantically.
-   *
-   * Performs comprehensive validation with detailed error and warning lists.
-   * Checks both EDIFACT structure and business logic according to market communication rules.
-   *
-   * @param payload - Request containing the EDIFACT message to validate
-   * @returns Promise resolving to the validation result with errors and warnings
-   *
-   * @example
-   * ```typescript
-   * const validation = await client.validateEdifactMessage({
-   *   message: 'UNH+1+MSCONS:D:11A:UN:2.6e\\n...'
-   * });
-   *
-   * console.log('Valid:', validation.data.isValid);
-   * console.log('Message Type:', validation.data.messageType);
-   * console.log('Segments:', validation.data.segmentCount);
-   *
-   * if (validation.data.errors.length > 0) {
-   *   console.log('Errors:');
-   *   validation.data.errors.forEach(error => console.log(`  - ${error}`));
-   * }
-   *
-   * if (validation.data.warnings.length > 0) {
-   *   console.log('Warnings:');
-   *   validation.data.warnings.forEach(warning => console.log(`  - ${warning}`));
-   * }
-   * ```
-   */
-  public async validateEdifactMessage(
-    payload: ValidateEdifactMessageRequest
-  ): Promise<ValidateEdifactMessageResponse> {
-    return this.request<ValidateEdifactMessageResponse>('/message-analyzer/validate', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-  }
-
-  /**
-   * Modifies an EDIFACT message based on natural language instructions.
-   *
-   * Uses AI to understand and apply modifications while maintaining valid EDIFACT structure.
-   * Perfect for testing scenarios or creating message variants.
-   *
-   * @param payload - Request with modification instruction and current message
-   * @returns Promise resolving to the modified message and validation status
-   *
-   * @example
-   * ```typescript
-   * const modified = await client.modifyEdifactMessage({
-   *   instruction: 'Erhöhe den Verbrauch in jedem Zeitfenster um 10%',
-   *   currentMessage: 'UNH+1+MSCONS:D:11A:UN:2.6e\\n...'
-   * });
-   *
-   * console.log('Modified message:');
-   * console.log(modified.data.modifiedMessage);
-   * console.log('Valid:', modified.data.isValid);
-   *
-   * // Save modified message
-   * await client.createArtifact({
-   *   sessionId: 'session-uuid',
-   *   type: 'edifact-message',
-   *   name: 'modified-mscons.edi',
-   *   mimeType: 'text/plain',
-   *   encoding: 'utf8',
-   *   content: modified.data.modifiedMessage,
-   *   tags: ['mscons', 'modified']
-   * });
-   * ```
-   */
-  public async modifyEdifactMessage(
-    payload: ModifyEdifactMessageRequest
-  ): Promise<ModifyEdifactMessageResponse> {
-    return this.request<ModifyEdifactMessageResponse>('/message-analyzer/modify', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-  }
-
-  /**
-   * Searches for market partners using BDEW/EIC codes, company names, cities, etc.
-   * This is a public endpoint that does not require authentication.
-   *
-   * @param query - Search parameters including the search term, optional limit, and optional role filter
-   * @returns Search results containing market partner information
-   *
-   * @example
-   * ```typescript
-   * // Search by company name
-   * const results = await client.searchMarketPartners({
-   *   q: 'Stadtwerke München',
-   *   limit: 5
-   * });
-   *
-   * // Search for distribution network operators (VNB)
-   * const vnbResults = await client.searchMarketPartners({
-   *   q: 'Stadtwerke',
-   *   role: 'VNB',
-   *   limit: 20
-   * });
-   *
-   * for (const partner of results.data.results) {
-   *   console.log(`${partner.companyName} (${partner.code})`);
-   *   console.log(`  Type: ${partner.codeType}, Source: ${partner.source}`);
-   *   if (partner.contacts?.length) {
-   *     console.log(`  Contacts: ${partner.contacts.length}`);
-   *   }
-   *   if (partner.allSoftwareSystems?.length) {
-   *     console.log(`  Software: ${partner.allSoftwareSystems.map(s => s.name).join(', ')}`);
-   *   }
-   * }
-   *
-   * // Search by BDEW code
-   * const codeResults = await client.searchMarketPartners({
-   *   q: '9900123456789'
-   * });
-   * ```
-   */
-  public async searchMarketPartners(
-    query: MarketPartnerSearchQuery
-  ): Promise<MarketPartnerSearchResponse> {
-    const params = new URLSearchParams();
-
-    if (query.q !== undefined) {
-      params.set('q', query.q);
-    }
-
-    if (query.limit !== undefined) {
-      params.set('limit', query.limit.toString());
-    }
-
-    if (query.role !== undefined) {
-      params.set('role', query.role);
-    }
-
-    return this.request<MarketPartnerSearchResponse>(
-      `/market-partners/search?${params.toString()}`,
-      {
-        method: 'GET',
-        skipAuth: true // Public endpoint
-      }
-    );
-  }
-
-  /**
-   * Executes a structured data query against registered Data Providers.
-   * Supports two modes:
-   * 1. Explicit capability with parameters
-   * 2. Natural language query with automatic intent resolution
-   *
-   * @param payload - Query request (explicit or natural language)
-   * @returns Provider-specific data and metadata
-   *
-   * @example
-   * ```typescript
-   * // Explicit capability query
-   * const explicitResult = await client.structuredDataQuery({
-   *   capability: 'market-partner-search',
-   *   parameters: {
-   *     q: 'netz',
-   *     limit: 5
-   *   }
-   * });
-   *
-   * // Natural language query
-   * const nlResult = await client.structuredDataQuery({
-   *   query: 'Wie viele Solaranlagen gibt es in Bayern?'
-   * });
-   *
-   * console.log('Provider:', nlResult.metadata.providerId);
-   * console.log('Capability:', nlResult.metadata.capability);
-   * console.log('Execution time:', nlResult.metadata.executionTimeMs, 'ms');
-   * console.log('Cache hit:', nlResult.metadata.cacheHit);
-   *
-   * if (nlResult.metadata.intentResolution) {
-   *   console.log('Original query:', nlResult.metadata.intentResolution.originalQuery);
-   *   console.log('Confidence:', nlResult.metadata.intentResolution.confidence);
-   * }
-   *
-   * console.log('Data:', nlResult.data);
-   * ```
-   */
-  public async structuredDataQuery(
-    payload: StructuredDataQueryRequest
-  ): Promise<StructuredDataQueryResponse> {
-    return this.request<StructuredDataQueryResponse>('/structured-data/query', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-  }
-
-  /**
-   * Analyzes a natural language query and shows detected capabilities without execution.
-   * Useful for testing intent detection and understanding how queries are interpreted.
-   *
-   * @param payload - Request with natural language query
-   * @returns Detected capabilities, suggested capability, and reasoning
-   *
-   * @example
-   * ```typescript
-   * const intent = await client.resolveIntent({
-   *   query: 'Wie viele Windkraftanlagen gibt es in Schleswig-Holstein?'
-   * });
-   *
-   * console.log('Original query:', intent.data.originalQuery);
-   * console.log('Suggested capability:', intent.data.suggestedCapability);
-   * console.log('Confidence:', intent.data.confidence);
-   * console.log('Reasoning:', intent.data.reasoning);
-   *
-   * console.log('\nDetected capabilities:');
-   * for (const cap of intent.data.detectedCapabilities) {
-   *   console.log(`  - ${cap.capability} (confidence: ${cap.confidence})`);
-   *   console.log(`    Parameters:`, cap.parameters);
-   * }
-   *
-   * console.log('\nAvailable capabilities:');
-   * for (const cap of intent.data.availableCapabilities) {
-   *   console.log(`  - ${cap.capability} (provider: ${cap.providerId})`);
-   *   console.log(`    Examples:`, cap.examples);
-   * }
-   * ```
-   */
-  public async resolveIntent(payload: ResolveIntentRequest): Promise<ResolveIntentResponse> {
-    return this.request<ResolveIntentResponse>('/structured-data/resolve-intent', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-  }
-
-  /**
-   * Lists all registered Data Providers with their capabilities and health status.
-   *
-   * @returns List of providers with their metadata and aggregate statistics
-   *
-   * @example
-   * ```typescript
-   * const providers = await client.getProviders();
-   *
-   * console.log(`Total providers: ${providers.data.stats.totalProviders}`);
-   * console.log(`Available capabilities: ${providers.data.stats.capabilities.join(', ')}`);
-   *
-   * for (const provider of providers.data.providers) {
-   *   console.log(`\n${provider.displayName} (${provider.id}) - v${provider.version}`);
-   *   console.log(`  Status: ${provider.healthy ? 'healthy' : 'degraded'}`);
-   *   console.log(`  Description: ${provider.description}`);
-   *   console.log(`  Capabilities: ${provider.capabilities.join(', ')}`);
-   * }
-   * ```
-   */
-  public async getProviders(): Promise<GetProvidersResponse> {
-    return this.request<GetProvidersResponse>('/structured-data/providers', {
-      method: 'GET'
-    });
-  }
-
-  /**
-   * Checks the health status of all registered Data Providers.
-   *
-   * @returns Overall health status and individual provider health information
-   *
-   * @example
-   * ```typescript
-   * const health = await client.getProvidersHealth();
-   *
-   * console.log(`Overall status: ${health.data.overall}`);
-   *
-   * for (const provider of health.data.providers) {
-   *   const status = provider.healthy ? '✓' : '✗';
-   *   console.log(`${status} ${provider.providerId}`);
-   *   console.log(`  Last check: ${provider.lastCheckAt}`);
-   *   if (provider.errorMessage) {
-   *     console.log(`  Error: ${provider.errorMessage}`);
-   *   }
-   * }
-   * ```
-   */
-  public async getProvidersHealth(): Promise<GetProvidersHealthResponse> {
-    return this.request<GetProvidersHealthResponse>('/structured-data/health', {
-      method: 'GET'
-    });
-  }
-
-  private resolveUrl(path: string): string {
-    if (!path.startsWith('/')) {
-      path = `/${path}`;
-    }
-
-    return `${this.baseUrl}${path}`;
-  }
-
-  private async request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-    const { skipAuth, headers: providedHeaders, ...init } = options;
-
-    const headers = new Headers(providedHeaders ?? {});
-    headers.set('Accept', 'application/json');
-
-    if (!skipAuth && this.token) {
-      headers.set('Authorization', `Bearer ${this.token}`);
-    }
-
-    if (init.body && !headers.has('Content-Type')) {
-      headers.set('Content-Type', 'application/json');
-    }
-
-    const response = await this.fetchImpl(this.resolveUrl(path), {
-      ...init,
-      headers
-    });
-
-    const text = await response.text();
-    const body = text.length ? parseJsonSafe(text) : undefined;
-
-    if (!response.ok) {
-      // Extract error message from various possible response structures
-      let message: string;
-      const bodyObj = body as Record<string, unknown> | undefined;
-
-      if (bodyObj?.error) {
-        if (typeof bodyObj.error === 'string') {
-          // Simple string error: { error: "message" }
-          message = bodyObj.error;
-        } else if (typeof bodyObj.error === 'object' && bodyObj.error !== null) {
-          // Nested error object: { error: { message: "..." } }
-          const errorObj = bodyObj.error as Record<string, unknown>;
-          message =
-            typeof errorObj.message === 'string' ? errorObj.message : JSON.stringify(bodyObj.error);
-        } else {
-          message = String(bodyObj.error);
-        }
-      } else if (typeof bodyObj?.message === 'string') {
-        // Direct message: { message: "..." }
-        message = bodyObj.message;
-      } else {
-        message = response.statusText || 'Request failed';
-      }
-
-      throw new WilliMakoError(message, response.status, body);
-    }
-
-    return body as T;
-  }
-
-  /**
-   * Get chat status for polling-based workflows (API v1.0.2+)
-   */
-  public async getChatStatus(chatId: string): Promise<any> {
-    const baseUrlForChat = this.baseUrl.replace(/\/api\/v2\/?$/, '/api/chat');
-    const url = `${baseUrlForChat}/chats/${encodeURIComponent(chatId)}/status`;
-    return this.request<any>(url, { method: 'GET' });
-  }
-
-  /**
-   * Get only the latest assistant response (API v1.0.2+)
-   */
-  public async getLatestResponse(chatId: string): Promise<any> {
-    const baseUrlForChat = this.baseUrl.replace(/\/api\/v2\/?$/, '/api/chat');
-    const url = `${baseUrlForChat}/chats/${encodeURIComponent(chatId)}/latest-response`;
-    return this.request<any>(url, { method: 'GET' });
-  }
-
-  /**
-   * Send a chat message and poll for completion (API v1.0.2+)
-   */
-  public async chatWithPolling(
-    sessionId: string,
-    message: string,
-    onProgress?: (status: string, progress: number) => void,
-    pollInterval: number = 2000,
-    maxPollTime: number = 300000
-  ): Promise<any> {
-    const session = await this.getSession(sessionId);
-    const chatId = session.data.legacyChatId;
-    if (!chatId) throw new WilliMakoError('Session has no legacyChatId', 500, session);
-
-    try {
-      await this.chat({ sessionId, message });
-    } catch (error) {
-      if (error instanceof WilliMakoError && error.status === 504) {
-        if (onProgress) onProgress('Request timed out, starting polling...', 10);
-      } else {
-        throw error;
-      }
-    }
-
-    const startTime = Date.now();
-    // eslint-disable-next-line no-constant-condition
-    while (true) {
-      const elapsed = Date.now() - startTime;
-      if (elapsed > maxPollTime) {
-        throw new WilliMakoError(`Polling timeout after ${maxPollTime}ms`, 408, {
-          chatId,
-          elapsed
-        });
-      }
-
-      const status = await this.getChatStatus(chatId);
-      const chatStatus = status.data.status;
-      const progress = status.data.estimatedProgress || 0;
-
-      if (onProgress) {
-        const statusMsg = chatStatus === 'processing' ? 'Processing...' : chatStatus;
-        onProgress(statusMsg, progress);
-      }
-
-      if (chatStatus === 'completed') return status.data.lastAssistantMessage;
-      if (chatStatus === 'error') {
-        throw new WilliMakoError(status.data.error || 'Chat processing failed', 500, status.data);
-      }
-
-      await new Promise((resolve) => setTimeout(resolve, pollInterval));
-    }
-  }
-
-  // ============================================================================
-  // OpenAI-Compatible Chat Completions (API v1.1.0+)
-  // ============================================================================
-
-  /**
-   * Create an OpenAI-compatible chat completion with RAG enhancement.
-   *
-   * This endpoint provides a drop-in replacement for OpenAI's chat completions API,
-   * but with automatic semantic search across Willi-Mako's energy sector knowledge base.
-   *
-   * **Key Features:**
-   * - OpenAI SDK compatible (works with Python, Node.js OpenAI clients)
-   * - Automatic QDrant search over 5 collections (ALWAYS active)
-   * - Stateless operation (no session required, but optional)
-   * - System instructions via messages array
-   * - RAG metadata included in response
-   *
-   * **Use Cases:**
-   * - Migration from OpenAI to Willi-Mako (only change base URL + API key)
-   * - External integrations using OpenAI SDK
-   * - Stateless requests without session management
-   * - Custom system instructions per request
-   *
-   * @param request - Chat completion request in OpenAI format
-   * @returns OpenAI-compatible response with RAG metadata extensions
-   *
-   * @example
-   * **Simple Question**
-   * ```typescript
-   * const response = await client.createChatCompletion({
-   *   messages: [
-   *     { role: 'user', content: 'Was ist der Unterschied zwischen UTILMD und MSCONS?' }
-   *   ]
-   * });
-   * console.log(response.choices[0].message.content);
-   * console.log(`RAG docs: ${response.x_rag_metadata.retrieved_documents}`);
-   * ```
-   *
-   * @example
-   * **With System Instructions**
-   * ```typescript
-   * const response = await client.createChatCompletion({
-   *   messages: [
-   *     {
-   *       role: 'system',
-   *       content: 'Du bist ein Senior-Berater für Netzbetreiber. Antworte präzise.'
-   *     },
-   *     { role: 'user', content: 'Welche Fristen gelten für den Lieferantenwechsel?' }
-   *   ],
-   *   temperature: 0.5,
-   *   max_tokens: 1500
-   * });
-   * ```
-   *
-   * @example
-   * **Restrict to Specific Collections**
-   * ```typescript
-   * const response = await client.createChatCompletion({
-   *   messages: [
-   *     { role: 'user', content: 'Was sind die TAB-Anforderungen für PV-Anlagen?' }
-   *   ],
-   *   context_settings: {
-   *     targetCollections: ['willi-netz']
-   *   }
-   * });
-   * ```
-   *
-   * @see https://platform.openai.com/docs/api-reference/chat/create
-   */
-  public async createChatCompletion(
-    request: ChatCompletionRequest
-  ): Promise<ChatCompletionResponse> {
-    const url = `${this.baseUrl}/chat/completions`;
-    return this.request<ChatCompletionResponse>(url, {
-      method: 'POST',
-      body: JSON.stringify(request)
-    });
+    const detail = typeof parsed === 'object' && parsed && 'error' in parsed
+      ? String((parsed as { error?: unknown }).error)
+      : response.statusText || `HTTP ${response.status}`;
+    return new WilliMakoError(`Willi Mako API request failed (${response.status}): ${detail}`, response.status, response, parsed);
   }
 }
 
-function parseJsonSafe(text: string): unknown {
-  try {
-    return JSON.parse(text);
-  } catch (_error) {
-    return text;
-  }
+function normalizeBaseUrl(url: string): string {
+  return url.replace(/\/+$/, '');
 }
+
+export default WilliMakoClient;
